@@ -1,0 +1,29 @@
+name: Test
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+      branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install packages
+        run: |
+          apt update 
+          apt install -y cmake
+      
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build
+          cmake --build build -j 4
+          ls -l build
+
+      - name: Run Tests
+        run: |
+          ./build/tyger_test $ --output-on-failure
