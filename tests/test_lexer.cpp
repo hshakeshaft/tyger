@@ -69,8 +69,8 @@ TEST(LexerTestSuite, Lexer_Integration_Test)
   lexer_init(&lx, INPUT);
 
   size_t tc_index = 0;
-  Token  tk_act;
-  Token& tk_exp;
+  Token tk_act;
+  Token tk_exp;
   do
   {
     tk_act = lexer_next_token(&lx);
@@ -78,7 +78,7 @@ TEST(LexerTestSuite, Lexer_Integration_Test)
 
     EXPECT_EQ(tk_exp.kind, tk_act.kind)
       << "Expected Token_Kind " << token_kind_to_string(tk_exp.kind)
-      << ", got " << token_kdin_to_string(tk_act.kdin);
+      << ", got " << token_kind_to_string(tk_act.kind);
 
     EXPECT_EQ(tk_exp.location.pos, tk_act.location.pos);
     EXPECT_EQ(tk_exp.location.col, tk_act.location.col);
