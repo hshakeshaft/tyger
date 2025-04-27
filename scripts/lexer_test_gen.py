@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
+import argparse
 import copy
 import enum as E
 from dataclasses import dataclass
 from typing import List, Dict
+import os
+import pathlib
 
 class TokenKind(E.Enum):
     """Specifies the kind of Token
@@ -62,6 +65,15 @@ class Token:
     location: Location
     kind: TokenKind = TokenKind.ILLEGAL
     literal: str = ""
+
+    def __str__(self) -> str:
+        """NOTE(HS): prints in C++ struct layout
+        """
+        return "Token{{ Location{{ {}, {}, {} }}, String_View{{ {}, {} }}, {}  }}".format(
+            self.location.pos, self.location.col, self.location.line,
+            self.location.pos, len(self.literal),
+            f"TK_{self.kind}"
+        )
 
 
 PUNCTUATION_TO_TOKEN_KIND: Dict[str, TokenKind] = {
@@ -209,31 +221,54 @@ class Lexer:
         return self.prog[pos:pos + slen]
 
 
-TEST_INPUT = """(){}[];
-+ - * / !
-!= == < > <= >=
- 
-10;
-100;
-0;
+class ExportType(E.Enum):
+    TEST_CASES = "testCase"
+    DEFS = "defs"
 
-"Hello, World!";
-"Hello \\\"World\\\"";
-"";
+    def __str__(self) -> str:
+        return self.value
 
-var x = 10;
-println();
-"""
 
 if __name__ == '__main__':
-    lexer = Lexer(TEST_INPUT)
+    parser = argparse.ArgumentParser(
+        prog="tyger_test_gen",
+        description="Script for generating lexer test cases, and some other useful things"
+    )
 
-    tokens: List[Token] = []
-    t = lexer.next_token()
-    tokens.append(t)
-    while t.kind != TokenKind.EOF:
-        t = lexer.next_token()
-        tokens.append(t)
+    parser.add_argument(
+        "-f", "--file",
+        help="The file to read, used to generate cases",
+        type=str, action="store"
+    )
 
-    for t in tokens:
-        print(t)
+    parser.add_argument(
+        "-t", "--output-type",
+        help="What kind of data to output",
+        type=ExportType, choices=list(ExportType), action="store"
+    )
+
+    args = parser.parse_args()
+
+    file_content = None
+    assert os.path.exists(pathlib.Path(args.file))
+    with open(args.file, "r") as f:
+        file_content = f.read()
+
+    lexer = Lexer(file_content)
+
+    match args.output_type:
+        case ExportType.TEST_CASES:
+            tokens: List[Token] = []
+            t = lexer.next_token()
+            tokens.append(t)
+
+            while t.kind != TokenKind.EOF:
+                t = lexer.next_token()
+                tokens.append(t)
+                
+            for t in tokens:
+                print(t)
+
+        case ExportType.DEFS:
+            for tk in list(TokenKind):
+                print(f"X({tk}) \\")
