@@ -69,7 +69,7 @@ class Token:
     def __str__(self) -> str:
         """NOTE(HS): prints in C++ struct layout
         """
-        return "Token{{ Location{{ {}, {}, {} }}, String_View{{ {}, {} }}, {}  }}".format(
+        return "Token{{ Location{{ {}, {}, {} }}, String_View{{ const_cast<char*>(&INPUT[{}]), {} }}, {}  }}".format(
             self.location.pos, self.location.col, self.location.line,
             self.location.pos, len(self.literal),
             f"TK_{self.kind}"
