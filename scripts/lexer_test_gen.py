@@ -224,6 +224,7 @@ class Lexer:
 class ExportType(E.Enum):
     TEST_CASES = "testCase"
     DEFS = "defs"
+    SOURCE = "source"
 
     def __str__(self) -> str:
         return self.value
@@ -267,8 +268,11 @@ if __name__ == '__main__':
                 tokens.append(t)
                 
             for t in tokens:
-                print(t)
+                print(f"{t},")
 
         case ExportType.DEFS:
             for tk in list(TokenKind):
                 print(f"X({tk}) \\")
+
+        case ExportType.SOURCE:
+            print(file_content)
