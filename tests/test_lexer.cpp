@@ -73,19 +73,19 @@ TEST(LexerTestSuite, Lexer_Integration_Test)
   Token& tk_exp;
   do
   {
-    tc_act = lexer_next_token(&lx);
-    tc_exp = TEST_CASES[tc_index];
+    tk_act = lexer_next_token(&lx);
+    tk_exp = TEST_CASES[tc_index];
 
-    EXPECT_EQ(tc_exp.kind, tc_act.kind)
-      << "Expected Token_Kind " << token_kind_to_string(tc_exp.kind)
-      << ", got " << token_kdin_to_string(tc_act.kdin);
+    EXPECT_EQ(tk_exp.kind, tk_act.kind)
+      << "Expected Token_Kind " << token_kind_to_string(tk_exp.kind)
+      << ", got " << token_kdin_to_string(tk_act.kdin);
 
-    EXPECT_EQ(tc_exp.location.pos, tc_act.location.pos);
-    EXPECT_EQ(tc_exp.location.col, tc_act.location.col);
-    EXPECT_EQ(tc_exp.location.line, tc_act.location.line);
+    EXPECT_EQ(tk_exp.location.pos, tk_act.location.pos);
+    EXPECT_EQ(tk_exp.location.col, tk_act.location.col);
+    EXPECT_EQ(tk_exp.location.line, tk_act.location.line);
 
-    EXPECT_EQ(tc_exp.literal.str, tc_act.literal.str);
-    EXPECT_EQ(tc_exp.literal.len, tc_act.literal.len);
+    EXPECT_EQ(tk_exp.literal.str, tk_act.literal.str);
+    EXPECT_EQ(tk_exp.literal.len, tk_act.literal.len);
 
     tc_index += 1;
   } while (tk_act.kind != TK_EOF);
