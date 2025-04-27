@@ -39,7 +39,7 @@ FetchContent_MakeAvailable(googletest)
 set(LIB_NAME ${PROJECT_NAME}_lib)
 set(
     LIB_SOURCES
-    code/foo.c
+    code/lexer.c
 )
 add_library(${LIB_NAME} STATIC ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)
@@ -60,7 +60,7 @@ enable_testing()
 set(TEST_EXE ${PROJECT_NAME}_test)
 set(
     TEST_SOURCES
-    tests/test_foo.cpp
+    tests/test_lexer.cpp
 )
 
 add_executable(${TEST_EXE} ${TEST_SOURCES})

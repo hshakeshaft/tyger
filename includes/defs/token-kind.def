@@ -1,0 +1,26 @@
+X(EOF) \
+X(ILLEGAL) \
+X(LPAREN) \
+X(RPAREN) \
+X(LBRACE) \
+X(RBRACE) \
+X(LBRACKET) \
+X(RBRACKET) \
+X(SEMICOLON) \
+X(PLUS) \
+X(MINUS) \
+X(ASTERISK) \
+X(SLASH) \
+X(ASSIGN) \
+X(BANG) \
+X(LT) \
+X(GT) \
+X(LTE) \
+X(GTE) \
+X(EQ) \
+X(NOT_EQ) \
+X(INTEGER) \
+X(STRING) \
+X(IDENT) \
+X(VAR) \
+X(PRINTLN) 
