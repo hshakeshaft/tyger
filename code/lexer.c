@@ -103,7 +103,7 @@ Token lexer_next_token(Lexer *lx)
       token.kind = TK_LT;
     }
   } break;
-k
+
   case '>':
   {
     if (lexer_peek_char(lx) == '=')
