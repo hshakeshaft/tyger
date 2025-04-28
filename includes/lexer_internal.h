@@ -6,8 +6,9 @@
 #define make_location(POS, COL, LINE) (Location) { .pos = (POS), .col = (COL), .line = (LINE) }
 
 void lexer_read_char(Lexer *lx);
+char lexer_peek_char(Lexer *lx);
 void lexer_skip_whitespace(Lexer *lx);
 
-inline bool is_whitespace(char c);
+bool is_whitespace(char c);
 
 #endif // TYGER_LEXER_INTERNAL_H_

@@ -57,6 +57,67 @@ Token lexer_next_token(Lexer *lx)
   case ']':  { token.kind = TK_RBRACKET; } break;
   case ';':  { token.kind = TK_SEMICOLON; } break;
 
+  case '+':  { token.kind = TK_PLUS; } break;
+  case '-':  { token.kind = TK_MINUS; } break;
+  case '*':  { token.kind = TK_ASTERISK; } break;
+  case '/':  { token.kind = TK_SLASH; } break;
+
+  case '!':
+  {
+    if (lexer_peek_char(lx) == '=')
+    {
+      token.kind = TK_NOT_EQ;
+      token.literal.len += 1;
+      lexer_read_char(lx);
+    }
+    else
+    {
+      token.kind = TK_BANG;
+    }
+  } break;
+
+  case '=':
+  {
+    if (lexer_peek_char(lx) == '=')
+    {
+      token.kind = TK_EQ;
+      token.literal.len += 1;
+      lexer_read_char(lx);
+    }
+    else
+    {
+      token.kind = TK_ASSIGN;
+    }
+  } break;
+
+  case '<':
+  {
+    if (lexer_peek_char(lx) == '=')
+    {
+      token.kind = TK_LTE;
+      token.literal.len += 1;
+      lexer_read_char(lx);
+    }
+    else
+    {
+      token.kind = TK_LT;
+    }
+  } break;
+k
+  case '>':
+  {
+    if (lexer_peek_char(lx) == '=')
+    {
+      token.kind = TK_GTE;
+      token.literal.len += 1;
+      lexer_read_char(lx);
+    }
+    else
+    {
+      token.kind = TK_GT;
+    }
+  } break;
+
   }
 
   lexer_read_char(lx);
@@ -75,6 +136,18 @@ void lexer_read_char(Lexer *lx)
     lx->ch = lx->program[lx->read_pos];
   }
   lx->pos = lx->read_pos++;
+}
+
+char lexer_peek_char(Lexer *lx)
+{
+  if (lx->read_pos >= lx->program_len)
+  {
+    return '\0';
+  }
+  else
+  {
+    return lx->program[lx->read_pos];
+  }
 }
 
 void lexer_skip_whitespace(Lexer *lx)
