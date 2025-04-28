@@ -84,6 +84,8 @@ TEST(LexerTestSuite, Lexer_Integration_Test)
     EXPECT_EQ(tk_exp.location.col, tk_act.location.col);
     EXPECT_EQ(tk_exp.location.line, tk_act.location.line);
 
+    // TODO(HS): need to actually do string-wise comparison, otherwise this will
+    // always fail
     EXPECT_EQ(tk_exp.literal.str, tk_act.literal.str);
     EXPECT_EQ(tk_exp.literal.len, tk_act.literal.len);
 

@@ -27,6 +27,7 @@ typedef struct token
 typedef struct lexer
 {
   const char *program;
+  size_t program_len;
   size_t pos;
   size_t read_pos;
   size_t col;
@@ -47,3 +48,4 @@ const char *token_kind_to_string(Token_Kind kind);
 #endif
 
 #endif // TYGER_LEXER_H_
+
