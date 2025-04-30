@@ -1,6 +1,7 @@
 #include <assert.h>
 // TODO(HS): impl own c-string functions
 #include <string.h>
+#include <stdio.h>
 #include "lexer.h"
 #include "lexer_internal.h"
 
@@ -34,6 +35,7 @@ const char *token_kind_to_string(Token_Kind kind)
   }
   return str;
 }
+
 
 Token lexer_next_token(Lexer *lx)
 {
@@ -118,6 +120,19 @@ Token lexer_next_token(Lexer *lx)
     }
   } break;
 
+  default:
+  {
+    // TODO(HS): impl float support
+    if (is_digit(lx->ch))
+    {
+      size_t pos = lx->pos;
+      lexer_read_number(lx);
+      size_t num_len = lx->pos - pos;
+      token.kind = TK_INTEGER;
+      token.literal.len = num_len;
+      return token;
+    }
+  } break;
   }
 
   lexer_read_char(lx);
@@ -152,15 +167,40 @@ char lexer_peek_char(Lexer *lx)
 
 void lexer_skip_whitespace(Lexer *lx)
 {
-  while (is_whitespace(lx->ch))
+  while (is_whitespace(lx->ch) && lx->ch != '\0')
   {
     lexer_read_char(lx);
   }
 }
 
+void lexer_read_number(Lexer *lx)
+{
+  while (is_digit(lx->ch) && lx->ch != '\0')
+  {
+    lexer_read_char(lx);
+  }
+}
 
 // TODO(HS): make UTF8 compliant
 inline bool is_whitespace(char c)
 {
   return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+inline bool is_digit(char c)
+{
+  return ('0' <= c && c <= '9');
+}
+
+void token_to_string(Token t, char *buffer, int buffer_size)
+{
+  const char *tk_str = token_kind_to_string(t.kind);
+  int bytes_to_write = snprintf(NULL, 0, TOKEN_FMT, TOKEN_ARGS(t, tk_str));
+  assert(bytes_to_write <= buffer_size);
+  int bytes_written = snprintf(buffer,
+                               bytes_to_write + 1,
+                               TOKEN_FMT,
+                               TOKEN_ARGS(t, tk_str));
+  assert(bytes_written == bytes_to_write);
+  buffer[bytes_to_write] = '\0';
 }

@@ -16,4 +16,8 @@ typedef struct stirng_view
 
 #define make_string_view_ex(STR, OFFSET, LEN) make_string_view(&((STR)[OFFSET]), (LEN))
 
+#define SV_FMT "%.*s"
+#define SV_ARGS(S) (int) (S).len, (S).str
+
+
 #endif // TYGER_TSTRINGS_H_
