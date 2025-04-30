@@ -120,8 +120,6 @@ Token lexer_next_token(Lexer *lx)
     }
   } break;
 
-  // TODO(HS): if all else fails, mark errant char as ILLEGAL
-  // TODO(HS): read illegal until first whitespace/quote?
   default:
   {
     // TODO(HS): impl float support
@@ -146,6 +144,16 @@ Token lexer_next_token(Lexer *lx)
       token.kind = TK_STRING;
       token.literal.str++;
       token.literal.len = str_len;
+      return token;
+    }
+    else
+    {
+      // NOTE(HS): ident/keyword/builtin parsing
+      size_t pos = lx->pos;
+      lexer_read_ident_or_keyword(lx);
+      size_t len = lx->pos - pos;
+      token.literal.len = len;
+      token.kind = string_view_to_token_kind(token.literal);
       return token;
     }
   } break;
@@ -209,6 +217,27 @@ void lexer_read_string(Lexer *lx)
   }
 }
 
+void lexer_read_ident_or_keyword(Lexer *lx)
+{
+  while ((is_char(lx->ch) || is_digit(lx->ch)) && lx->ch != '\0')
+  {
+    lexer_read_char(lx);
+  }
+}
+
+Token_Kind string_view_to_token_kind(String_View sv)
+{
+#define lexer_sv_cmp_str(SV, S) \
+  ((strlen((S)) == (SV).len) && (strncmp((S), (SV).str, (SV).len) == 0))
+
+  Token_Kind kind;
+  if      (lexer_sv_cmp_str(sv, "var"))     { kind = TK_VAR; }
+  else if (lexer_sv_cmp_str(sv, "println")) { kind = TK_PRINTLN; }
+  else                                      { kind = TK_IDENT; }
+
+  return kind;
+}
+
 // TODO(HS): make UTF8 compliant
 inline bool is_whitespace(char c)
 {
@@ -218,6 +247,11 @@ inline bool is_whitespace(char c)
 inline bool is_digit(char c)
 {
   return ('0' <= c && c <= '9');
+}
+
+inline bool is_char(char c)
+{
+  return ( ('a' <= c && c <= 'z') || ('A' <= c && c <= 'z') );
 }
 
 void token_to_string(Token t, char *buffer, int buffer_size)
