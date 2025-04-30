@@ -120,6 +120,8 @@ Token lexer_next_token(Lexer *lx)
     }
   } break;
 
+  // TODO(HS): if all else fails, mark errant char as ILLEGAL
+  // TODO(HS): read illegal until first whitespace/quote?
   default:
   {
     // TODO(HS): impl float support
@@ -130,6 +132,20 @@ Token lexer_next_token(Lexer *lx)
       size_t num_len = lx->pos - pos;
       token.kind = TK_INTEGER;
       token.literal.len = num_len;
+      return token;
+    }
+    else if (lx->ch == '\"')
+    {
+      // NOTE(HS): "consumes" the surroinding quotes as these aren't needed to store
+      // the fact this is a string
+      lexer_read_char(lx);
+      size_t pos = lx->pos;
+      lexer_read_string(lx);
+      size_t str_len = lx->pos - pos;
+      lexer_read_char(lx);
+      token.kind = TK_STRING;
+      token.literal.str++;
+      token.literal.len = str_len;
       return token;
     }
   } break;
@@ -177,6 +193,18 @@ void lexer_read_number(Lexer *lx)
 {
   while (is_digit(lx->ch) && lx->ch != '\0')
   {
+    lexer_read_char(lx);
+  }
+}
+
+void lexer_read_string(Lexer *lx)
+{
+  while (lx->ch != '\"' && lx->ch != '\0')
+  {
+    if (lx->ch == '\\' && lexer_peek_char(lx) == '\"')
+    {
+      lexer_read_char(lx);
+    }
     lexer_read_char(lx);
   }
 }

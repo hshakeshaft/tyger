@@ -10,6 +10,7 @@ char lexer_peek_char(Lexer *lx);
 void lexer_skip_whitespace(Lexer *lx);
 
 void lexer_read_number(Lexer *lx);
+void lexer_read_string(Lexer *lx);
 
 bool is_whitespace(char c);
 bool is_digit(char c);
