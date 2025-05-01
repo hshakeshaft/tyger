@@ -14,13 +14,13 @@ expression evaluation, and builtin `println` evaluation.
 
 ## Lexing
 
-- [ ] basics:
-    - [ ] `var`
-    - [ ] identifiers
-    - [ ] integer literals
-    - [ ] string literals
-    - [ ] `println`
-    - [ ] operators (`+ - * / = == !=` etc)
+- [x] basics:
+    - [x] `var`
+    - [x] identifiers
+    - [x] integer literals
+    - [x] string literals
+    - [x] `println`
+    - [x] operators (`+ - * / = == !=` etc)
 
 ## Parsing
 
