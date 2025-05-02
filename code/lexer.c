@@ -141,9 +141,14 @@ Token lexer_next_token(Lexer *lx)
       lexer_read_string(lx);
       size_t str_len = lx->pos - pos;
       lexer_read_char(lx);
+      
       token.kind = TK_STRING;
-      token.literal.str++;
-      token.literal.len = str_len;
+      token.location.pos = pos;
+      token.literal = (String_View) {
+        .str = token.literal.str + 1,
+        .len = str_len
+      };
+
       return token;
     }
     else
