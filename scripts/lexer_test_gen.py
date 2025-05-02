@@ -69,10 +69,14 @@ class Token:
     def __str__(self) -> str:
         """NOTE(HS): prints in C++ struct layout
         """
-        return "Token{{ Location{{ {}, {}, {} }}, String_View{{ const_cast<char*>(&INPUT[{}]), {} }}, {}  }}".format(
-            self.location.pos, self.location.col, self.location.line,
-            self.location.pos, len(self.literal),
-            f"TK_{self.kind}"
+        loc_str = "Location{{ {}, {}, {} }}".format(
+            self.location.pos, self.location.line, self.location.col
+        )
+        literal = "Literal{{ (char*) \"{}\", {} }}".format(
+            self.literal.replace("\\\"", "\\\\\\\""), len(self.literal)
+        )
+        return "Lexer_Test_Case{{ {}, {}, {} }}".format(
+            loc_str, literal, f"TK_{self.kind}"
         )
 
 
@@ -113,6 +117,9 @@ class Lexer:
         if self.read_pos >= len(self.prog):
             self.ch = "\0"
         else:
+            if self.ch == '\r':
+                if self.peek_char() == '\n':
+                    self.read_pos += 1
             self.ch = self.prog[self.read_pos]
         self.pos.pos = self.read_pos
         self.read_pos += 1
@@ -178,8 +185,10 @@ class Lexer:
                     token.literal = self.read_number()
                     return token
                 elif self.ch == '\"':
+                    pos = copy.copy(self.pos)
                     token.literal = self.read_string()
                     token.kind = TokenKind.STRING
+                    token.location = pos
                     return token
                 elif self.ch.isalpha():
                     token.literal = self.read_ident()
