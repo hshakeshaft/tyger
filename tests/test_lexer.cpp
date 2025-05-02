@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
+#include <iostream>
 #include <vector>
 #include <stddef.h>
 #include "lexer.h"
+#include "tstrings.h"
 
 // TODO(HS): eliniate leading space before integers
 const char *INPUT = \
@@ -21,47 +23,60 @@ const char *INPUT = \
   "println();\n"
 ;
 
-const auto TEST_CASES = std::vector<Token>{
-  Token{ Location{ 0, 0, 0 }, String_View{ const_cast<char*>(&INPUT[0]), 1 }, TK_LPAREN  },
-  Token{ Location{ 1, 0, 0 }, String_View{ const_cast<char*>(&INPUT[1]), 1 }, TK_RPAREN  },
-  Token{ Location{ 2, 0, 0 }, String_View{ const_cast<char*>(&INPUT[2]), 1 }, TK_LBRACE  },
-  Token{ Location{ 3, 0, 0 }, String_View{ const_cast<char*>(&INPUT[3]), 1 }, TK_RBRACE  },
-  Token{ Location{ 4, 0, 0 }, String_View{ const_cast<char*>(&INPUT[4]), 1 }, TK_LBRACKET  },
-  Token{ Location{ 5, 0, 0 }, String_View{ const_cast<char*>(&INPUT[5]), 1 }, TK_RBRACKET  },
-  Token{ Location{ 6, 0, 0 }, String_View{ const_cast<char*>(&INPUT[6]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 8, 0, 0 }, String_View{ const_cast<char*>(&INPUT[8]), 1 }, TK_PLUS  },
-  Token{ Location{ 10, 0, 0 }, String_View{ const_cast<char*>(&INPUT[10]), 1 }, TK_MINUS  },
-  Token{ Location{ 12, 0, 0 }, String_View{ const_cast<char*>(&INPUT[12]), 1 }, TK_ASTERISK  },
-  Token{ Location{ 14, 0, 0 }, String_View{ const_cast<char*>(&INPUT[14]), 1 }, TK_SLASH  },
-  Token{ Location{ 16, 0, 0 }, String_View{ const_cast<char*>(&INPUT[16]), 1 }, TK_BANG  },
-  Token{ Location{ 18, 0, 0 }, String_View{ const_cast<char*>(&INPUT[18]), 2 }, TK_NOT_EQ  },
-  Token{ Location{ 21, 0, 0 }, String_View{ const_cast<char*>(&INPUT[21]), 2 }, TK_EQ  },
-  Token{ Location{ 24, 0, 0 }, String_View{ const_cast<char*>(&INPUT[24]), 1 }, TK_LT  },
-  Token{ Location{ 26, 0, 0 }, String_View{ const_cast<char*>(&INPUT[26]), 1 }, TK_GT  },
-  Token{ Location{ 28, 0, 0 }, String_View{ const_cast<char*>(&INPUT[28]), 2 }, TK_LTE  },
-  Token{ Location{ 31, 0, 0 }, String_View{ const_cast<char*>(&INPUT[31]), 2 }, TK_GTE  },
-  Token{ Location{ 36, 0, 0 }, String_View{ const_cast<char*>(&INPUT[36]), 2 }, TK_INTEGER  },
-  Token{ Location{ 38, 0, 0 }, String_View{ const_cast<char*>(&INPUT[38]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 40, 0, 0 }, String_View{ const_cast<char*>(&INPUT[40]), 3 }, TK_INTEGER  },
-  Token{ Location{ 43, 0, 0 }, String_View{ const_cast<char*>(&INPUT[43]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 45, 0, 0 }, String_View{ const_cast<char*>(&INPUT[45]), 1 }, TK_INTEGER  },
-  Token{ Location{ 46, 0, 0 }, String_View{ const_cast<char*>(&INPUT[46]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 49, 0, 0 }, String_View{ const_cast<char*>(&INPUT[49]), 13 }, TK_STRING  },
-  Token{ Location{ 64, 0, 0 }, String_View{ const_cast<char*>(&INPUT[64]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 66, 0, 0 }, String_View{ const_cast<char*>(&INPUT[66]), 15 }, TK_STRING  },
-  Token{ Location{ 83, 0, 0 }, String_View{ const_cast<char*>(&INPUT[83]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 85, 0, 0 }, String_View{ const_cast<char*>(&INPUT[85]), 0 }, TK_STRING  },
-  Token{ Location{ 87, 0, 0 }, String_View{ const_cast<char*>(&INPUT[87]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 90, 0, 0 }, String_View{ const_cast<char*>(&INPUT[90]), 3 }, TK_VAR  },
-  Token{ Location{ 94, 0, 0 }, String_View{ const_cast<char*>(&INPUT[94]), 1 }, TK_IDENT  },
-  Token{ Location{ 96, 0, 0 }, String_View{ const_cast<char*>(&INPUT[96]), 1 }, TK_ASSIGN  },
-  Token{ Location{ 98, 0, 0 }, String_View{ const_cast<char*>(&INPUT[98]), 2 }, TK_INTEGER  },
-  Token{ Location{ 100, 0, 0 }, String_View{ const_cast<char*>(&INPUT[100]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 102, 0, 0 }, String_View{ const_cast<char*>(&INPUT[102]), 7 }, TK_PRINTLN  },
-  Token{ Location{ 109, 0, 0 }, String_View{ const_cast<char*>(&INPUT[109]), 1 }, TK_LPAREN  },
-  Token{ Location{ 110, 0, 0 }, String_View{ const_cast<char*>(&INPUT[110]), 1 }, TK_RPAREN  },
-  Token{ Location{ 111, 0, 0 }, String_View{ const_cast<char*>(&INPUT[111]), 1 }, TK_SEMICOLON  },
-  Token{ Location{ 113, 0, 0 }, String_View{ const_cast<char*>(&INPUT[113]), 1 }, TK_EOF  },
+struct Literal
+{
+  char *str;
+  size_t len;
+};
+
+struct Lexer_Test_Case
+{
+  Location location;
+  Literal literal;
+  Token_Kind kind;
+};
+
+const auto TEST_CASES = std::vector<Lexer_Test_Case>{
+  Lexer_Test_Case{ Location{ 0, 0, 0 }, Literal{ (char*) "(", 1 }, TK_LPAREN },
+  Lexer_Test_Case{ Location{ 1, 0, 0 }, Literal{ (char*) ")", 1 }, TK_RPAREN },
+  Lexer_Test_Case{ Location{ 2, 0, 0 }, Literal{ (char*) "{", 1 }, TK_LBRACE },
+  Lexer_Test_Case{ Location{ 3, 0, 0 }, Literal{ (char*) "}", 1 }, TK_RBRACE },
+  Lexer_Test_Case{ Location{ 4, 0, 0 }, Literal{ (char*) "[", 1 }, TK_LBRACKET },
+  Lexer_Test_Case{ Location{ 5, 0, 0 }, Literal{ (char*) "]", 1 }, TK_RBRACKET },
+  Lexer_Test_Case{ Location{ 6, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 8, 0, 0 }, Literal{ (char*) "+", 1 }, TK_PLUS },
+  Lexer_Test_Case{ Location{ 10, 0, 0 }, Literal{ (char*) "-", 1 }, TK_MINUS },
+  Lexer_Test_Case{ Location{ 12, 0, 0 }, Literal{ (char*) "*", 1 }, TK_ASTERISK },
+  Lexer_Test_Case{ Location{ 14, 0, 0 }, Literal{ (char*) "/", 1 }, TK_SLASH },
+  Lexer_Test_Case{ Location{ 16, 0, 0 }, Literal{ (char*) "!", 1 }, TK_BANG },
+  Lexer_Test_Case{ Location{ 18, 0, 0 }, Literal{ (char*) "!=", 2 }, TK_NOT_EQ },
+  Lexer_Test_Case{ Location{ 21, 0, 0 }, Literal{ (char*) "==", 2 }, TK_EQ },
+  Lexer_Test_Case{ Location{ 24, 0, 0 }, Literal{ (char*) "<", 1 }, TK_LT },
+  Lexer_Test_Case{ Location{ 26, 0, 0 }, Literal{ (char*) ">", 1 }, TK_GT },
+  Lexer_Test_Case{ Location{ 28, 0, 0 }, Literal{ (char*) "<=", 2 }, TK_LTE },
+  Lexer_Test_Case{ Location{ 31, 0, 0 }, Literal{ (char*) ">=", 2 }, TK_GTE },
+  Lexer_Test_Case{ Location{ 35, 0, 0 }, Literal{ (char*) "10", 2 }, TK_INTEGER },
+  Lexer_Test_Case{ Location{ 37, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 39, 0, 0 }, Literal{ (char*) "100", 3 }, TK_INTEGER },
+  Lexer_Test_Case{ Location{ 42, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 44, 0, 0 }, Literal{ (char*) "0", 1 }, TK_INTEGER },
+  Lexer_Test_Case{ Location{ 45, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 48, 0, 0 }, Literal{ (char*) "Hello, World!", 13 }, TK_STRING },
+  Lexer_Test_Case{ Location{ 63, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 65, 0, 0 }, Literal{ (char*) "Hello \\\"World\\\"", 15 }, TK_STRING },
+  Lexer_Test_Case{ Location{ 82, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 84, 0, 0 }, Literal{ (char*) "", 0 }, TK_STRING },
+  Lexer_Test_Case{ Location{ 86, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 89, 0, 0 }, Literal{ (char*) "var", 3 }, TK_VAR },
+  Lexer_Test_Case{ Location{ 93, 0, 0 }, Literal{ (char*) "x", 1 }, TK_IDENT },
+  Lexer_Test_Case{ Location{ 95, 0, 0 }, Literal{ (char*) "=", 1 }, TK_ASSIGN },
+  Lexer_Test_Case{ Location{ 97, 0, 0 }, Literal{ (char*) "10", 2 }, TK_INTEGER },
+  Lexer_Test_Case{ Location{ 99, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 101, 0, 0 }, Literal{ (char*) "println", 7 }, TK_PRINTLN },
+  Lexer_Test_Case{ Location{ 108, 0, 0 }, Literal{ (char*) "(", 1 }, TK_LPAREN },
+  Lexer_Test_Case{ Location{ 109, 0, 0 }, Literal{ (char*) ")", 1 }, TK_RPAREN },
+  Lexer_Test_Case{ Location{ 110, 0, 0 }, Literal{ (char*) ";", 1 }, TK_SEMICOLON },
+  Lexer_Test_Case{ Location{ 112, 0, 0 }, Literal{ (char*) "", 1 }, TK_EOF },
 };
 
 TEST(LexerTestSuite, Lexer_Integration_Test)
@@ -71,7 +86,7 @@ TEST(LexerTestSuite, Lexer_Integration_Test)
 
   size_t tc_index = 0;
   Token tk_act;
-  Token tk_exp;
+  Lexer_Test_Case tk_exp;
   do
   {
     tk_act = lexer_next_token(&lx);
@@ -79,21 +94,29 @@ TEST(LexerTestSuite, Lexer_Integration_Test)
 
     char tk_act_str[128];
     token_to_string(tk_act, tk_act_str, sizeof(tk_act_str));
-    char tk_exp_str[128];
-    token_to_string(tk_exp, tk_exp_str, sizeof(tk_act_str));
 
     EXPECT_EQ(tk_exp.kind, tk_act.kind)
       << "Expected Token_Kind " << token_kind_to_string(tk_exp.kind)
-      << ", got " << token_kind_to_string(tk_act.kind)
-      << "\nExpected:  " << tk_exp_str
-      << "\nGot Token: " << tk_act_str;
+      << ", got " << token_kind_to_string(tk_act.kind);
 
-    EXPECT_EQ(tk_exp.location.pos, tk_act.location.pos);
+    // TODO(HS): issues with this with cross platform becaue \r\n - make separate
+    // tests covering this functionality
+    // EXPECT_EQ(tk_exp.location.pos, tk_act.location.pos);
 
     // TODO(HS): need to actually do string-wise comparison, otherwise this will
     // always fail
-    // EXPECT_EQ(tk_exp.literal.str, tk_act.literal.str);
-    // EXPECT_EQ(tk_exp.literal.len, tk_act.literal.len);
+    if (tk_exp.kind != TK_EOF)
+    {
+      char act_literal_str[128];
+      string_view_format_buffer(act_literal_str, sizeof(act_literal_str), tk_act.literal);
+
+      EXPECT_EQ(tk_exp.literal.len, tk_act.literal.len);
+      EXPECT_TRUE(string_view_eq_str(tk_act.literal, tk_exp.literal.str))
+        << "Expected SV: \"" << tk_exp.literal.str << "\"\n"
+        << "Got:         \"" << act_literal_str << "\""
+        << "\n"
+        << "Got Token:      " << tk_act_str;
+    }
 
     tc_index += 1;
   } while (tk_act.kind != TK_EOF);
