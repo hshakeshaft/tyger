@@ -57,7 +57,7 @@ void string_view_format_buffer(char *buffer, size_t buffer_len, String_View sv)
   assert(buffer_len >= sv.len);
 
   int bytes_to_write = snprintf(NULL, 0, "%.*s", (int) sv.len, sv.str);
-  assert(bytes_to_write <= buffer_len);
+  assert(bytes_to_write <= (int) buffer_len);
 
   int bytes_written = snprintf(buffer, bytes_to_write + 1, "%.*s", (int) sv.len, sv.str);
   assert(bytes_written == bytes_to_write);
