@@ -33,7 +33,32 @@ const fib = func(n) {
     if (n < 2) {
         return 1;
     } else {
-        return ;fib(n - 1) + fib(n - 2)
+        return fib(n - 1) + fib(n - 2);
     }
 };
+```
+
+---
+
+# Building
+
+## CMake
+
+Run the following commands:
+
+```sh
+cmake -S . -B build
+cmake --build build
+```
+
+Alternatively:
+
+```sh
+# 1. create the build dir & change to it
+mkdir build
+cd build
+# 2. generate the build files
+cmake -S .. -B .
+# 3. build the project(s)
+cmake --build .
 ```
