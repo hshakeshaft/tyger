@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-typedef struct stirng_view
+typedef struct string_view
 {
   char *str;
   size_t len;
