@@ -41,6 +41,7 @@ set(
     LIB_SOURCES
     code/lexer.c
     code/tstrings.c
+    code/repl.c
 )
 add_library(${LIB_NAME} STATIC ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)
