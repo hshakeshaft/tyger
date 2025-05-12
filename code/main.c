@@ -1,6 +1,11 @@
 #include <stdio.h>
+#include "lexer.h"
+#include "repl.h"
 
 int main(void)
 {
-  printf("Hello, World!\n");
+  Repl repl;
+  repl_init(&repl);
+  repl_run(&repl);
+  repl_deinit(&repl);
 }
