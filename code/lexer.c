@@ -151,7 +151,7 @@ Token lexer_next_token(Lexer *lx)
 
       return token;
     }
-    else
+    else if (is_char(lx->ch))
     {
       // NOTE(HS): ident/keyword/builtin parsing
       size_t pos = lx->pos;
@@ -160,6 +160,10 @@ Token lexer_next_token(Lexer *lx)
       token.literal.len = len;
       token.kind = string_view_to_token_kind(token.literal);
       return token;
+    }
+    else
+    {
+      token.kind = TK_ILLEGAL;
     }
   } break;
   }
