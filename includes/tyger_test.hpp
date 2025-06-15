@@ -9,6 +9,7 @@ extern "C" {
   #include "lexer_internal.h"
   #include "repl.h"
   #include "tstrings.h"
+  #include "parser.h"
 }
 
 #endif // TYGER_TEST_HPP_

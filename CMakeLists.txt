@@ -42,6 +42,7 @@ set(
     code/lexer.c
     code/tstrings.c
     code/repl.c
+    code/parser.c
 )
 add_library(${LIB_NAME} STATIC ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)
@@ -63,6 +64,7 @@ set(TEST_EXE ${PROJECT_NAME}_test)
 set(
     TEST_SOURCES
     tests/test_lexer.cpp
+    tests/test_parser.cpp
 )
 
 add_executable(${TEST_EXE} ${TEST_SOURCES})
