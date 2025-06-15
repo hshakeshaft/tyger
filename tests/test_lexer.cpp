@@ -2,8 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <stddef.h>
-#include "lexer.h"
-#include "tstrings.h"
+#include "tyger_test.hpp"
 
 // TODO(HS): eliniate leading space before integers
 const char *INPUT = \
