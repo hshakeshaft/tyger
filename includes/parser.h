@@ -20,6 +20,8 @@ typedef struct error_vaarray
 typedef struct parser
 {
   Lexer *lexer;
+  Token cur_token;
+  Token peek_token;
 } Parser;
 
 typedef struct program
