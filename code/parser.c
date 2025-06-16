@@ -111,7 +111,7 @@ Tyger_Error parser_parse_statement(Parser *p, Statement *stmt)
 
 static inline bool peek_token_is(Parser *p, Token_Kind kind)
 {
-  return p->cur_token.kind == kind;
+  return p->peek_token.kind == kind;
 }
 
 static inline bool expect_peek(Parser *p, Token_Kind kind)
