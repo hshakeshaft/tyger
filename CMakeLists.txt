@@ -43,6 +43,7 @@ set(
     code/tstrings.c
     code/repl.c
     code/parser.c
+    code/trace.c
 )
 add_library(${LIB_NAME} STATIC ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)

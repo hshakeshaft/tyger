@@ -10,6 +10,7 @@ extern "C" {
   #include "repl.h"
   #include "tstrings.h"
   #include "parser.h"
+  #include "trace.h"
 }
 
 #endif // TYGER_TEST_HPP_
