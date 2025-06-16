@@ -6,6 +6,8 @@
 #include "lexer.h"
 #include "util.h"
 
+static const char *PARSER_NULL_TERMINATOR = "\0";
+
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind)
 {
   const char *str;
@@ -61,18 +63,26 @@ void parser_init(Parser *p, Lexer *lx)
   parser_next_token(p);
 }
   
+static void parser_context_init(Parser_Context *ctx)
+{
+  va_array_init(char, ctx->identifiers);
+}
+
 Program parser_parse_program(Parser *p)
 {
+  Parser_Context ctx;
+  parser_context_init(&ctx);
+
   Program program = {0};
   va_array_init(Tyger_Error, program.errors);
-  va_array_init(char, program.statements);
+  va_array_init(Statement, program.statements);
 
   while (p->cur_token.kind != TK_EOF)
   {
     Statement stmt = {0};
-    Tyger_Error err = parser_parse_statement(p, &stmt);
+    Tyger_Error err = parser_parse_statement(p, &ctx, &stmt);
 
-    if (err.kind == TYERR_NONE)
+    if (err.kind != TYERR_NONE)
     {
       va_array_append(program.errors, err);
     }
@@ -83,10 +93,11 @@ Program parser_parse_program(Parser *p)
     parser_next_token(p);
   }
 
+  program.context = ctx;
   return program;
 }
 
-Tyger_Error parser_parse_statement(Parser *p, Statement *stmt)
+Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 {
   Tyger_Error err = {0};
 
@@ -94,7 +105,7 @@ Tyger_Error parser_parse_statement(Parser *p, Statement *stmt)
   {
   case TK_VAR:
   {
-    err = parse_var_statement(p, stmt);
+    err = parse_var_statement(p, ctx, stmt);
   } break;
 
   default:
@@ -127,20 +138,29 @@ static inline bool expect_peek(Parser *p, Token_Kind kind)
   }
 }
 
-Tyger_Error parse_var_statement(Parser *p, Statement *stmt)
+Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 {
   Tyger_Error err = {0};
 
   if (!expect_peek(p, TK_IDENT))
   {
     err.kind = TYERR_SYNTAX;
+    return err;
   }
 
-  // TODO(HS): read ident
+  char *ident_start;
+  { // copy ident into dynamic array
+    assert(p->cur_token.literal.str);
+    assert(p->cur_token.literal.len > 0);
+    ident_start = &(ctx->identifiers.elems[ctx->identifiers.len]);
+    va_array_append_n(ctx->identifiers, p->cur_token.literal.str, p->cur_token.literal.len);
+    va_array_append_n(ctx->identifiers, PARSER_NULL_TERMINATOR, 1);
+  }
 
   if (!expect_peek(p, TK_ASSIGN))
   {
     err.kind = TYERR_SYNTAX;
+    return err;
   }
 
   // TODO(HS): parse expression
@@ -150,6 +170,9 @@ Tyger_Error parse_var_statement(Parser *p, Statement *stmt)
   }
 
   stmt->kind = STMT_VAR;
+  stmt->statement.var_statement = (Var_Statement) {
+    .ident = ident_start
+  };
 
   return err;
 }

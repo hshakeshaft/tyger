@@ -22,9 +22,20 @@ typedef struct tyger_error
   Tyger_Error_Kind kind;
 } Tyger_Error;
 
+typedef struct var_statement
+{
+  const char *ident;
+} Var_Statement;
+
+typedef union ustatement
+{
+  Var_Statement var_statement;
+} uStatement;
+
 typedef struct statement
 {
   Statement_Kind kind;
+  uStatement statement;
 } Statement;
 
 typedef struct statement_vaarray
@@ -41,6 +52,18 @@ typedef struct error_vaarray
   size_t len;
 } Error_VaArray;
 
+typedef struct string_vaarray
+{
+  char *elems;
+  size_t capacity;
+  size_t len;
+} String_VaArray;
+
+typedef struct parser_context
+{
+  String_VaArray identifiers;
+} Parser_Context;
+
 typedef struct parser
 {
   Lexer *lexer;
@@ -52,6 +75,8 @@ typedef struct program
 {
   Statement_VaArray statements;
   Error_VaArray errors;
+  String_VaArray identifiers;
+  Parser_Context context;
 } Program;
 
 void parser_init(Parser *p, Lexer *lx);
@@ -60,7 +85,7 @@ Program parser_parse_program(Parser *p);
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind);
 const char *statement_kind_to_string(Statement_Kind kind);
 
-Tyger_Error parser_parse_statement(Parser *p, Statement *stmt);
-Tyger_Error parse_var_statement(Parser *p, Statement *stmt);
+Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
+Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
 
 #endif // TYGER_PARSER_H_

@@ -103,4 +103,51 @@ static void yaml_print_statement(
   *buffer_len += bytes_written;
 
   // TODO(HS): write YAML body for statement kinds
+  switch (stmt->kind)
+  {
+  case STMT_VAR:
+  {
+    // indent key
+    if ((*buffer_len + num_indent_spaces) > *buffer_capacity)
+    {
+      size_t new_capacity = *buffer_capacity * 2;
+      char *new_buffer = realloc(buffer, new_capacity);
+      if (new_buffer != buffer)
+      {
+        buffer = new_buffer;
+      }
+      *buffer_capacity = new_capacity;
+    }
+    memset(&(buffer[*buffer_len]), ' ', num_indent_spaces);
+    *buffer_len += num_indent_spaces;
+
+    // format print ident key
+    bytes_to_write = snprintf(NULL, 0, "  ident: %s\n", stmt->statement.var_statement.ident);
+    if ((*buffer_len + bytes_to_write) > *buffer_capacity)
+    {
+      size_t new_capacity = *buffer_capacity * 2;
+      char *new_buffer = realloc(buffer, new_capacity);
+      if (new_buffer != buffer)
+      {
+        buffer = new_buffer;
+      }
+      *buffer_capacity = new_capacity;
+    }
+    bytes_written = snprintf(
+      &(buffer[*buffer_len]), bytes_to_write + 1,
+      "  ident: %s\n", stmt->statement.var_statement.ident
+    );
+    assert(bytes_written == bytes_to_write);
+    *buffer_len += bytes_written;
+  } break;
+
+  default:
+  {
+    fprintf(
+      stderr, "[ERROR] unhandles statement kind: %s (%i)\n",
+      statement_kind_to_string(stmt->kind), stmt->kind
+    );
+    assert(0);
+  } break;
+  }
 }
