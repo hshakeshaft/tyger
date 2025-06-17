@@ -14,7 +14,7 @@ set(C_STANDARD_REQUIRED ON)
 # TODO(HS): Add switch for "release" vs "dev" builds
 #
 if (MSVC)
-    add_compile_options(/W4 /w14640 /WX /permissive- /Zi /Od)
+    add_compile_options(/W4 /w14640 /wd4996 /WX /permissive- /Zi /Od)
 else()
     add_compile_options(-Wall -Wextra -Werror -Wshadow -pedantic -g -O0)
 endif()
