@@ -63,6 +63,8 @@ static void yaml_print_header(const Program *p, String_Builder *sb)
   string_builder_append_fmt(sb, TRACE_YAML_HEADER_FMT, p->errors.len, p->statements.len);
 }
 
+
+// TODO(HS): improve num indent spaces calculation
 static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int *indent_level)
 {
   yaml_print_indent(sb, *indent_level);
@@ -79,6 +81,8 @@ static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int 
 
   case STMT_EXPRESSION:
   {
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "  expression:\n");
     const Expression *expr = stmt->statement.expression_statement.expression;
     *indent_level += 1;
     yaml_print_expression(expr, sb, indent_level);
@@ -96,9 +100,26 @@ static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int 
   }
 }
 
-// TODO(HS): handle printing expression kinds
 static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level)
 {
   yaml_print_indent(sb, *indent_level);
-  string_builder_append_fmt(sb, "- kind: %s\n", expression_kind_to_string(expr->kind));
+  string_builder_append_fmt(sb, "  - kind: %s\n", expression_kind_to_string(expr->kind));
+
+  switch (expr->kind)
+  {
+  case EXPR_INT:
+  {
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    value: %i\n", expr->expression.int_expression.value);
+  } break;
+
+  default:
+  {
+    fprintf(
+      stderr, "[ERROR] Unhandled Expression_Kind %i (%s)\n",
+      expr->kind, expression_kind_to_string(expr->kind)
+    );
+    assert(0);
+  } break;
+  }
 }

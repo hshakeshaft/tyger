@@ -91,14 +91,16 @@ TEST(ParserTestSuite, Test_Int_Expression)
   Statement *stmt = &(p.statements.elems[0]);
   EXPECT_EQ(stmt->kind, STMT_EXPRESSION)
     << "Expected Statement_Kind " << statement_kind_to_string(STMT_EXPRESSION)
-    << ", got " << statement_kind_to_string(stmt->kind);
+    << ", got " << statement_kind_to_string(stmt->kind)
+    << prog_str;
 
   Expression *expr = stmt->statement.expression_statement.expression;
   EXPECT_EQ(expr->kind, EXPR_INT)
     << "Expected Expression_Kind " << expression_kind_to_string(EXPR_INT)
-    << ", got " << expression_kind_to_string(expr->kind);
+    << ", got " << expression_kind_to_string(expr->kind)
+    << prog_str;
 
   int64_t exp_val = 10;
   int64_t act_val = expr->expression.int_expression.value;
-  EXPECT_EQ(exp_val, act_val);
+  EXPECT_EQ(exp_val, act_val) << prog_str;
 }
