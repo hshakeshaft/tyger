@@ -130,6 +130,6 @@ Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *st
 Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
 Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
 
-kTyger_Error parse_int_expression(Parser *p, Expression *expr);
+Tyger_Error parse_int_expression(Parser *p, Expression *expr);
 
 #endif // TYGER_PARSER_H_
