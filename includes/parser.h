@@ -1,5 +1,6 @@
 #ifndef TYGER_PARSER_H_
 #define TYGER_PARSER_H_
+#include <stdint.h>
 #include <stddef.h>
 #include "lexer.h"
 
@@ -17,19 +18,50 @@ typedef enum statement_kind
 #undef X
 } Statement_Kind;
 
+typedef enum expression_kind
+{
+#define X(NAME) EXPR_##NAME,
+  #include "defs/expression-kind.def"
+#undef X
+} Expression_Kind;
+
 typedef struct tyger_error
 {
   Tyger_Error_Kind kind;
 } Tyger_Error;
+
+typedef struct expression Expression;
+
+typedef struct int_expression
+{
+  int64_t value;
+} Int_Expression;
+
+typedef union uexpression
+{
+  Int_Expression int_expression;
+} uExpression;
+
+struct expression
+{
+  Expression_Kind kind;
+  uExpression expression;
+};
 
 typedef struct var_statement
 {
   const char *ident;
 } Var_Statement;
 
+typedef struct expression_statement
+{
+  Expression *expression;
+} Expression_Statement;
+
 typedef union ustatement
 {
   Var_Statement var_statement;
+  Expression_Statement expression_statement;
 } uStatement;
 
 typedef struct statement
@@ -59,9 +91,17 @@ typedef struct string_vaarray
   size_t len;
 } String_VaArray;
 
+typedef struct expression_vaarray
+{
+  Expression *elems;
+  size_t capacity;
+  size_t len;
+} Expression_VaArray;
+
 typedef struct parser_context
 {
   String_VaArray identifiers;
+  Expression_VaArray expressions;
 } Parser_Context;
 
 typedef struct parser
@@ -84,8 +124,12 @@ Program parser_parse_program(Parser *p);
 
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind);
 const char *statement_kind_to_string(Statement_Kind kind);
+const char *expression_kind_to_string(Expression_Kind kind);
 
 Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
 Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
+Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
+
+kTyger_Error parse_int_expression(Parser *p, Expression *expr);
 
 #endif // TYGER_PARSER_H_

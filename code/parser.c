@@ -50,6 +50,27 @@ const char *statement_kind_to_string(Statement_Kind kind)
   return str;
 }
 
+const char *expression_kind_to_string(Expression_Kind kind)
+{
+  const char *str;
+
+  switch (kind)
+  {
+#define X(NAME) case EXPR_##NAME: { str = #NAME; } break;
+    #include "defs/expression-kind.def"
+#undef X
+
+  default:
+  {
+    fprintf(stderr, "[ERROR] Invalid expression kind encountered: %i\n", kind);
+    str = NULL;
+    assert(0);
+  } break;
+  }
+
+  return str;
+}
+
 static void parser_next_token(Parser *p)
 {
   p->cur_token = p->peek_token;
@@ -66,6 +87,7 @@ void parser_init(Parser *p, Lexer *lx)
 static void parser_context_init(Parser_Context *ctx)
 {
   va_array_init(char, ctx->identifiers);
+  va_array_init(Expression, ctx->expressions);
 }
 
 Program parser_parse_program(Parser *p)
@@ -110,10 +132,7 @@ Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *st
 
   default:
   {
-    fprintf(
-      stderr, "[ERROR] unexpected value for Token_Kind: %i\n", p->cur_token.kind
-    );
-    assert(0);
+    err = parse_expression_statement(p, ctx, stmt);
   } break;
   }
 
@@ -176,3 +195,57 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
   return err;
 }
+
+Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
+{
+  Tyger_Error err = {0};
+
+  Expression expr;
+  switch (p->cur_token.kind)
+  {
+  case TK_INTEGER:
+  {
+    err = parse_int_expression(p, &expr);
+  } break;
+
+  default:
+  {
+    fprintf(
+      stderr, "[ERROR] Unhanlded Token_Kind whilst parsing expression, %s\n",
+      token_kind_to_string(p->cur_token.kind)
+    );
+  } break;
+  }
+
+  Expression *hexpr = &(ctx->expressions.elems[ctx->expressions.len]);
+  if (err.kind == TYERR_NONE)
+  {
+    va_array_append(ctx->expressions, expr);
+  }
+
+  // TODO(HS): assign stmt->->expression
+  stmt->kind = STMT_EXPRESSION;
+  stmt->statement.expression_statement.expression = hexpr;
+
+  return err;
+}
+
+// TODO(HS): parse int into int64_t
+Tyger_Error parse_int_expression(Parser *p, Expression *expr)
+{
+  (void*) expr;
+  Tyger_Error err = {0};
+
+  int64_t result = atoll(p->cur_token.literal.str);
+  if (result == 0 && !string_view_eq_str(p->cur_token.literal, "0"))
+  {
+    err.kind = TYERR_INVALID_INTEGER;
+    return err;
+  }
+
+  expr->kind = EXPR_INT;
+  expr->expression.int_expression.value = result;
+
+  parser_next_token(p);
+  return err;
+} 
