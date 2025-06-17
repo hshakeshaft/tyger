@@ -3,142 +3,86 @@
 #include <stdio.h>
 #include <string.h>
 #include "trace.h"
+#include "tstrings.h"
 
 #define TRACE_YAML_SPACES_PER_INDENT_LEVEL 4
 
-static void yaml_print_header(const Program *p, char *buffer, size_t *buffer_len, size_t *buffer_capacity);
-static void yaml_print_statement(
-  const Statement *stmt, char *buffer, size_t *buffer_len, size_t *buffer_capacity, int *indent_level
-);
+static void yaml_print_header(const Program *p, String_Builder *sb);
+static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int *indent_level);
+static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level);
 
 const char *program_to_string(const Program *p, Trace_Format kind)
 {
   assert(p);
-  
-  size_t buffer_capacity = 2048;
-  size_t buffer_len = 0;
-  char *buffer = malloc(sizeof(char) * buffer_capacity);
-  assert(buffer);
+  String_Builder sb;
+  string_builder_init(&sb);
 
   switch (kind)
   {
   case TRACE_YAML:
   {
-    yaml_print_header(p, buffer, &buffer_len, &buffer_capacity);
+    yaml_print_header(p, &sb);
     for (size_t i = 0; i < p->statements.len; ++i)
     {
       int indent_level = 1;
       Statement *stmt = &(p->statements.elems[i]);
-      yaml_print_statement(stmt, buffer, &buffer_len, &buffer_capacity, &indent_level);
+      yaml_print_statement(stmt, &sb, &indent_level);
     }
   } break;
   }
 
-  buffer[buffer_len] = '\0';
+  const char *buffer = string_builder_to_cstring(&sb);
   return buffer;
 }
 
-static void yaml_print_header(const Program *p, char *buffer, size_t *buffer_len, size_t *buffer_capacity)
+static void check_buffer_and_resize(char *buffer, size_t *capacity, size_t len, size_t bytes_to_write)
 {
-  #define TRACE_YAML_HEADER_FMT "---\nErrors: %zu\nStatements: %zu\n---\nprogram:\n"
-
-  int bytes_to_write = snprintf(NULL, 0, TRACE_YAML_HEADER_FMT, p->errors.len, p->statements.len);
-
-  if ((*buffer_len + bytes_to_write) > *buffer_capacity)
+  if ((len + bytes_to_write) > *capacity)
   {
-    size_t new_capacity = *buffer_capacity * 2;
+    size_t new_capacity = *capacity * 2;
     char *new_buffer = realloc(buffer, new_capacity);
-    if (new_buffer != buffer)
+    if (buffer != new_buffer)
     {
       buffer = new_buffer;
     }
-    *buffer_capacity = new_capacity;
+    *capacity = new_capacity;
   }
-
-  int bytes_written = snprintf(
-    &(buffer[*buffer_len]), bytes_to_write + 1, TRACE_YAML_HEADER_FMT,
-    p->errors.len, p->statements.len);
-
-  assert(bytes_to_write == bytes_written);
-
-  *buffer_len += bytes_written;
 }
 
-static void yaml_print_statement(
-  const Statement *stmt, char *buffer, size_t *buffer_len, size_t *buffer_capacity, int *indent_level
-)
+static void yaml_print_indent(String_Builder *sb, int indent_level)
 {
-  int num_indent_spaces = *indent_level * TRACE_YAML_SPACES_PER_INDENT_LEVEL;
+  int num_spaces_to_indent = indent_level * TRACE_YAML_SPACES_PER_INDENT_LEVEL;
+  check_buffer_and_resize(sb->buffer, &sb->capacity, sb->len, num_spaces_to_indent);
+  memset(&(sb->buffer[sb->len]), ' ', num_spaces_to_indent);
+  sb->len += num_spaces_to_indent;
+}
 
-  // write base indent
-  if ((*buffer_len + num_indent_spaces) > *buffer_capacity)
-  {
-    size_t new_capacity = *buffer_capacity * 2;
-    char *new_buffer = realloc(buffer, new_capacity);
-    if (new_buffer != buffer)
-    {
-      buffer = new_buffer;
-    }
-    *buffer_capacity = new_capacity;
-  }
-  memset(&(buffer[*buffer_len]), ' ', num_indent_spaces);
-  *buffer_len += num_indent_spaces;
+static void yaml_print_header(const Program *p, String_Builder *sb)
+{
+  #define TRACE_YAML_HEADER_FMT "---\nErrors: %zu\nStatements: %zu\n---\nprogram:\n"
+  string_builder_append_fmt(sb, TRACE_YAML_HEADER_FMT, p->errors.len, p->statements.len);
+}
 
-  // write "kind"
-  int bytes_to_write = snprintf(NULL, 0, "- kind: %s\n", statement_kind_to_string(stmt->kind));
-  if ((*buffer_len + bytes_to_write) > *buffer_capacity)
-  {
-    size_t new_capacity = *buffer_capacity * 2;
-    char *new_buffer = realloc(buffer, new_capacity);
-    if (new_buffer != buffer)
-    {
-      buffer = new_buffer;
-    }
-    *buffer_capacity = new_capacity;
-  }
-  int bytes_written = snprintf(
-    &(buffer[*buffer_len]), bytes_to_write + 1, "- kind: %s\n", statement_kind_to_string(stmt->kind)
-  );
-  assert(bytes_written == bytes_to_write);
-  *buffer_len += bytes_written;
+static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int *indent_level)
+{
+  yaml_print_indent(sb, *indent_level);
+  string_builder_append_fmt(sb, "- kind: %s\n", statement_kind_to_string(stmt->kind));
 
   // TODO(HS): write YAML body for statement kinds
   switch (stmt->kind)
   {
   case STMT_VAR:
   {
-    // indent key
-    if ((*buffer_len + num_indent_spaces) > *buffer_capacity)
-    {
-      size_t new_capacity = *buffer_capacity * 2;
-      char *new_buffer = realloc(buffer, new_capacity);
-      if (new_buffer != buffer)
-      {
-        buffer = new_buffer;
-      }
-      *buffer_capacity = new_capacity;
-    }
-    memset(&(buffer[*buffer_len]), ' ', num_indent_spaces);
-    *buffer_len += num_indent_spaces;
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "  ident: %s\n", stmt->statement.var_statement.ident);
+  } break;
 
-    // format print ident key
-    bytes_to_write = snprintf(NULL, 0, "  ident: %s\n", stmt->statement.var_statement.ident);
-    if ((*buffer_len + bytes_to_write) > *buffer_capacity)
-    {
-      size_t new_capacity = *buffer_capacity * 2;
-      char *new_buffer = realloc(buffer, new_capacity);
-      if (new_buffer != buffer)
-      {
-        buffer = new_buffer;
-      }
-      *buffer_capacity = new_capacity;
-    }
-    bytes_written = snprintf(
-      &(buffer[*buffer_len]), bytes_to_write + 1,
-      "  ident: %s\n", stmt->statement.var_statement.ident
-    );
-    assert(bytes_written == bytes_to_write);
-    *buffer_len += bytes_written;
+  case STMT_EXPRESSION:
+  {
+    const Expression *expr = stmt->statement.expression_statement.expression;
+    *indent_level += 1;
+    yaml_print_expression(expr, sb, indent_level);
+    *indent_level -= 1;
   } break;
 
   default:
@@ -150,4 +94,11 @@ static void yaml_print_statement(
     assert(0);
   } break;
   }
+}
+
+// TODO(HS): handle printing expression kinds
+static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level)
+{
+  yaml_print_indent(sb, *indent_level);
+  string_builder_append_fmt(sb, "- kind: %s\n", expression_kind_to_string(expr->kind));
 }
