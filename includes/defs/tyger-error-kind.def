@@ -1,2 +1,3 @@
-X(NONE) \
-X(SYNTAX)
+X(NONE)                 \
+X(SYNTAX)               \
+X(INVALID_INTEGER)
