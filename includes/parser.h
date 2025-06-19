@@ -2,6 +2,7 @@
 #define TYGER_PARSER_H_
 #include <stdint.h>
 #include <stddef.h>
+#include "tstrings.h"
 #include "lexer.h"
 
 typedef enum tyger_error_kind
@@ -37,9 +38,16 @@ typedef struct int_expression
   int64_t value;
 } Int_Expression;
 
+typedef struct string_expression
+{
+  const char *value;
+  size_t len;
+} String_Expression;
+
 typedef union uexpression
 {
   Int_Expression int_expression;
+  String_Expression string_expression;
 } uExpression;
 
 struct expression
@@ -102,6 +110,7 @@ typedef struct parser_context
 {
   String_VaArray identifiers;
   Expression_VaArray expressions;
+  String_VaArray strings;
 } Parser_Context;
 
 typedef struct parser
@@ -131,5 +140,6 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
 
 Tyger_Error parse_int_expression(Parser *p, Expression *expr);
+Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *expr);
 
 #endif // TYGER_PARSER_H_

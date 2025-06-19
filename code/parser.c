@@ -6,6 +6,8 @@
 #include "lexer.h"
 #include "util.h"
 
+// NOTE(HS): way to fudge being able to pass a string containing the null terminator
+// into va_array_append_n calls.
 static const char *PARSER_NULL_TERMINATOR = "\0";
 
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind)
@@ -88,6 +90,7 @@ static void parser_context_init(Parser_Context *ctx)
 {
   va_array_init(char, ctx->identifiers);
   va_array_init(Expression, ctx->expressions);
+  va_array_init(char, ctx->strings);
 }
 
 Program parser_parse_program(Parser *p)
@@ -208,6 +211,11 @@ Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement
     err = parse_int_expression(p, &expr);
   } break;
 
+  case TK_STRING:
+  {
+    err = parse_string_expression(p, ctx, &expr);
+  } break;
+
   default:
   {
     fprintf(
@@ -249,3 +257,22 @@ Tyger_Error parse_int_expression(Parser *p, Expression *expr)
   parser_next_token(p);
   return err;
 } 
+
+// TODO(HS): more robust string parsing
+Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *expr)
+{
+  Tyger_Error err = {0};
+
+  const char *str_value = &(ctx->strings.elems[ctx->strings.len]);
+  va_array_append_n(ctx->strings, p->cur_token.literal.str, p->cur_token.literal.len);
+  va_array_append_n(ctx->strings, PARSER_NULL_TERMINATOR, 1);
+
+  expr->kind = EXPR_STRING;
+  expr->expression.string_expression = (String_Expression) {
+    .value = str_value,
+    .len = p->cur_token.literal.len
+  };
+
+  parser_next_token(p);
+  return err;
+}

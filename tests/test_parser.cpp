@@ -104,3 +104,37 @@ TEST(ParserTestSuite, Test_Int_Expression)
   int64_t act_val = expr->expression.int_expression.value;
   EXPECT_EQ(exp_val, act_val) << prog_str;
 }
+
+TEST(ParserTestSuite, Test_String_Expression)
+{
+  Lexer lexer;
+  Parser parser;
+  const char *program = "\"Hellope\";";
+  setup_parser_test_case(&parser, &lexer, program);
+
+  Program p = parser_parse_program(&parser);
+  const char *prog_str = program_to_string(&p, TRACE_YAML);
+  DEFER(delete prog_str;);
+
+  EXPECT_EQ(p.errors.len, 0) << "Expected 0 errors, got " << p.errors.len;
+  parser_test_case_enumerate_errors(&p);
+
+  EXPECT_EQ(p.statements.len, 1) << prog_str;
+
+  Statement *stmt = &(p.statements.elems[0]);
+  EXPECT_EQ(stmt->kind, STMT_EXPRESSION)
+    << "Expected Statement_Kind " << statement_kind_to_string(STMT_EXPRESSION)
+    << ", got " << statement_kind_to_string(stmt->kind)
+    << prog_str;
+
+  Expression *expr = stmt->statement.expression_statement.expression;
+   EXPECT_EQ(expr->kind, EXPR_STRING)
+    << "Expected Expression_Kind " << expression_kind_to_string(EXPR_STRING)
+    << ", got " << expression_kind_to_string(expr->kind)
+    << prog_str;
+
+   std::string exp_value{"Hellope"};
+   std::string act_value{expr->expression.string_expression.value};
+   EXPECT_EQ(exp_value, act_value) << prog_str;
+   EXPECT_EQ(exp_value.size(), act_value.size()) << prog_str;
+}
