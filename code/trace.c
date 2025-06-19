@@ -113,6 +113,15 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
     string_builder_append_fmt(sb, "    value: %i\n", expr->expression.int_expression.value);
   } break;
 
+  case EXPR_STRING:
+  {
+    const String_Expression *sexpr = &(expr->expression.string_expression);
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    value: \"%s\"\n", sexpr->value);
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    len: %lu\n", sexpr->len);
+  } break;
+
   default:
   {
     fprintf(
