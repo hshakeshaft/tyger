@@ -30,8 +30,11 @@ static void setup_parser_test_case(Parser *p, Lexer *lx, const char *program)
   parser_init(p, lx);
 }
 
-static void parser_test_case_enumerate_errors(const Program *p)
+static void parser_test_case_enumerate_errors(const Program *p, int expected_errors)
 {
+  EXPECT_EQ(expected_errors, p->errors.len)
+    << "Expected " << expected_errors << " errors, got " << p->errors.len;
+
   if (p->errors.len > 0)
   {
     for (size_t i = 0; i < p->errors.len; ++i)
@@ -41,6 +44,18 @@ static void parser_test_case_enumerate_errors(const Program *p)
     }
   }
 }
+
+/// checks that a Statement is of the expected kind and logs an error if not
+#define EXPECT_STATEMENT_IS(STMT, KIND)                                 \
+  EXPECT_EQ((STMT)->kind, (KIND))                                       \
+  << "Expected Statement_Kind " << statement_kind_to_string((KIND))     \
+  << ", got " << statement_kind_to_string((STMT)->kind)
+
+/// checks that an Expression is of the expected kind and logs an error if not
+#define EXPECT_EXPRESSION_IS(EXPR, KIND)                                \
+  EXPECT_EQ((EXPR)->kind, (KIND))                                       \
+  << "Expected Expression_Kind " << expression_kind_to_string((KIND))   \
+  << ", got " << expression_kind_to_string((EXPR)->kind)
 
 // TODO(HS): add some more rigourous parsing example test cases
 
@@ -57,15 +72,11 @@ TEST(ParserTestSuite, Test_Var_Statement)
   const char *prog_str = program_to_string(&p, TRACE_YAML);
   DEFER(delete prog_str;);
 
-  EXPECT_EQ(p.errors.len, 0) << "Expected 0 errors, got " << p.errors.len;
-  parser_test_case_enumerate_errors(&p);
-
+  parser_test_case_enumerate_errors(&p, 0);
   EXPECT_EQ(p.statements.len, 1) << prog_str;
 
   Statement *stmt = &(p.statements.elems[0]);
-  EXPECT_EQ(stmt->kind, STMT_VAR)
-    << "Expected Statement_Kind " << statement_kind_to_string(stmt->kind)
-    << ", got " << statement_kind_to_string(STMT_VAR);
+  EXPECT_STATEMENT_IS(stmt, STMT_VAR);
 
   std::string exp_ident{"x"};
   std::string act_ident{stmt->statement.var_statement.ident};
@@ -83,22 +94,14 @@ TEST(ParserTestSuite, Test_Int_Expression)
   const char *prog_str = program_to_string(&p, TRACE_YAML);
   DEFER(delete prog_str;);
 
-  EXPECT_EQ(p.errors.len, 0) << "Expected 0 errors, got " << p.errors.len;
-  parser_test_case_enumerate_errors(&p);
-
+  parser_test_case_enumerate_errors(&p, 0);
   EXPECT_EQ(p.statements.len, 1) << prog_str;
 
   Statement *stmt = &(p.statements.elems[0]);
-  EXPECT_EQ(stmt->kind, STMT_EXPRESSION)
-    << "Expected Statement_Kind " << statement_kind_to_string(STMT_EXPRESSION)
-    << ", got " << statement_kind_to_string(stmt->kind)
-    << prog_str;
+  EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
 
   Expression *expr = stmt->statement.expression_statement.expression;
-  EXPECT_EQ(expr->kind, EXPR_INT)
-    << "Expected Expression_Kind " << expression_kind_to_string(EXPR_INT)
-    << ", got " << expression_kind_to_string(expr->kind)
-    << prog_str;
+  EXPECT_EXPRESSION_IS(expr, EXPR_INT);
 
   int64_t exp_val = 10;
   int64_t act_val = expr->expression.int_expression.value;
@@ -116,25 +119,19 @@ TEST(ParserTestSuite, Test_String_Expression)
   const char *prog_str = program_to_string(&p, TRACE_YAML);
   DEFER(delete prog_str;);
 
-  EXPECT_EQ(p.errors.len, 0) << "Expected 0 errors, got " << p.errors.len;
-  parser_test_case_enumerate_errors(&p);
-
+  parser_test_case_enumerate_errors(&p, 0);
   EXPECT_EQ(p.statements.len, 1) << prog_str;
 
   Statement *stmt = &(p.statements.elems[0]);
-  EXPECT_EQ(stmt->kind, STMT_EXPRESSION)
-    << "Expected Statement_Kind " << statement_kind_to_string(STMT_EXPRESSION)
-    << ", got " << statement_kind_to_string(stmt->kind)
-    << prog_str;
+  EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
 
   Expression *expr = stmt->statement.expression_statement.expression;
-   EXPECT_EQ(expr->kind, EXPR_STRING)
-    << "Expected Expression_Kind " << expression_kind_to_string(EXPR_STRING)
-    << ", got " << expression_kind_to_string(expr->kind)
-    << prog_str;
+  EXPECT_EXPRESSION_IS(expr, EXPR_STRING);
 
-   std::string exp_value{"Hellope"};
-   std::string act_value{expr->expression.string_expression.value};
-   EXPECT_EQ(exp_value, act_value) << prog_str;
-   EXPECT_EQ(exp_value.size(), act_value.size()) << prog_str;
+  std::string exp_value{"Hellope"};
+  std::string act_value{expr->expression.string_expression.value};
+  EXPECT_EQ(exp_value, act_value) << prog_str;
+  EXPECT_EQ(exp_value.size(), act_value.size()) << prog_str;
 }
+
+// TODO(HS): Test_Infix_Expression
