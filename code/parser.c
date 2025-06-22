@@ -199,31 +199,32 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
   return err;
 }
 
-Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
+static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *expr, int precidence)
 {
+  (void)precidence;
   Tyger_Error err = {0};
 
-  Expression expr;
   switch (p->cur_token.kind)
   {
   case TK_INTEGER:
   {
-    err = parse_int_expression(p, &expr);
+    err = parse_int_expression(p, expr);
   } break;
 
   case TK_STRING:
   {
-    err = parse_string_expression(p, ctx, &expr);
-  } break;
-
-  default:
-  {
-    fprintf(
-      stderr, "[ERROR] Unhanlded Token_Kind whilst parsing expression, %s\n",
-      token_kind_to_string(p->cur_token.kind)
-    );
+    err = parse_string_expression(p, ctx, expr);
   } break;
   }
+
+  return err;
+}
+
+// TODO(HS): return errors
+Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
+{
+  Expression expr;
+  Tyger_Error err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
 
   Expression *hexpr = &(ctx->expressions.elems[ctx->expressions.len]);
   if (err.kind == TYERR_NONE)
@@ -231,9 +232,13 @@ Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement
     va_array_append(ctx->expressions, expr);
   }
 
-  // TODO(HS): assign stmt->->expression
   stmt->kind = STMT_EXPRESSION;
   stmt->statement.expression_statement.expression = hexpr;
+
+  if (peek_token_is(p, TK_SEMICOLON))
+  {
+    parser_next_token(p);
+  }
 
   return err;
 }
