@@ -72,6 +72,31 @@ void string_builder_init(String_Builder *sb)
   sb->buffer = malloc(sizeof(char) * sb->capacity);
 }
 
+void string_builder_append(String_Builder *sb, const char *str)
+{
+  assert(sb);
+  assert(sb->buffer);
+
+  int bytes_to_write = snprintf(NULL, 0, str);
+
+  if ((sb->len + bytes_to_write) > sb->capacity)
+  {
+    size_t new_capacity = sb->capacity * 2;
+    char *new_buffer = realloc(sb->buffer, new_capacity);
+    if (sb->buffer != new_buffer)
+    {
+      sb->buffer = new_buffer;
+    }
+    sb->capacity = new_capacity;
+  }
+
+  int bytes_written = snprintf(&(sb->buffer[sb->len]), bytes_to_write + 1, str); 
+
+  assert(bytes_written == bytes_to_write);
+
+  sb->len += bytes_written;
+}
+
 void string_builder_append_fmt(String_Builder *sb, const char *fmt, ...)
 {
   assert(sb);

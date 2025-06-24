@@ -32,6 +32,7 @@ bool string_view_eq_str(String_View sv, const char *str);
 void string_view_format_buffer(char *buffer, size_t buffer_len, String_View sv);
 
 void string_builder_init(String_Builder *sb);
+void string_builder_append(String_Builder *sb, const char *str);
 void string_builder_append_fmt(String_Builder *sb, const char *fmt, ...);
 const char *string_builder_to_cstring(const String_Builder *sb);
 
