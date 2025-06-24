@@ -5,6 +5,7 @@
 typedef enum trace_format
 {
   TRACE_YAML,
+  TRACE_SEXPR,
 } Trace_Format;
 
 const char *program_to_string(const Program *p, Trace_Format format);

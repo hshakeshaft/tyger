@@ -11,6 +11,9 @@ static void yaml_print_header(const Program *p, String_Builder *sb);
 static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int *indent_level);
 static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level);
 
+static void sexpr_print_statement(const Statement *stmt, String_Builder *sb);
+static void sexpr_print_expression(const Expression *expr, String_Builder *sb);
+
 const char *program_to_string(const Program *p, Trace_Format kind)
 {
   assert(p);
@@ -27,6 +30,15 @@ const char *program_to_string(const Program *p, Trace_Format kind)
       int indent_level = 1;
       Statement *stmt = &(p->statements.elems[i]);
       yaml_print_statement(stmt, &sb, &indent_level);
+    }
+  } break;
+
+  case TRACE_SEXPR:
+  {
+    for (size_t i = 0; i < p->statements.len; ++i)
+    {
+      Statement *stmt = &(p->statements.elems[i]);
+      sexpr_print_statement(stmt, &sb);
     }
   } break;
   }
@@ -122,11 +134,136 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
     string_builder_append_fmt(sb, "    len: %lu\n", sexpr->len);
   } break;
 
+  case EXPR_INFIX:
+  {
+    const Infix_Expression *iexpr = &expr->expression.infix_expression;
+
+    char *op_str = NULL;
+    switch (iexpr->op)
+    {
+    case OP_PLUS:     { op_str = "+"; } break;
+    case OP_MINUS:    { op_str = "-"; } break;
+    case OP_ASTERISK: { op_str = "*"; } break;
+    case OP_SLASH:    { op_str = "/"; } break;
+    case OP_EQ:       { op_str = "=="; } break;
+    case OP_NOT_EQ:   { op_str = "!="; } break;
+    case OP_LT:       { op_str = "<"; } break;
+    case OP_GT:       { op_str = ">"; } break;
+    default:
+    {
+      fprintf(stderr, "[ERROR] invalid Operator %i", iexpr->op);
+      assert(0);
+    } break;
+    }
+
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    op: %s\n", op_str);
+
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    lhs:\n");
+    *indent_level += 1;
+    yaml_print_expression(iexpr->lhs, sb, indent_level);
+    *indent_level -= 1;
+
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    rhs:\n");
+    *indent_level += 1;
+    yaml_print_expression(iexpr->rhs, sb, indent_level);
+    *indent_level -= 1;
+  } break;
+
   default:
   {
     fprintf(
       stderr, "[ERROR] Unhandled Expression_Kind %i (%s)\n",
       expr->kind, expression_kind_to_string(expr->kind)
+    );
+    assert(0);
+  } break;
+  }
+}
+
+static void sexpr_print_statement(const Statement *stmt, String_Builder *sb)
+{
+  string_builder_append(sb, "(");
+
+  switch (stmt->kind)
+  {
+  case STMT_VAR:
+  {
+    string_builder_append_fmt(sb, "var %s ", stmt->statement.var_statement.ident);
+  } break;
+
+  case STMT_EXPRESSION:
+  {
+    const Expression *expr = stmt->statement.expression_statement.expression;
+    sexpr_print_expression(expr, sb);
+  } break;
+
+  default:
+  {
+    fprintf(
+      stderr,
+      "[ERROR] Unhandled Statement_Kind %s (%i)\n",
+      statement_kind_to_string(stmt->kind),
+      stmt->kind
+    );
+    assert(0);
+  } break;
+  }
+
+  string_builder_append(sb, ")");
+}
+
+static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
+{
+  switch (expr->kind)
+  {
+  case EXPR_INT:
+  {
+    string_builder_append_fmt(sb, "%i", expr->expression.int_expression.value);
+  } break;
+
+  case EXPR_STRING:
+  {
+    string_builder_append_fmt(sb, "%s", expr->expression.string_expression.value);
+  } break;
+
+  case EXPR_INFIX:
+  {
+    char *op_str = NULL;
+    const Infix_Expression *iexpr = &expr->expression.infix_expression;
+
+    switch (iexpr->op)
+    {
+    case OP_PLUS:     { op_str = "+"; } break;
+    case OP_MINUS:    { op_str = "-"; } break;
+    case OP_ASTERISK: { op_str = "*"; } break;
+    case OP_SLASH:    { op_str = "/"; } break;
+    case OP_EQ:       { op_str = "=="; } break;
+    case OP_NOT_EQ:   { op_str = "!="; } break;
+    case OP_LT:       { op_str = "<"; } break;
+    case OP_GT:       { op_str = ">"; } break;
+    default:
+    {
+      fprintf(stderr, "[ERROR] invalid Operator %i", iexpr->op);
+      assert(0);
+    } break;
+    }
+
+    string_builder_append_fmt(sb, "%s ", op_str);
+    sexpr_print_expression(iexpr->lhs, sb);
+    string_builder_append_fmt(sb, " ", op_str);
+    sexpr_print_expression(iexpr->rhs, sb);
+  } break;
+
+  default:
+  {
+    fprintf(
+      stderr,
+      "[ERROR] Unhandled Expression_Kind %s (%i)\n",
+      expression_kind_to_string(expr->kind),
+      expr->kind
     );
     assert(0);
   } break;
