@@ -405,6 +405,24 @@ Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *
 
 Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *expr)
 {
+  // NOTE(HS): Code does the following steps
+  //   1. create handle for `LHS` of infix to be stored at
+  //   2. copy supplied `expr` into `ctx->expressions` (`LHS`)
+  //   3. parse expression using `RHS`
+  //   4. assuming `RHS` parse correctly, create handle to `RHS`
+  //   5. copy `RHS` into `ctx->expressions`
+  //   6. override `expr` parameter with `infix` values
+  //
+  // This in this order as it guarentees that copies of both LHS and RHS into the
+  // backing buffer is performed correctly.
+  //
+  // When both copies done after parse(RHS) it was noted that the `RHS` was getting
+  // copied, incorrectly, into both the `LHS` and `RHS` side of more complex expressions,
+  // such as `1 + 2 * 3`
+  //   Expected: (+ 1 (* 2 3))
+  //   Actual:   (+ 2 (* 2 3))
+  // Such are the joys of overriding inout parameters an arbitrary number of times.
+  //
   Tyger_Error err = {0};
 
   int precidence = precidence_of(p->cur_token.kind);
@@ -412,6 +430,7 @@ Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *e
   parser_next_token(p);
 
   Expression *lhs_handle = va_array_next(ctx->expressions);
+  va_array_append(ctx->expressions, *expr);
 
   Expression rhs;
   err = parse_expression(p, ctx, &rhs, precidence);
@@ -419,15 +438,9 @@ Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *e
   {
     return err;
   }
-
-  // copy LHS into context
-  va_array_append(ctx->expressions, *expr);
-
-  // copy RHS into context
   Expression *rhs_handle = va_array_next(ctx->expressions);
   va_array_append(ctx->expressions, rhs);
 
-  // set infix expresion
   *expr = (Expression) {
     .kind = EXPR_INFIX,
     .expression.infix_expression = (Infix_Expression) {

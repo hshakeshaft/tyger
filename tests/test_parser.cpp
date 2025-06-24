@@ -186,4 +186,65 @@ TEST(ParserTestSuite, Test_Infix_Expression)
   }
 }
 
-// TODO(HS): test operator precidence
+// TODO(HS): some more rigourous test cases to robustly check arbitrary nesting
+// TODO(HS): add logical operators to test cases
+TEST(ParserTestSuite, Test_Operator_Precidence)
+{
+  struct Precidence_Test
+  {
+    const char *input;
+    const char *ast;
+  };
+
+  std::vector<Precidence_Test> test_cases{
+    { "1 + 2 + 3;", "(+ (+ 1 2) 3)" },
+    { "1 - 2 - 3;", "(- (- 1 2) 3)" },
+    { "1 + 2 - 3;", "(- (+ 1 2) 3)" },
+
+    { "1 * 2;", "(* 1 2)" },
+    { "4 / 2;", "(/ 4 2)" },
+    { "4 * 3 / 2", "(/ (* 4 3) 2)" },
+
+    { "1 + 2 * 3;", "(+ 1 (* 2 3))" },
+    { "4 + 9 / 3;", "(+ 4 (/ 9 3))" },
+
+    { "1 + 2 - 3 * 4 / 5;", "(- (+ 1 2) (/ (* 3 4) 5))" },
+                                                     //       (-)
+                                                     //      /   \
+                                                     //    (+)    \
+                                                     //   /   \    \
+                                                     // (1)   (2)  (/)
+                                                     //           /   \
+                                                     //         (*)   (5)
+                                                     //        /   \
+                                                     //      (3)  (4)
+  };
+
+  for (auto& tc : test_cases)
+  {
+    Lexer lexer;
+    Parser parser;
+    setup_parser_test_case(&parser, &lexer, tc.input);
+
+    Program p = parser_parse_program(&parser);
+    const char *prog_str = program_to_string(&p, TRACE_YAML);
+    const char *act_ast = program_to_string(&p, TRACE_SEXPR);
+    DEFER({
+        delete prog_str;
+        delete act_ast;
+    });
+
+    parser_test_case_enumerate_errors(&p, 0);
+    EXPECT_EQ(p.statements.len, 1) << prog_str;
+
+    Statement *stmt = &(p.statements.elems[0]);
+    EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
+
+    Expression *expr = stmt->statement.expression_statement.expression;
+    EXPECT_EXPRESSION_IS(expr, EXPR_INFIX);
+
+    std::string act_ast_string{act_ast};
+    std::string exp_ast_string{tc.ast};
+    EXPECT_EQ(exp_ast_string, act_ast_string) << prog_str;
+  }
+}
