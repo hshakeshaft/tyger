@@ -1,0 +1,9 @@
+X(NONE, "0")       \
+X(PLUS, "+")       \
+X(MINUS, "-")      \
+X(ASTERISK, "*")   \
+X(SLASH, "/")      \
+X(EQ, "==")        \
+X(NOT_EQ, "!=")    \
+X(LT, "<")         \
+X(GT, ">")

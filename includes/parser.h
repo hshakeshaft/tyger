@@ -26,17 +26,11 @@ typedef enum expression_kind
 #undef X
 } Expression_Kind;
 
-typedef enum operator_e
+typedef enum
 {
-  OP_NONE = 0,
-  OP_PLUS,
-  OP_MINUS,
-  OP_ASTERISK,
-  OP_SLASH,
-  OP_EQ,
-  OP_NOT_EQ,
-  OP_LT,
-  OP_GT
+#define X(NAME, ...) OP_##NAME,
+  #include "defs/operator.def"
+#undef X
 } Operator;
 
 typedef struct tyger_error
@@ -155,6 +149,7 @@ Program parser_parse_program(Parser *p);
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind);
 const char *statement_kind_to_string(Statement_Kind kind);
 const char *expression_kind_to_string(Expression_Kind kind);
+const char *operator_to_string(Operator op);
 
 Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
 Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt);

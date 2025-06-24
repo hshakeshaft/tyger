@@ -83,6 +83,25 @@ const char *expression_kind_to_string(Expression_Kind kind)
   return str;
 }
 
+const char *operator_to_string(Operator op)
+{
+  const char *str;
+  switch (op)
+  {
+#define X(NAME, STR) case OP_##NAME: { str = STR; } break;
+    #include "defs/operator.def"
+#undef X
+
+  default:
+  {
+    str = NULL;
+    fprintf(stderr, "[ERROR] Invalid operator %i encountered\n", op);
+    assert(0);
+  } break;
+  }
+  return str;
+}
+
 static void parser_next_token(Parser *p)
 {
   p->cur_token = p->peek_token;

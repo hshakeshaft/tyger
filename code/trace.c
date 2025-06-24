@@ -137,24 +137,7 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
   case EXPR_INFIX:
   {
     const Infix_Expression *iexpr = &expr->expression.infix_expression;
-
-    char *op_str = NULL;
-    switch (iexpr->op)
-    {
-    case OP_PLUS:     { op_str = "+"; } break;
-    case OP_MINUS:    { op_str = "-"; } break;
-    case OP_ASTERISK: { op_str = "*"; } break;
-    case OP_SLASH:    { op_str = "/"; } break;
-    case OP_EQ:       { op_str = "=="; } break;
-    case OP_NOT_EQ:   { op_str = "!="; } break;
-    case OP_LT:       { op_str = "<"; } break;
-    case OP_GT:       { op_str = ">"; } break;
-    default:
-    {
-      fprintf(stderr, "[ERROR] invalid Operator %i", iexpr->op);
-      assert(0);
-    } break;
-    }
+    const char *op_str = operator_to_string(iexpr->op);
 
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    op: %s\n", op_str);
@@ -231,26 +214,8 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
 
   case EXPR_INFIX:
   {
-    char *op_str = NULL;
     const Infix_Expression *iexpr = &expr->expression.infix_expression;
-
-    switch (iexpr->op)
-    {
-    case OP_PLUS:     { op_str = "+"; } break;
-    case OP_MINUS:    { op_str = "-"; } break;
-    case OP_ASTERISK: { op_str = "*"; } break;
-    case OP_SLASH:    { op_str = "/"; } break;
-    case OP_EQ:       { op_str = "=="; } break;
-    case OP_NOT_EQ:   { op_str = "!="; } break;
-    case OP_LT:       { op_str = "<"; } break;
-    case OP_GT:       { op_str = ">"; } break;
-    default:
-    {
-      fprintf(stderr, "[ERROR] invalid Operator %i", iexpr->op);
-      assert(0);
-    } break;
-    }
-
+    const char *op_str = operator_to_string(iexpr->op);
     string_builder_append_fmt(sb, "%s ", op_str);
     sexpr_print_expression(iexpr->lhs, sb);
     string_builder_append_fmt(sb, " ", op_str);
