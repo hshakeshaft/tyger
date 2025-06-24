@@ -168,13 +168,12 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
 
 static void sexpr_print_statement(const Statement *stmt, String_Builder *sb)
 {
-  string_builder_append(sb, "(");
-
   switch (stmt->kind)
   {
   case STMT_VAR:
   {
-    string_builder_append_fmt(sb, "var %s ", stmt->statement.var_statement.ident);
+    string_builder_append_fmt(sb, "(var %s ", stmt->statement.var_statement.ident);
+    string_builder_append(sb, ")");
   } break;
 
   case STMT_EXPRESSION:
@@ -194,8 +193,6 @@ static void sexpr_print_statement(const Statement *stmt, String_Builder *sb)
     assert(0);
   } break;
   }
-
-  string_builder_append(sb, ")");
 }
 
 static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
@@ -214,12 +211,16 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
 
   case EXPR_INFIX:
   {
-    const Infix_Expression *iexpr = &expr->expression.infix_expression;
-    const char *op_str = operator_to_string(iexpr->op);
-    string_builder_append_fmt(sb, "%s ", op_str);
-    sexpr_print_expression(iexpr->lhs, sb);
-    string_builder_append_fmt(sb, " ", op_str);
-    sexpr_print_expression(iexpr->rhs, sb);
+    string_builder_append(sb, "(");
+    {
+      const Infix_Expression *iexpr = &expr->expression.infix_expression;
+      const char *op_str = operator_to_string(iexpr->op);
+      string_builder_append_fmt(sb, "%s ", op_str);
+      sexpr_print_expression(iexpr->lhs, sb);
+      string_builder_append_fmt(sb, " ", op_str);
+      sexpr_print_expression(iexpr->rhs, sb);
+    }
+    string_builder_append(sb, ")");
   } break;
 
   default:
