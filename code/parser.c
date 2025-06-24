@@ -20,6 +20,141 @@ enum {
   PRECIDENCE_CALL        = 60, // myFunction(X)
 };
 
+///
+/// internal functions
+///
+  
+static void parser_context_init(Parser_Context *ctx)
+{
+  va_array_init(char, ctx->identifiers);
+  va_array_init(Expression, ctx->expressions);
+  va_array_init(char, ctx->strings);
+}
+
+static inline void parser_next_token(Parser *p)
+{
+  p->cur_token = p->peek_token;
+  p->peek_token = lexer_next_token(p->lexer);
+}
+
+static inline int precidence_of(Token_Kind k)
+{
+  int precidence;
+  switch (k)
+  {
+  case TK_PLUS:
+  case TK_MINUS:
+  {
+    precidence = PRECIDENCE_SUM;
+  } break;
+
+  case TK_ASTERISK:
+  case TK_SLASH:
+  {
+    precidence = PRECIDENCE_PRODUCT;
+  } break;
+
+  case TK_LT:
+  case TK_GT:
+  {
+    precidence = PRECIDENCE_LESSGREATER;
+  } break;
+
+  case TK_EQ:
+  case TK_NOT_EQ:
+  {
+    precidence = PRECIDENCE_EQUALS;
+  } break;
+
+  default:
+  {
+    precidence = PRECIDENCE_LOWEST;
+  } break;
+  }
+  return precidence;
+}
+
+static inline int peek_precidence(const Parser *p)
+{
+  return precidence_of(p->peek_token.kind);
+}
+
+static inline bool peek_token_is(Parser *p, Token_Kind kind)
+{
+  return p->peek_token.kind == kind;
+}
+
+static inline bool expect_peek(Parser *p, Token_Kind kind)
+{
+  if (peek_token_is(p, kind))
+  {
+    parser_next_token(p);
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+static inline Operator token_kind_to_operator(Token_Kind k)
+{
+  Operator op = OP_NONE;
+  switch (k)
+  {
+  case TK_PLUS:     { op = OP_PLUS; } break;
+  case TK_MINUS:    { op = OP_MINUS; } break;
+  case TK_ASTERISK: { op = OP_ASTERISK; } break;
+  case TK_SLASH:    { op = OP_SLASH; } break;
+  case TK_EQ:       { op = OP_EQ; } break;
+  case TK_NOT_EQ:   { op = OP_NOT_EQ; } break;
+  case TK_LT:       { op = OP_LT; } break;
+  case TK_GT:       { op = OP_GT; } break;
+  default:
+  {
+    fprintf(stderr, "[ERROR] Cannot convert token %s to operator\n", token_kind_to_string(k));
+    assert(0);
+  } break;
+  }
+  return op;
+}
+
+// TODO(HS): decide where/when in `expr` lifetime I need to perform copy into backing
+// ctx buffer
+static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *expr, int precidence)
+{
+  Tyger_Error err = {0};
+
+  switch (p->cur_token.kind)
+  {
+  case TK_INTEGER:
+  {
+    err = parse_int_expression(p, expr);
+  } break;
+
+  case TK_STRING:
+  {
+    err = parse_string_expression(p, ctx, expr);
+  } break;
+  }
+
+  if (err.kind == TYERR_NONE)
+  {
+    while (!peek_token_is(p, TK_SEMICOLON) && (precidence < peek_precidence(p)))
+    {
+      parser_next_token(p);
+      err = parse_infix_expression(p, ctx, expr);
+    }
+  }
+
+  return err;
+}
+
+
+///
+/// public functions
+///
+
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind)
 {
   const char *str;
@@ -102,24 +237,11 @@ const char *operator_to_string(Operator op)
   return str;
 }
 
-static void parser_next_token(Parser *p)
-{
-  p->cur_token = p->peek_token;
-  p->peek_token = lexer_next_token(p->lexer);
-}
-
 void parser_init(Parser *p, Lexer *lx)
 {
   p->lexer = lx;
   parser_next_token(p);
   parser_next_token(p);
-}
-  
-static void parser_context_init(Parser_Context *ctx)
-{
-  va_array_init(char, ctx->identifiers);
-  va_array_init(Expression, ctx->expressions);
-  va_array_init(char, ctx->strings);
 }
 
 Program parser_parse_program(Parser *p)
@@ -171,24 +293,6 @@ Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *st
   return err;
 }
 
-static inline bool peek_token_is(Parser *p, Token_Kind kind)
-{
-  return p->peek_token.kind == kind;
-}
-
-static inline bool expect_peek(Parser *p, Token_Kind kind)
-{
-  if (peek_token_is(p, kind))
-  {
-    parser_next_token(p);
-    return true;
-  }
-  else
-  {
-    return false;
-  }
-}
-
 Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 {
   Tyger_Error err = {0};
@@ -224,101 +328,6 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
   stmt->statement.var_statement = (Var_Statement) {
     .ident = ident_start
   };
-
-  return err;
-}
-
-static inline int precidence_of(Token_Kind k)
-{
-  int precidence;
-  switch (k)
-  {
-  case TK_PLUS:
-  case TK_MINUS:
-  {
-    precidence = PRECIDENCE_SUM;
-  } break;
-
-  case TK_ASTERISK:
-  case TK_SLASH:
-  {
-    precidence = PRECIDENCE_PRODUCT;
-  } break;
-
-  case TK_LT:
-  case TK_GT:
-  {
-    precidence = PRECIDENCE_LESSGREATER;
-  } break;
-
-  case TK_EQ:
-  case TK_NOT_EQ:
-  {
-    precidence = PRECIDENCE_EQUALS;
-  } break;
-
-  default:
-  {
-    precidence = PRECIDENCE_LOWEST;
-  } break;
-  }
-  return precidence;
-}
-
-static inline int peek_precidence(const Parser *p)
-{
-  return precidence_of(p->peek_token.kind);
-}
-
-static inline Operator token_kind_to_operator(Token_Kind k)
-{
-  Operator op = OP_NONE;
-  switch (k)
-  {
-  case TK_PLUS:     { op = OP_PLUS; } break;
-  case TK_MINUS:    { op = OP_MINUS; } break;
-  case TK_ASTERISK: { op = OP_ASTERISK; } break;
-  case TK_SLASH:    { op = OP_SLASH; } break;
-  case TK_EQ:       { op = OP_EQ; } break;
-  case TK_NOT_EQ:   { op = OP_NOT_EQ; } break;
-  case TK_LT:       { op = OP_LT; } break;
-  case TK_GT:       { op = OP_GT; } break;
-  default:
-  {
-    fprintf(stderr, "[ERROR] Cannot convert token %s to operator\n", token_kind_to_string(k));
-    assert(0);
-  } break;
-  }
-  return op;
-}
-
-// TODO(HS): decide where/when in `expr` lifetime I need to perform copy into backing
-// ctx buffer
-static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *expr, int precidence)
-{
-  Tyger_Error err = {0};
-
-  switch (p->cur_token.kind)
-  {
-  case TK_INTEGER:
-  {
-    err = parse_int_expression(p, expr);
-  } break;
-
-  case TK_STRING:
-  {
-    err = parse_string_expression(p, ctx, expr);
-  } break;
-  }
-
-  if (err.kind == TYERR_NONE)
-  {
-    while (!peek_token_is(p, TK_SEMICOLON) && (precidence < peek_precidence(p)))
-    {
-      parser_next_token(p);
-      err = parse_infix_expression(p, ctx, expr);
-    }
-  }
 
   return err;
 }
