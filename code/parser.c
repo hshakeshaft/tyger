@@ -10,6 +10,16 @@
 // into va_array_append_n calls.
 static const char *PARSER_NULL_TERMINATOR = "\0";
 
+enum {
+  PRECIDENCE_LOWEST      = 0,
+  PRECIDENCE_EQUALS      = 10, // ==
+  PRECIDENCE_LESSGREATER = 20, // > or <
+  PRECIDENCE_SUM         = 30, // +
+  PRECIDENCE_PRODUCT     = 40, // *
+  PRECIDENCE_PREFIX      = 50, // -X or !X
+  PRECIDENCE_CALL        = 60, // myFunction(X)
+};
+
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind)
 {
   const char *str;
@@ -199,9 +209,74 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
   return err;
 }
 
+static inline int precidence_of(Token_Kind k)
+{
+  int precidence;
+  switch (k)
+  {
+  case TK_PLUS:
+  case TK_MINUS:
+  {
+    precidence = PRECIDENCE_SUM;
+  } break;
+
+  case TK_ASTERISK:
+  case TK_SLASH:
+  {
+    precidence = PRECIDENCE_PRODUCT;
+  } break;
+
+  case TK_LT:
+  case TK_GT:
+  {
+    precidence = PRECIDENCE_LESSGREATER;
+  } break;
+
+  case TK_EQ:
+  case TK_NOT_EQ:
+  {
+    precidence = PRECIDENCE_EQUALS;
+  } break;
+
+  default:
+  {
+    precidence = PRECIDENCE_LOWEST;
+  } break;
+  }
+  return precidence;
+}
+
+static inline int peek_precidence(const Parser *p)
+{
+  return precidence_of(p->peek_token.kind);
+}
+
+static inline Operator token_kind_to_operator(Token_Kind k)
+{
+  Operator op = OP_NONE;
+  switch (k)
+  {
+  case TK_PLUS:     { op = OP_PLUS; } break;
+  case TK_MINUS:    { op = OP_MINUS; } break;
+  case TK_ASTERISK: { op = OP_ASTERISK; } break;
+  case TK_SLASH:    { op = OP_SLASH; } break;
+  case TK_EQ:       { op = OP_EQ; } break;
+  case TK_NOT_EQ:   { op = OP_NOT_EQ; } break;
+  case TK_LT:       { op = OP_LT; } break;
+  case TK_GT:       { op = OP_GT; } break;
+  default:
+  {
+    fprintf(stderr, "[ERROR] Cannot convert token %s to operator\n", token_kind_to_string(k));
+    assert(0);
+  } break;
+  }
+  return op;
+}
+
+// TODO(HS): decide where/when in `expr` lifetime I need to perform copy into backing
+// ctx buffer
 static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *expr, int precidence)
 {
-  (void)precidence;
   Tyger_Error err = {0};
 
   switch (p->cur_token.kind)
@@ -217,10 +292,18 @@ static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *
   } break;
   }
 
+  if (err.kind == TYERR_NONE)
+  {
+    while (!peek_token_is(p, TK_SEMICOLON) && (precidence < peek_precidence(p)))
+    {
+      parser_next_token(p);
+      err = parse_infix_expression(p, ctx, expr);
+    }
+  }
+
   return err;
 }
 
-// TODO(HS): return errors
 Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 {
   Expression expr;
@@ -231,9 +314,17 @@ Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement
   {
     va_array_append(ctx->expressions, expr);
   }
+  else
+  {
+    return err;
+  }
 
-  stmt->kind = STMT_EXPRESSION;
-  stmt->statement.expression_statement.expression = hexpr;
+  *stmt = (Statement) {
+    .kind = STMT_EXPRESSION,
+    .statement.expression_statement = (Expression_Statement) {
+      .expression = hexpr,
+    }
+  };
 
   if (peek_token_is(p, TK_SEMICOLON))
   {
@@ -243,10 +334,8 @@ Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement
   return err;
 }
 
-// TODO(HS): parse int into int64_t
 Tyger_Error parse_int_expression(Parser *p, Expression *expr)
 {
-  (void*) expr;
   Tyger_Error err = {0};
 
   int64_t result = atoll(p->cur_token.literal.str);
@@ -256,10 +345,13 @@ Tyger_Error parse_int_expression(Parser *p, Expression *expr)
     return err;
   }
 
-  expr->kind = EXPR_INT;
-  expr->expression.int_expression.value = result;
+  *expr = (Expression) {
+    .kind = EXPR_INT,
+    .expression.int_expression = (Int_Expression) {
+      .value = result,
+    }
+  };
 
-  parser_next_token(p);
   return err;
 } 
 
@@ -272,12 +364,50 @@ Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *
   va_array_append_n(ctx->strings, p->cur_token.literal.str, p->cur_token.literal.len);
   va_array_append_n(ctx->strings, PARSER_NULL_TERMINATOR, 1);
 
-  expr->kind = EXPR_STRING;
-  expr->expression.string_expression = (String_Expression) {
-    .value = str_value,
-    .len = p->cur_token.literal.len
+  *expr = (Expression) {
+    .kind = EXPR_STRING,
+    .expression.string_expression = (String_Expression) {
+      .value = str_value,
+      .len = p->cur_token.literal.len
+    }
   };
 
+  return err;
+}
+
+Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *expr)
+{
+  Tyger_Error err = {0};
+
+  int precidence = precidence_of(p->cur_token.kind);
+  Operator op = token_kind_to_operator(p->cur_token.kind);
   parser_next_token(p);
+
+  Expression *lhs_handle = va_array_next(ctx->expressions);
+
+  Expression rhs;
+  err = parse_expression(p, ctx, &rhs, precidence);
+  if (err.kind != TYERR_NONE)
+  {
+    return err;
+  }
+
+  // copy LHS into context
+  va_array_append(ctx->expressions, *expr);
+
+  // copy RHS into context
+  Expression *rhs_handle = va_array_next(ctx->expressions);
+  va_array_append(ctx->expressions, rhs);
+
+  // set infix expresion
+  *expr = (Expression) {
+    .kind = EXPR_INFIX,
+    .expression.infix_expression = (Infix_Expression) {
+      .op = op,
+      .lhs = lhs_handle,
+      .rhs = rhs_handle,
+    }
+  };
+
   return err;
 }

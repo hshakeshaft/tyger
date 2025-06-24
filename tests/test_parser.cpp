@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include "tyger_test.hpp"
 #include <string>
+#include <vector>
 #include <cstdint>
 
+// TODO(HS): pull this into own "test util" file
 /// ScopeExit, adapted from the following Withness blog post to allow for defered blocks
 /// http://the-witness.net/news/2012/11/scopeexit-in-c11/
 template <typename F>
@@ -134,4 +136,54 @@ TEST(ParserTestSuite, Test_String_Expression)
   EXPECT_EQ(exp_value.size(), act_value.size()) << prog_str;
 }
 
-// TODO(HS): Test_Infix_Expression
+TEST(ParserTestSuite, Test_Infix_Expression)
+{
+  struct Infix_Test
+  {
+    const char *input;
+    int num_errors;
+    int num_statements;
+    const char *ast;    // S-expression like formatted representation of AST
+  };
+
+  std::vector<Infix_Test> test_cases{
+    { "1 + 1;",  0, 1, "(+ 1 1)" },
+    { "1 - 1;",  0, 1, "(- 1 1)" },
+    { "1 * 1;",  0, 1, "(* 1 1)" },
+    { "1 / 1;",  0, 1, "(/ 1 1)" },
+    { "1 < 1;",  0, 1, "(< 1 1)" },
+    { "1 > 1;",  0, 1, "(> 1 1)" },
+    { "1 == 1;", 0, 1, "(== 1 1)" },
+    { "1 != 1;", 0, 1, "(!= 1 1)" },
+  };
+
+  for (auto& tc : test_cases)
+  {
+    Lexer lexer;
+    Parser parser;
+    setup_parser_test_case(&parser, &lexer, tc.input);
+
+    Program p = parser_parse_program(&parser);
+    const char *prog_str = program_to_string(&p, TRACE_YAML);
+    const char *act_ast = program_to_string(&p, TRACE_SEXPR);
+    DEFER({
+        delete prog_str;
+        delete act_ast;
+    });
+
+    parser_test_case_enumerate_errors(&p, tc.num_errors);
+    EXPECT_EQ(p.statements.len, tc.num_statements) << prog_str;
+
+    Statement *stmt = &(p.statements.elems[0]);
+    EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
+
+    Expression *expr = stmt->statement.expression_statement.expression;
+    EXPECT_EXPRESSION_IS(expr, EXPR_INFIX);
+
+    std::string act_ast_string{act_ast};
+    std::string exp_ast_string{tc.ast};
+    EXPECT_EQ(exp_ast_string, act_ast_string) << prog_str;
+  }
+}
+
+// TODO(HS): test operator precidence

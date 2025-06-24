@@ -26,6 +26,19 @@ typedef enum expression_kind
 #undef X
 } Expression_Kind;
 
+typedef enum operator_e
+{
+  OP_NONE = 0,
+  OP_PLUS,
+  OP_MINUS,
+  OP_ASTERISK,
+  OP_SLASH,
+  OP_EQ,
+  OP_NOT_EQ,
+  OP_LT,
+  OP_GT
+} Operator;
+
 typedef struct tyger_error
 {
   Tyger_Error_Kind kind;
@@ -44,10 +57,18 @@ typedef struct string_expression
   size_t len;
 } String_Expression;
 
+typedef struct infix_expression
+{
+  Operator op;
+  Expression *lhs;
+  Expression *rhs;
+} Infix_Expression;
+
 typedef union uexpression
 {
   Int_Expression int_expression;
   String_Expression string_expression;
+  Infix_Expression infix_expression;
 } uExpression;
 
 struct expression
@@ -141,5 +162,6 @@ Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement
 
 Tyger_Error parse_int_expression(Parser *p, Expression *expr);
 Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *expr);
+Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *lhs);
 
 #endif // TYGER_PARSER_H_

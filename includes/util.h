@@ -41,4 +41,6 @@
     (DA).len += (N);                                                  \
   } while (0)
 
+#define va_array_next(DA) &( (DA).elems[(DA).len] )
+
 #endif // TYGER_UTIL_H_

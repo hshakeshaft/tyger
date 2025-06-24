@@ -1,3 +1,4 @@
 X(NONE) \
 X(INT)  \
-X(STRING)
+X(STRING) \
+X(INFIX)
