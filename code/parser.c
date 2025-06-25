@@ -27,6 +27,7 @@ enum {
 static void parser_context_init(Parser_Context *ctx)
 {
   va_array_init(char, ctx->identifiers);
+  va_array_init(char, ctx->evaluated_identifiers);
   va_array_init(Expression, ctx->expressions);
   va_array_init(char, ctx->strings);
 }
@@ -135,6 +136,11 @@ static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *
   case TK_STRING:
   {
     err = parse_string_expression(p, ctx, expr);
+  } break;
+
+  case TK_IDENT:
+  {
+    err = parse_ident_expression(p, ctx, expr);
   } break;
   }
 
@@ -397,6 +403,24 @@ Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *
     .expression.string_expression = (String_Expression) {
       .value = str_value,
       .len = p->cur_token.literal.len
+    }
+  };
+
+  return err;
+}
+
+Tyger_Error parse_ident_expression(Parser *p, Parser_Context *ctx, Expression *expr)
+{
+  Tyger_Error err= {0};
+
+  const char *ident = va_array_next(ctx->evaluated_identifiers);
+  va_array_append_n(ctx->evaluated_identifiers, p->cur_token.literal.str, p->cur_token.literal.len);
+  va_array_append_n(ctx->evaluated_identifiers, PARSER_NULL_TERMINATOR, 1);
+
+  *expr = (Expression) {
+    .kind = EXPR_IDENT,
+    .expression.ident_expression = (Ident_Expression) {
+      .ident = ident
     }
   };
 

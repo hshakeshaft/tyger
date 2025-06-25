@@ -1,4 +1,5 @@
-X(NONE) \
-X(INT)  \
-X(STRING) \
+X(NONE)    \
+X(INT)     \
+X(STRING)  \
+X(IDENT)   \
 X(INFIX)

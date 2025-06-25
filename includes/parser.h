@@ -51,6 +51,11 @@ typedef struct string_expression
   size_t len;
 } String_Expression;
 
+typedef struct ident_expression
+{
+  const char *ident;
+} Ident_Expression;
+
 typedef struct infix_expression
 {
   Operator op;
@@ -62,6 +67,7 @@ typedef union uexpression
 {
   Int_Expression int_expression;
   String_Expression string_expression;
+  Ident_Expression ident_expression;
   Infix_Expression infix_expression;
 } uExpression;
 
@@ -121,9 +127,11 @@ typedef struct expression_vaarray
   size_t len;
 } Expression_VaArray;
 
+// TODO(HS): use a hash map for identifiers?
 typedef struct parser_context
 {
   String_VaArray identifiers;
+  String_VaArray evaluated_identifiers;
   Expression_VaArray expressions;
   String_VaArray strings;
 } Parser_Context;
@@ -157,6 +165,7 @@ Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement
 
 Tyger_Error parse_int_expression(Parser *p, Expression *expr);
 Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *expr);
+Tyger_Error parse_ident_expression(Parser *p, Parser_Context *ctx, Expression *expr);
 Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *lhs);
 
 #endif // TYGER_PARSER_H_

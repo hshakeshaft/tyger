@@ -134,6 +134,13 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
     string_builder_append_fmt(sb, "    len: %lu\n", sexpr->len);
   } break;
 
+  case EXPR_IDENT:
+  {
+    const Ident_Expression *iexpr = &(expr->expression.ident_expression);
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    ident: %s\n", iexpr->ident);
+  } break;
+
   case EXPR_INFIX:
   {
     const Infix_Expression *iexpr = &expr->expression.infix_expression;

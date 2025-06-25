@@ -136,6 +136,45 @@ TEST(ParserTestSuite, Test_String_Expression)
   EXPECT_EQ(exp_value.size(), act_value.size()) << prog_str;
 }
 
+TEST(ParserTestSuite, Test_Ident_Expression)
+{
+  struct Ident_Test
+  {
+    const char *input;
+    const char *ident;
+  };
+
+  std::vector<Ident_Test> test_cases{
+    { "x;", "x" },
+    { "foo;", "foo" },
+    { "fooBarBaz;", "fooBarBaz" },
+  };
+
+  for (auto& tc : test_cases)
+  {
+    Lexer lexer;
+    Parser parser;
+    setup_parser_test_case(&parser, &lexer, tc.input);
+
+    Program p = parser_parse_program(&parser);
+    const char *prog_str = program_to_string(&p, TRACE_YAML);
+    DEFER({delete prog_str;});
+
+    parser_test_case_enumerate_errors(&p, 0);
+    ASSERT_EQ(p.statements.len, 1) << prog_str;
+
+    Statement *stmt = &(p.statements.elems[0]);
+    EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
+
+    Expression *expr = stmt->statement.expression_statement.expression;
+    EXPECT_EXPRESSION_IS(expr, EXPR_IDENT);
+
+    std::string exp_ident{tc.ident};
+    std::string act_ident{expr->expression.ident_expression.ident};
+    EXPECT_EQ(exp_ident, act_ident);
+  }
+}
+
 TEST(ParserTestSuite, Test_Infix_Expression)
 {
   struct Infix_Test
@@ -218,6 +257,22 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
                                                      //         (*)   (5)
                                                      //        /   \
                                                      //      (3)  (4)
+
+    { "5 > 4 == 3 < 4;", "(== (> 5 4) (< 3 4))" },
+    { "5 > 4 != 3 < 4;", "(!= (> 5 4) (< 3 4))" },
+
+    // { "a + b * c + d / e - f;", "(- (+ (+ a (* b c)) (/ d e)) f)" },
+                                                            //            (-)
+                                                            //           /   \
+                                                            //         (+)   (f)
+                                                            //        /   \
+                                                            //       /    (/)   
+                                                            //      /    /   \
+                                                            //    (+)  (d)   (e)
+                                                            //   /   \
+                                                            // (a)   (*)
+                                                            //      /   \
+                                                            //    (b)   (c)
   };
 
   for (auto& tc : test_cases)
