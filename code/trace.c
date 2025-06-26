@@ -89,6 +89,11 @@ static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int 
   {
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "  ident: %s\n", stmt->statement.var_statement.ident);
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "  expression:\n");
+    *indent_level += 1;
+    yaml_print_expression(stmt->statement.var_statement.expression, sb, indent_level);
+    *indent_level -= 1;
   } break;
 
   case STMT_EXPRESSION:

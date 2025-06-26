@@ -5,26 +5,48 @@
 #include "../tests/parser_test_helper.hpp"
 
 // TODO(HS): add some more rigourous parsing example test cases
-
 // TODO(HS): program deinit code
+
 // TODO(HS): test error handling for invalid var statements
 TEST(ParserTestSuite, Test_Var_Statement)
 {
-  const char *program = "var x = 10;";
-  SETUP_PARSER_TEST_CASE(program);
+  struct Var_Test
+  {
+    const char *input;
+    const char *ident;
+    int64_t value;
+  };
 
-  const char *prog_str = program_to_string(&p, TRACE_YAML);
-  DEFER(delete prog_str;);
+  std::vector<Var_Test> test_cases{
+    { "var x = 10;", "x", 10 },
+    { "var y = 1;", "y", 1 },
+    { "var fooBar = 15000;", "fooBar", 15000 },
+    { "var spam_eggs = 8140124;", "spam_eggs", 8140124 },
+  };
 
-  EXPECT_PROGRAM_PARSED_SUCCESS(p);
-  ENUMERATE_PARSER_ERRORS(p);
+  for (auto& tc : test_cases)
+  {
+    SETUP_PARSER_TEST_CASE(tc.input);
 
-  Statement *stmt = &(p.statements.elems[0]);
-  EXPECT_STATEMENT_IS(stmt, STMT_VAR);
+    const char *prog_str = program_to_string(&p, TRACE_YAML);
+    DEFER(delete prog_str;);
 
-  std::string exp_ident{"x"};
-  std::string act_ident{stmt->statement.var_statement.ident};
-  EXPECT_EQ(exp_ident, act_ident) << prog_str;
+    EXPECT_PROGRAM_PARSED_SUCCESS(p);
+    ENUMERATE_PARSER_ERRORS(p);
+    ASSERT_EQ(p.statements.len, 1) << prog_str;
+
+    Statement *stmt = &(p.statements.elems[0]);
+    EXPECT_STATEMENT_IS(stmt, STMT_VAR);
+
+    std::string exp_ident{tc.ident};
+    std::string act_ident{stmt->statement.var_statement.ident};
+    EXPECT_EQ(exp_ident, act_ident) << prog_str;
+
+    Expression *expr = stmt->statement.var_statement.expression;
+    ASSERT_NE(expr, nullptr) << prog_str;
+    ASSERT_EQ(expr->kind, EXPR_INT) << prog_str;
+    EXPECT_EQ(expr->expression.int_expression.value, tc.value) << prog_str;
+  }
 }
 
 TEST(ParserTestSuite, Test_Int_Expression)

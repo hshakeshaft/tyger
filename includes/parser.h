@@ -80,6 +80,7 @@ struct expression
 typedef struct var_statement
 {
   const char *ident;
+  Expression *expression;
 } Var_Statement;
 
 typedef struct expression_statement

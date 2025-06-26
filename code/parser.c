@@ -80,6 +80,11 @@ static inline int peek_precidence(const Parser *p)
   return precidence_of(p->peek_token.kind);
 }
 
+static inline bool cur_token_is(Parser *p, Token_Kind kind)
+{
+  return p->cur_token.kind == kind;
+}
+
 static inline bool peek_token_is(Parser *p, Token_Kind kind)
 {
   return p->peek_token.kind == kind;
@@ -324,15 +329,31 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
     return err;
   }
 
+  if (expect_peek(p, TK_SEMICOLON))
+  {
+    err.kind = TYERR_SYNTAX;
+    return err;
+  }
+
+  parser_next_token(p);
+
   // TODO(HS): parse expression
-  while (p->cur_token.kind != TK_SEMICOLON)
+  Expression *hexpr = va_array_next(ctx->expressions);
+  err = parse_expression(p, ctx, hexpr, PRECIDENCE_LOWEST);
+  if (err.kind != TYERR_NONE)
+  {
+    return err;
+  }
+
+  if (peek_token_is(p, TK_SEMICOLON))
   {
     parser_next_token(p);
   }
 
   stmt->kind = STMT_VAR;
   stmt->statement.var_statement = (Var_Statement) {
-    .ident = ident_start
+    .ident = ident_start,
+    .expression = hexpr
   };
 
   return err;
