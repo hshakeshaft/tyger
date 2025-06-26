@@ -337,13 +337,14 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
   parser_next_token(p);
 
-  // TODO(HS): parse expression
   Expression *hexpr = va_array_next(ctx->expressions);
-  err = parse_expression(p, ctx, hexpr, PRECIDENCE_LOWEST);
+  Expression expr;
+  err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
   if (err.kind != TYERR_NONE)
   {
     return err;
   }
+  va_array_append(ctx->expressions, expr);
 
   if (peek_token_is(p, TK_SEMICOLON))
   {
