@@ -1,63 +1,8 @@
 #include <gtest/gtest.h>
-#include "tyger_test.hpp"
 #include <string>
 #include <vector>
 #include <cstdint>
-
-// TODO(HS): pull this into own "test util" file
-/// ScopeExit, adapted from the following Withness blog post to allow for defered blocks
-/// http://the-witness.net/news/2012/11/scopeexit-in-c11/
-template <typename F>
-struct ScopeExit
-{
-  ScopeExit(F f) : f(f) {}
-  ~ScopeExit() { f(); }
-  F f;
-};
-
-template <typename F>
-ScopeExit<F> MakeScopeExit(F f)
-{
-  return ScopeExit<F>(f);
-}
-
-#define DO_STRING_JOIN(S1, S2) S1 ## S2
-#define STRING_JOIN_2(S1, S2) DO_STRING_JOIN(S1, S2)
-#define DEFER(...) \
-  auto STRING_JOIN_2(defer_scope_exit_, __LINE__) = MakeScopeExit([=] () { __VA_ARGS__ })
-
-static void setup_parser_test_case(Parser *p, Lexer *lx, const char *program)
-{
-  lexer_init(lx, program);
-  parser_init(p, lx);
-}
-
-static void parser_test_case_enumerate_errors(const Program *p, int expected_errors)
-{
-  EXPECT_EQ(expected_errors, p->errors.len)
-    << "Expected " << expected_errors << " errors, got " << p->errors.len;
-
-  if (p->errors.len > 0)
-  {
-    for (size_t i = 0; i < p->errors.len; ++i)
-    {
-      Tyger_Error *err = &(p->errors.elems[i]);
-      EXPECT_FALSE(true) << "[ERROR] " << tyger_error_kind_to_string(err->kind) << '\n';
-    }
-  }
-}
-
-/// checks that a Statement is of the expected kind and logs an error if not
-#define EXPECT_STATEMENT_IS(STMT, KIND)                                 \
-  EXPECT_EQ((STMT)->kind, (KIND))                                       \
-  << "Expected Statement_Kind " << statement_kind_to_string((KIND))     \
-  << ", got " << statement_kind_to_string((STMT)->kind)
-
-/// checks that an Expression is of the expected kind and logs an error if not
-#define EXPECT_EXPRESSION_IS(EXPR, KIND)                                \
-  EXPECT_EQ((EXPR)->kind, (KIND))                                       \
-  << "Expected Expression_Kind " << expression_kind_to_string((KIND))   \
-  << ", got " << expression_kind_to_string((EXPR)->kind)
+#include "../tests/parser_test_helper.hpp"
 
 // TODO(HS): add some more rigourous parsing example test cases
 
@@ -65,17 +10,14 @@ static void parser_test_case_enumerate_errors(const Program *p, int expected_err
 // TODO(HS): test error handling for invalid var statements
 TEST(ParserTestSuite, Test_Var_Statement)
 {
-  Lexer lexer;
-  Parser parser;
   const char *program = "var x = 10;";
-  setup_parser_test_case(&parser, &lexer, program);
+  SETUP_PARSER_TEST_CASE(program);
 
-  Program p = parser_parse_program(&parser);
   const char *prog_str = program_to_string(&p, TRACE_YAML);
   DEFER(delete prog_str;);
 
-  parser_test_case_enumerate_errors(&p, 0);
-  EXPECT_EQ(p.statements.len, 1) << prog_str;
+  EXPECT_PROGRAM_PARSED_SUCCESS(p);
+  ENUMERATE_PARSER_ERRORS(p);
 
   Statement *stmt = &(p.statements.elems[0]);
   EXPECT_STATEMENT_IS(stmt, STMT_VAR);
@@ -87,23 +29,20 @@ TEST(ParserTestSuite, Test_Var_Statement)
 
 TEST(ParserTestSuite, Test_Int_Expression)
 {
-  Lexer lexer;
-  Parser parser;
   const char *program = "10;";
-  setup_parser_test_case(&parser, &lexer, program);
+  SETUP_PARSER_TEST_CASE(program);
 
-  Program p = parser_parse_program(&parser);
   const char *prog_str = program_to_string(&p, TRACE_YAML);
   DEFER(delete prog_str;);
 
-  parser_test_case_enumerate_errors(&p, 0);
-  EXPECT_EQ(p.statements.len, 1) << prog_str;
+  EXPECT_PROGRAM_PARSED_SUCCESS(p);
+  ENUMERATE_PARSER_ERRORS(p);
 
   Statement *stmt = &(p.statements.elems[0]);
-  EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
+  EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION) << prog_str;
 
   Expression *expr = stmt->statement.expression_statement.expression;
-  EXPECT_EXPRESSION_IS(expr, EXPR_INT);
+  EXPECT_EXPRESSION_IS(expr, EXPR_INT) << prog_str;
 
   int64_t exp_val = 10;
   int64_t act_val = expr->expression.int_expression.value;
@@ -112,17 +51,14 @@ TEST(ParserTestSuite, Test_Int_Expression)
 
 TEST(ParserTestSuite, Test_String_Expression)
 {
-  Lexer lexer;
-  Parser parser;
   const char *program = "\"Hellope\";";
-  setup_parser_test_case(&parser, &lexer, program);
+  SETUP_PARSER_TEST_CASE(program);
 
-  Program p = parser_parse_program(&parser);
   const char *prog_str = program_to_string(&p, TRACE_YAML);
   DEFER(delete prog_str;);
 
-  parser_test_case_enumerate_errors(&p, 0);
-  EXPECT_EQ(p.statements.len, 1) << prog_str;
+  EXPECT_PROGRAM_PARSED_SUCCESS(p) << prog_str;
+  ENUMERATE_PARSER_ERRORS(p);
 
   Statement *stmt = &(p.statements.elems[0]);
   EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
@@ -152,16 +88,13 @@ TEST(ParserTestSuite, Test_Ident_Expression)
 
   for (auto& tc : test_cases)
   {
-    Lexer lexer;
-    Parser parser;
-    setup_parser_test_case(&parser, &lexer, tc.input);
+    SETUP_PARSER_TEST_CASE(tc.input);
 
-    Program p = parser_parse_program(&parser);
     const char *prog_str = program_to_string(&p, TRACE_YAML);
-    DEFER({delete prog_str;});
+    DEFER(delete prog_str;);
 
-    parser_test_case_enumerate_errors(&p, 0);
-    ASSERT_EQ(p.statements.len, 1) << prog_str;
+    EXPECT_PROGRAM_PARSED_SUCCESS(p) << prog_str;
+    ENUMERATE_PARSER_ERRORS(p);
 
     Statement *stmt = &(p.statements.elems[0]);
     EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
@@ -198,11 +131,8 @@ TEST(ParserTestSuite, Test_Infix_Expression)
 
   for (auto& tc : test_cases)
   {
-    Lexer lexer;
-    Parser parser;
-    setup_parser_test_case(&parser, &lexer, tc.input);
+    SETUP_PARSER_TEST_CASE(tc.input);
 
-    Program p = parser_parse_program(&parser);
     const char *prog_str = program_to_string(&p, TRACE_YAML);
     const char *act_ast = program_to_string(&p, TRACE_SEXPR);
     DEFER({
@@ -210,8 +140,8 @@ TEST(ParserTestSuite, Test_Infix_Expression)
         delete act_ast;
     });
 
-    parser_test_case_enumerate_errors(&p, tc.num_errors);
-    EXPECT_EQ(p.statements.len, tc.num_statements) << prog_str;
+    EXPECT_PROGRAM_PARSED_SUCCESS(p);
+    ENUMERATE_PARSER_ERRORS(p);
 
     Statement *stmt = &(p.statements.elems[0]);
     EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
@@ -277,11 +207,8 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
 
   for (auto& tc : test_cases)
   {
-    Lexer lexer;
-    Parser parser;
-    setup_parser_test_case(&parser, &lexer, tc.input);
+    SETUP_PARSER_TEST_CASE(tc.input);
 
-    Program p = parser_parse_program(&parser);
     const char *prog_str = program_to_string(&p, TRACE_YAML);
     const char *act_ast = program_to_string(&p, TRACE_SEXPR);
     DEFER({
@@ -289,14 +216,14 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
         delete act_ast;
     });
 
-    parser_test_case_enumerate_errors(&p, 0);
-    EXPECT_EQ(p.statements.len, 1) << prog_str;
+    EXPECT_PROGRAM_PARSED_SUCCESS(p);
+    ENUMERATE_PARSER_ERRORS(p);
 
     Statement *stmt = &(p.statements.elems[0]);
-    EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
+    EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION) << prog_str;
 
     Expression *expr = stmt->statement.expression_statement.expression;
-    EXPECT_EXPRESSION_IS(expr, EXPR_INFIX);
+    EXPECT_EXPRESSION_IS(expr, EXPR_INFIX) << prog_str;
 
     std::string act_ast_string{act_ast};
     std::string exp_ast_string{tc.ast};
