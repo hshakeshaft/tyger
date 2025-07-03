@@ -24,7 +24,7 @@ expression evaluation, and builtin `println` evaluation.
 
 ## Parsing
 
-- [ ] parse all elements in `lexing`
+- [x] parse all elements in `lexing`
 
 
 ## Evaluating

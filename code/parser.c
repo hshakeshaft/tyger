@@ -558,10 +558,6 @@ Tyger_Error parse_call_expression_args(Parser *p, Parser_Context *ctx, Argument_
 {
   Tyger_Error err = {0};
 
-  (void) p;
-  (void) ctx;
-  (void) args;
-
   if (peek_token_is(p, TK_RPAREN))
   {
     parser_next_token(p);
