@@ -58,6 +58,7 @@ Token lexer_next_token(Lexer *lx)
   case '[':  { token.kind = TK_LBRACKET; } break;
   case ']':  { token.kind = TK_RBRACKET; } break;
   case ';':  { token.kind = TK_SEMICOLON; } break;
+  case ',':  { token.kind = TK_COMMA; } break;
 
   case '+':  { token.kind = TK_PLUS; } break;
   case '-':  { token.kind = TK_MINUS; } break;
