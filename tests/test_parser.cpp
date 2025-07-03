@@ -252,3 +252,54 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
     EXPECT_EQ(exp_ast_string, act_ast_string) << prog_str;
   }
 }
+
+// TODO(HS): add more test cases when support added for other function idents
+TEST(ParserTestSuite, Test_Call_Expression)
+{
+  struct Function_Test
+  {
+    const char *input;
+    const char *ident;
+    std::size_t arg_count;
+    const char *ast;
+  };
+
+  std::vector<Function_Test> test_cases{
+    { "println();", "println", 0, "(println [])" },
+    { "println(5);", "println", 1, "(println [5])" },
+    { "println(\"Hello, World!\");", "println", 1, "(println [\"Hello, World!\"])" },
+    { "println(\"a\");", "println", 1, "(println [\"a\"])" },
+    { "println(1 + 2);", "println", 1, "(println [(+ 1 2)])" },
+    { "println(1 + 2 - 3 * 4 / 5);", "println", 1, "(println [(- (+ 1 2) (/ (* 3 4) 5))])" },
+    { "println(1, 1);", "println", 2, "(println [1 ; 1])"  },
+    { "println(5, 4, 3, 2, 1);", "println", 5, "(println [5 ; 4 ; 3 ; 2 ; 1])"  },
+    { "println(5, 1 + 1, \"fooBar\");", "println", 3, "(println [5 ; (+ 1 1) ; \"fooBar\"])"  },
+  };
+
+  for (auto& tc : test_cases)
+  {
+    SETUP_PARSER_TEST_CASE(tc.input);
+    const char *prog_str = program_to_string(&p, TRACE_YAML);
+    const char *act_ast = program_to_string(&p, TRACE_SEXPR);
+    DEFER({
+        delete prog_str;
+        delete act_ast;
+    });
+
+    EXPECT_PROGRAM_PARSED_SUCCESS(p);
+    ENUMERATE_PARSER_ERRORS(p);
+
+    Statement *stmt = &(p.statements.elems[0]);
+    EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION) << prog_str;
+
+    Expression *expr = stmt->statement.expression_statement.expression;
+    EXPECT_EXPRESSION_IS(expr, EXPR_CALL) << prog_str;
+
+    Call_Expression *ce = &(expr->expression.call_expression);
+    ASSERT_EQ(ce->args.len, tc.arg_count) << prog_str;
+
+    std::string act_ast_string{act_ast};
+    std::string exp_ast_string{tc.ast};
+    EXPECT_EQ(act_ast_string, exp_ast_string) << prog_str;
+  }
+}

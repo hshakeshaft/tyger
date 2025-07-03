@@ -63,12 +63,26 @@ typedef struct infix_expression
   Expression *rhs;
 } Infix_Expression;
 
+typedef struct argument_list
+{
+  Expression *elems;
+  size_t capacity;
+  size_t len;
+} Argument_List;
+
+typedef struct call_expression
+{
+  Expression *function;
+  Argument_List args;
+} Call_Expression;
+
 typedef union uexpression
 {
   Int_Expression int_expression;
   String_Expression string_expression;
   Ident_Expression ident_expression;
   Infix_Expression infix_expression;
+  Call_Expression call_expression;
 } uExpression;
 
 struct expression
@@ -168,5 +182,7 @@ Tyger_Error parse_int_expression(Parser *p, Expression *expr);
 Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *expr);
 Tyger_Error parse_ident_expression(Parser *p, Parser_Context *ctx, Expression *expr);
 Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *lhs);
+Tyger_Error parse_call_expression(Parser *p, Parser_Context *ctx, Expression *expr);
+Tyger_Error parse_call_expression_args(Parser *p, Parser_Context *ctx, Argument_List *args);
 
 #endif // TYGER_PARSER_H_

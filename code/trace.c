@@ -167,6 +167,25 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
     *indent_level -= 1;
   } break;
 
+  case EXPR_CALL:
+  {
+    const Call_Expression *cexpr = &expr->expression.call_expression;
+    assert(cexpr->function->kind == EXPR_IDENT);
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    name: %s\n", cexpr->function->expression.ident_expression.ident);
+
+    yaml_print_indent(sb, *indent_level);
+    string_builder_append_fmt(sb, "    args:\n");
+
+    *indent_level += 1;
+    for (size_t i = 0; i < cexpr->args.len; ++i)
+    {
+      const Expression *arg = &(cexpr->args.elems[i]);
+      yaml_print_expression(arg, sb, indent_level);
+    }
+    *indent_level -= 1;
+  } break;
+
   default:
   {
     fprintf(
@@ -218,7 +237,7 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
 
   case EXPR_STRING:
   {
-    string_builder_append_fmt(sb, "%s", expr->expression.string_expression.value);
+    string_builder_append_fmt(sb, "\"%s\"", expr->expression.string_expression.value);
   } break;
 
   case EXPR_INFIX:
@@ -233,6 +252,26 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
       sexpr_print_expression(iexpr->rhs, sb);
     }
     string_builder_append(sb, ")");
+  } break;
+
+  case EXPR_CALL:
+  {
+    const Call_Expression *cexpr = &expr->expression.call_expression;
+    assert(cexpr->function->kind == EXPR_IDENT);
+
+    string_builder_append_fmt(sb, "(%s [", cexpr->function->expression.ident_expression.ident);
+
+    for (size_t i = 0; i < cexpr->args.len; ++i)
+    {
+      const Expression *arg = &(cexpr->args.elems[i]);
+      sexpr_print_expression(arg, sb);
+      if (!(i + 1 >= cexpr->args.len))
+      {
+        string_builder_append_fmt(sb, " ; ");
+      }
+    }
+
+    string_builder_append(sb, "])");
   } break;
 
   default:

@@ -143,9 +143,18 @@ static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *
     err = parse_string_expression(p, ctx, expr);
   } break;
 
+  // TODO(HS): add support for call expressions here
   case TK_IDENT:
   {
     err = parse_ident_expression(p, ctx, expr);
+  } break;
+
+  // TODO(HS): maybe this is a bad idea and I should just do a hash lookup for global
+  // builtin functions (means `println` => TK_IDENT)
+  // NOTE(HS): builtin functions
+  case TK_PRINTLN:
+  {
+    err = parse_call_expression(p, ctx, expr);
   } break;
   }
 
@@ -155,6 +164,10 @@ static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *
     {
       parser_next_token(p);
       err = parse_infix_expression(p, ctx, expr);
+      if (err.kind != TYERR_NONE)
+      {
+        return err;
+      }
     }
   }
 
@@ -496,5 +509,90 @@ Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *e
     }
   };
 
+  return err;
+}
+
+// TODO(HS): function literal support in call expressions
+Tyger_Error parse_call_expression(Parser *p, Parser_Context *ctx, Expression *expr)
+{
+  Tyger_Error err = {0};
+
+  Expression function;
+  err = parse_ident_expression(p, ctx, &function);
+  if (err.kind != TYERR_NONE)
+  {
+    return err;
+  }
+
+  Expression *function_handle = va_array_next(ctx->expressions);
+  va_array_append(ctx->expressions, function);
+
+  if (!expect_peek(p, TK_LPAREN))
+  {
+    err.kind = TYERR_SYNTAX;
+    return err;
+  }
+
+  Argument_List args;
+  va_array_init(Expression, args);
+  err = parse_call_expression_args(p, ctx, &args);
+  if (err.kind != TYERR_NONE)
+  {
+    return err;
+  }
+
+  *expr = (Expression) {
+    .kind = EXPR_CALL,
+    .expression.call_expression = (Call_Expression) {
+      .function = function_handle,
+      .args = args,
+    }
+  };
+
+  return err;
+}
+
+// TODO(HS): may need to embed `Parser_Context` into the `Argument_List` struct
+// and then pass this into `parse_expression`
+Tyger_Error parse_call_expression_args(Parser *p, Parser_Context *ctx, Argument_List *args)
+{
+  Tyger_Error err = {0};
+
+  (void) p;
+  (void) ctx;
+  (void) args;
+
+  if (peek_token_is(p, TK_RPAREN))
+  {
+    parser_next_token(p);
+    return err;
+  }
+  parser_next_token(p);
+
+  Expression first_arg;
+  err = parse_expression(p, ctx, &first_arg, PRECIDENCE_LOWEST);
+  va_array_append(*args, first_arg);
+
+  while (peek_token_is(p, TK_COMMA))
+  {
+    parser_next_token(p);
+    parser_next_token(p);
+
+    Expression next_arg;
+    err = parse_expression(p, ctx, &next_arg, PRECIDENCE_LOWEST);
+    if (err.kind != TYERR_NONE)
+    {
+      return err;
+    }
+
+    va_array_append(*args, next_arg);
+  }
+
+  if (!expect_peek(p, TK_RPAREN))
+  {
+    err.kind = TYERR_SYNTAX;
+    return err;
+  }
+ 
   return err;
 }
