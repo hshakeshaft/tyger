@@ -156,6 +156,16 @@ static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *
   {
     err = parse_call_expression(p, ctx, expr);
   } break;
+
+  default:
+  {
+    Token_Kind k = p->cur_token.kind;
+    fprintf(
+      stderr, "[ERROR] Unexpected token kind encountererd whilst parsing: %i (%s)\n",
+      k, token_kind_to_string(k)
+    );
+    assert(0);
+  } break;
   }
 
   if (err.kind == TYERR_NONE)
