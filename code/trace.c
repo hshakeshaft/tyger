@@ -240,6 +240,11 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
     string_builder_append_fmt(sb, "\"%s\"", expr->expression.string_expression.value);
   } break;
 
+  case EXPR_IDENT:
+  {
+    string_builder_append_fmt(sb, "%s", expr->expression.ident_expression.ident);
+  } break;
+
   case EXPR_INFIX:
   {
     string_builder_append(sb, "(");
