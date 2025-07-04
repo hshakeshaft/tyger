@@ -77,7 +77,7 @@ void string_builder_append(String_Builder *sb, const char *str)
   assert(sb);
   assert(sb->buffer);
 
-  int bytes_to_write = snprintf(NULL, 0, str);
+  int bytes_to_write = snprintf(NULL, 0, "%s", str);
 
   if ((sb->len + bytes_to_write) > sb->capacity)
   {
@@ -90,7 +90,7 @@ void string_builder_append(String_Builder *sb, const char *str)
     sb->capacity = new_capacity;
   }
 
-  int bytes_written = snprintf(&(sb->buffer[sb->len]), bytes_to_write + 1, str); 
+  int bytes_written = snprintf(&(sb->buffer[sb->len]), bytes_to_write + 1, "%s", str);
 
   assert(bytes_written == bytes_to_write);
 
