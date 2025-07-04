@@ -7,7 +7,7 @@
 template <typename F>
 struct ScopeExit
 {
-  ScopeExit(F f) : f(f) {}
+  ScopeExit(F t_f) : f(t_f) {}
   ~ScopeExit() { f(); }
   F f;
 };
