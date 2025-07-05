@@ -28,8 +28,11 @@ TEST(ParserTestSuite, Test_Var_Statement)
   {
     SETUP_PARSER_TEST_CASE(tc.input);
 
-    const char *prog_str = program_to_string(&p, TRACE_YAML);
-    DEFER(delete prog_str;);
+    const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+    DEFER({
+        delete prog_str;
+        program_free((Program*) &p);
+    });
 
     EXPECT_PROGRAM_PARSED_SUCCESS(p);
     ENUMERATE_PARSER_ERRORS(p);
@@ -54,8 +57,11 @@ TEST(ParserTestSuite, Test_Int_Expression)
   const char *program = "10;";
   SETUP_PARSER_TEST_CASE(program);
 
-  const char *prog_str = program_to_string(&p, TRACE_YAML);
-  DEFER(delete prog_str;);
+  const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+  DEFER({
+      delete prog_str;
+      program_free((Program*) &p);
+  });
 
   EXPECT_PROGRAM_PARSED_SUCCESS(p);
   ENUMERATE_PARSER_ERRORS(p);
@@ -76,8 +82,11 @@ TEST(ParserTestSuite, Test_String_Expression)
   const char *program = "\"Hellope\";";
   SETUP_PARSER_TEST_CASE(program);
 
-  const char *prog_str = program_to_string(&p, TRACE_YAML);
-  DEFER(delete prog_str;);
+  const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+  DEFER({
+      delete prog_str;
+      program_free((Program*) &p);
+  });
 
   EXPECT_PROGRAM_PARSED_SUCCESS(p) << prog_str;
   ENUMERATE_PARSER_ERRORS(p);
@@ -112,8 +121,11 @@ TEST(ParserTestSuite, Test_Ident_Expression)
   {
     SETUP_PARSER_TEST_CASE(tc.input);
 
-    const char *prog_str = program_to_string(&p, TRACE_YAML);
-    DEFER(delete prog_str;);
+    const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+    DEFER({
+        delete prog_str;
+        program_free((Program*) &p);
+    });
 
     EXPECT_PROGRAM_PARSED_SUCCESS(p) << prog_str;
     ENUMERATE_PARSER_ERRORS(p);
@@ -155,11 +167,12 @@ TEST(ParserTestSuite, Test_Infix_Expression)
   {
     SETUP_PARSER_TEST_CASE(tc.input);
 
-    const char *prog_str = program_to_string(&p, TRACE_YAML);
-    const char *act_ast = program_to_string(&p, TRACE_SEXPR);
+    const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+    const char *act_ast = program_to_string((Program*) &p, TRACE_SEXPR);
     DEFER({
         delete prog_str;
         delete act_ast;
+        program_free((Program*) &p);
     });
 
     EXPECT_PROGRAM_PARSED_SUCCESS(p);
@@ -235,11 +248,12 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
   {
     SETUP_PARSER_TEST_CASE(tc.input);
 
-    const char *prog_str = program_to_string(&p, TRACE_YAML);
-    const char *act_ast = program_to_string(&p, TRACE_SEXPR);
+    const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+    const char *act_ast = program_to_string((Program*) &p, TRACE_SEXPR);
     DEFER({
         delete prog_str;
         delete act_ast;
+        program_free((Program*) &p);
     });
 
     EXPECT_PROGRAM_PARSED_SUCCESS(p);
@@ -283,11 +297,12 @@ TEST(ParserTestSuite, Test_Call_Expression)
   for (auto& tc : test_cases)
   {
     SETUP_PARSER_TEST_CASE(tc.input);
-    const char *prog_str = program_to_string(&p, TRACE_YAML);
-    const char *act_ast = program_to_string(&p, TRACE_SEXPR);
+    const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+    const char *act_ast = program_to_string((Program*) &p, TRACE_SEXPR);
     DEFER({
         delete prog_str;
         delete act_ast;
+        program_free((Program*) &p);
     });
 
     EXPECT_PROGRAM_PARSED_SUCCESS(p);
