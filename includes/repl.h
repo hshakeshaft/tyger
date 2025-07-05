@@ -1,6 +1,5 @@
 #ifndef TYGER_REPL_H_
 #define TYGER_REPL_H_
-#include "lexer.h"
 
 #define REPL_INPUT_BUFFER_SIZE 2048
 
