@@ -11,6 +11,16 @@
     (DA).elems = malloc(sizeof(T) * (DA).capacity); \
   } while (0)
 
+#define va_array_free(DA)                       \
+  do {                                          \
+    if ((DA).elems) {                           \
+      free((DA).elems);                         \
+    }                                           \
+    (DA).elems = NULL;                          \
+    (DA).len = 0;                               \
+    (DA).capacity = 0;                          \
+  } while (0)
+
 /// appends an element to an array
 #define va_array_append(DA, ELEM)                               \
   do {                                                          \

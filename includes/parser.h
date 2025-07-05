@@ -162,12 +162,12 @@ typedef struct program
 {
   Statement_VaArray statements;
   Error_VaArray errors;
-  String_VaArray identifiers;
   Parser_Context context;
 } Program;
 
 void parser_init(Parser *p, Lexer *lx);
 Program parser_parse_program(Parser *p);
+void program_free(Program *p);
 
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind);
 const char *statement_kind_to_string(Statement_Kind kind);

@@ -307,6 +307,26 @@ Program parser_parse_program(Parser *p)
   return program;
 }
 
+void program_free(Program *p)
+{
+  { // free errors
+    // TODO(HS): when errors fleshed out a little more, compensate here (e.g. free
+    // any strings allocated for messages)
+    va_array_free(p->errors);
+  }
+
+  { // free context
+    va_array_free(p->context.identifiers);
+    va_array_free(p->context.evaluated_identifiers);
+    va_array_free(p->context.strings);
+    va_array_free(p->context.expressions);
+  }
+
+  { // free statements
+    va_array_free(p->statements);
+  }
+}
+
 Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 {
   Tyger_Error err = {0};

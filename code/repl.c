@@ -33,6 +33,8 @@ void repl_run(void)
     Program program = parser_parse_program(&parser);
     const char *yaml = program_to_string(&program, TRACE_YAML);
     fprintf(stdout, "%s\n", yaml);
+
     free((void*) yaml);
+    program_free(&program);
   }
 }
