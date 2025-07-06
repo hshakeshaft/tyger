@@ -455,13 +455,16 @@ Tyger_Error parse_int_expression(Parser *p, Expression *expr)
 } 
 
 // TODO(HS): more robust string parsing
+// TODO(HS): refactor all instances of `va_array_next` out - may cause bugs if reallocs
+// occur (use the `next_handle` pattern)
 Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *expr)
 {
   Tyger_Error err = {0};
 
-  const char *str_value = &(ctx->strings.elems[ctx->strings.len]);
+  size_t str_value_handle = va_array_next_handle(ctx->strings);
   va_array_append_n(ctx->strings, p->cur_token.literal.str, p->cur_token.literal.len);
   va_array_append_n(ctx->strings, PARSER_NULL_TERMINATOR, 1);
+  const char *str_value = va_array_address_of(ctx->strings, str_value_handle);
 
   *expr = (Expression) {
     .kind = EXPR_STRING,

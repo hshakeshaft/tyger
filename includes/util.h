@@ -53,4 +53,12 @@
 
 #define va_array_next(DA) &( (DA).elems[(DA).len] )
 
+/// returns the handle (index) to the next entry which will be written to
+#define va_array_next_handle(DA) (DA).len
+
+/// returns a poitner to the dynamic array at the given index
+/// NOTE(HS): will assert and crash if invalid index
+#define va_array_address_of(DA, INDEX)                                  \
+  &((DA).elems[(INDEX)]); assert(INDEX < (DA).len && INDEX >= 0)
+
 #endif // TYGER_UTIL_H_

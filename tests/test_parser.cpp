@@ -79,28 +79,47 @@ TEST(ParserTestSuite, Test_Int_Expression)
 
 TEST(ParserTestSuite, Test_String_Expression)
 {
-  const char *program = "\"Hellope\";";
-  SETUP_PARSER_TEST_CASE(program);
+  struct String_Test
+  {
+    std::string input;
+    std::string expected;
+  };
 
-  const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
-  DEFER({
-      delete prog_str;
-      program_free((Program*) &p);
-  });
+  std::vector<String_Test> test_cases{
+    { "\"\";", "" },
+    { "\"foo\";", "foo" },
+    { "\"bar\";", "bar" },
+    { "\"baz\";", "baz" },
+    { "\"Hello, World!\";", "Hello, World!" },
 
-  EXPECT_PROGRAM_PARSED_SUCCESS(p) << prog_str;
-  ENUMERATE_PARSER_ERRORS(p);
+    // NOTE(HS): this is to test longer strings and reallocations under the hood
+    { "\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\";", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+    { "\"the quick brown fox jumps over the lazy dog\";", "the quick brown fox jumps over the lazy dog" },
+  };
 
-  Statement *stmt = &(p.statements.elems[0]);
-  EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
+  for (auto& tc : test_cases)
+  {
+    SETUP_PARSER_TEST_CASE(tc.input.c_str());
+    const char *prog_str = program_to_string(&p, TRACE_YAML);
+    DEFER({
+        delete prog_str;
+        program_free((Program*) &p);
+    });
 
-  Expression *expr = stmt->statement.expression_statement.expression;
-  EXPECT_EXPRESSION_IS(expr, EXPR_STRING);
+    EXPECT_PROGRAM_PARSED_SUCCESS(p);
+    ENUMERATE_PARSER_ERRORS(p);
 
-  std::string exp_value{"Hellope"};
-  std::string act_value{expr->expression.string_expression.value};
-  EXPECT_EQ(exp_value, act_value) << prog_str;
-  EXPECT_EQ(exp_value.size(), act_value.size()) << prog_str;
+    Statement *stmt = &(p.statements.elems[0]);
+    EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
+
+    Expression *expr = stmt->statement.expression_statement.expression;
+    EXPECT_EXPRESSION_IS(expr, EXPR_STRING);
+
+    String_Expression se = expr->expression.string_expression;
+    std::string act_value{se.value};
+    EXPECT_EQ(tc.expected, act_value) << prog_str;
+    EXPECT_EQ(tc.expected.size(), act_value.size()) << prog_str;
+  }
 }
 
 TEST(ParserTestSuite, Test_Ident_Expression)
