@@ -59,6 +59,6 @@
 /// returns a poitner to the dynamic array at the given index
 /// NOTE(HS): will assert and crash if invalid index
 #define va_array_address_of(DA, INDEX)                                  \
-  &((DA).elems[(INDEX)]); assert(INDEX < (DA).len && INDEX >= 0)
+  &((DA).elems[(INDEX)]); assert(INDEX < (DA).len)
 
 #endif // TYGER_UTIL_H_
