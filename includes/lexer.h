@@ -35,19 +35,11 @@ typedef struct lexer
   char ch;
 } Lexer;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 void lexer_init(Lexer *lx, const char *program);
 Token lexer_next_token(Lexer *lx);
 const char *token_kind_to_string(Token_Kind kind);
 
 void token_to_string(Token t, char *buffer, int buffer_size);
-
-#if defined (__cplusplus)
-}
-#endif
 
 #define LOCATION_FMT "Location{ .pos = %zu, .col = %zu, .line = %zu }"
 #define LOCATION_ARGS(L) (L).pos, (L).col, (L).line

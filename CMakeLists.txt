@@ -14,7 +14,7 @@ set(C_STANDARD_REQUIRED ON)
 # TODO(HS): Add switch for "release" vs "dev" builds
 #
 if (MSVC)
-    add_compile_options(/W4 /w14640 /WX /permissive- /Zi /Od)
+    add_compile_options(/W4 /w14640 /wd4996 /WX /permissive- /Zi /Od)
 else()
     add_compile_options(-Wall -Wextra -Werror -Wshadow -pedantic -g -O0)
 endif()
@@ -42,6 +42,8 @@ set(
     code/lexer.c
     code/tstrings.c
     code/repl.c
+    code/parser.c
+    code/trace.c
 )
 add_library(${LIB_NAME} STATIC ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)
@@ -63,6 +65,7 @@ set(TEST_EXE ${PROJECT_NAME}_test)
 set(
     TEST_SOURCES
     tests/test_lexer.cpp
+    tests/test_parser.cpp
 )
 
 add_executable(${TEST_EXE} ${TEST_SOURCES})

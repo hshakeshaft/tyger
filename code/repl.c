@@ -1,8 +1,10 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "repl.h"
-
+#include "lexer.h"
+#include "parser.h"
+#include "trace.h"
 
 // TODO(HS): handle Ctrl+c/d exits nicely?
 // TODO(HS): control sequences
@@ -23,14 +25,16 @@ void repl_run(void)
     }
 
     Lexer lexer;
-    lexer_init(&lexer, input_buffer);
+    Parser parser;
 
-    Token token;
-    while ((token = lexer_next_token(&lexer)).kind != TK_EOF)
-    {
-      char token_str[512];
-      token_to_string(token, token_str, sizeof(token_str));
-      fprintf(stdout, "    %s\n", token_str);
-    }
+    lexer_init(&lexer, input_buffer);
+    parser_init(&parser, &lexer);
+
+    Program program = parser_parse_program(&parser);
+    const char *yaml = program_to_string(&program, TRACE_YAML);
+    fprintf(stdout, "%s\n", yaml);
+
+    free((void*) yaml);
+    program_free(&program);
   }
 }
