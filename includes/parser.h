@@ -102,7 +102,7 @@ typedef struct var_statement
 
 typedef struct expression_statement
 {
-  Expression *expression;
+  Expression_Handle expression_handle;
 } Expression_Statement;
 
 typedef union ustatement

@@ -105,9 +105,12 @@ static void yaml_print_statement(
 
   case STMT_EXPRESSION:
   {
+    const Expression *expr = expression_handle_to_expression(
+      prog, stmt->statement.expression_statement.expression_handle
+    );
+
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "  expression:\n");
-    const Expression *expr = stmt->statement.expression_statement.expression;
     *indent_level += 1;
     yaml_print_expression(expr, sb, indent_level);
     *indent_level -= 1;
@@ -221,8 +224,12 @@ static void sexpr_print_statement(const Program *prog, const Statement *stmt, St
 
   case STMT_EXPRESSION:
   {
-    const Expression *expr = stmt->statement.expression_statement.expression;
+    const Expression *expr = expression_handle_to_expression(
+      prog, stmt->statement.expression_statement.expression_handle
+    );
+    string_builder_append_fmt(sb, "(");
     sexpr_print_expression(expr, sb);
+    string_builder_append_fmt(sb, ")");
   } break;
 
   default:

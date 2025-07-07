@@ -440,34 +440,32 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
 Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 {
-  Expression expr;
-  Tyger_Error err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
+  Tyger_Error err = {0};
 
-  Expression *hexpr = &(ctx->expressions.elems[ctx->expressions.len]);
-  if (err.kind == TYERR_NONE)
-  {
-    va_array_append(ctx->expressions, expr);
-  }
-  else
+  Expression expr;
+  err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
+  if (err.kind != TYERR_NONE)
   {
     return err;
   }
 
+  Expression_Handle handle = va_array_next_handle(ctx->expressions);
+  va_array_append(ctx->expressions, expr);
+
   *stmt = (Statement) {
     .kind = STMT_EXPRESSION,
     .statement.expression_statement = (Expression_Statement) {
-      .expression = hexpr,
+      .expression_handle = handle
     }
   };
 
-  if (peek_token_is(p, TK_SEMICOLON))
-  {
-    parser_next_token(p);
-  }
+  expect_peek(p, TK_SEMICOLON);
 
   return err;
 }
 
+// TODO(HS): handle overflow cases for INT64_MAX when parsing `- INT64_MIN`
+// NOTE(HS): this is probably something for eval time
 Tyger_Error parse_int_expression(Parser *p, Expression *expr)
 {
   Tyger_Error err = {0};
