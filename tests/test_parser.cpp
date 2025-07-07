@@ -67,7 +67,11 @@ TEST(ParserTestSuite, Test_Int_Expression)
   };
 
   std::vector<Int_Test> test_cases{
+    { "0;", "(0)" },
+    { "1;", "(1)" },
     { "10;", "(10)" },
+    { "100000;", "(100000)" },
+    { "9223372036854775807;", "(9223372036854775807)" },
   };
 
   for (auto& tc : test_cases)
