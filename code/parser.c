@@ -6,6 +6,9 @@
 #include "lexer.h"
 #include "util.h"
 
+// TODO(HS): refactor all instances of `va_array_next` out - may cause bugs if reallocs
+// occur (use the `next_handle` pattern)
+
 // NOTE(HS): way to fudge being able to pass a string containing the null terminator
 // into va_array_append_n calls.
 static const char *PARSER_NULL_TERMINATOR = "\0";
@@ -455,8 +458,6 @@ Tyger_Error parse_int_expression(Parser *p, Expression *expr)
 } 
 
 // TODO(HS): more robust string parsing
-// TODO(HS): refactor all instances of `va_array_next` out - may cause bugs if reallocs
-// occur (use the `next_handle` pattern)
 Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *expr)
 {
   Tyger_Error err = {0};
