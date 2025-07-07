@@ -5,8 +5,9 @@
 #include "../tests/parser_test_helper.hpp"
 
 // TODO(HS): add some more rigourous parsing example test cases
-
 // TODO(HS): test error handling for invalid var statements
+
+// TODO(HS): might be able to just run asserts on the `sexpr` trace form,
 TEST(ParserTestSuite, Test_Var_Statement)
 {
   struct Var_Test
@@ -16,13 +17,11 @@ TEST(ParserTestSuite, Test_Var_Statement)
     std::string ast;
   };
 
-  // TODO(HS): enumerate more test cases here
   std::vector<Var_Test> test_cases{
     { "var x = 10;", "x", "(var x 10)" },
-    // "var x = 10;"
-    // "var y = 1;"
-    // "var fooBar = 15000;"
-    // "var spam_eggs = 8140124;"
+    { "var y = 15000;", "y", "(var y 15000)" },
+    { "var msg = \"Hello, Sunshine! The Earth says Hello!\";", "msg", "(var msg \"Hello, Sunshine! The Earth says Hello!\")" },
+    { "var theQuickBrownFoxJumpsOverTheLazyDog123456789 = 1;", "theQuickBrownFoxJumpsOverTheLazyDog123456789", "(var theQuickBrownFoxJumpsOverTheLazyDog123456789 1)", },
   };
 
   for (auto& tc : test_cases)
@@ -52,7 +51,6 @@ TEST(ParserTestSuite, Test_Var_Statement)
     std::string act_ident{ident};
     ASSERT_EQ(tc.ident, act_ident);
 
-    // TODO(HS): refactor expression to be a handle
     // NOTE(HS): Allows for more convienient testing of expressions assigned as part
     // of var_statements
     std::string act_ast{prog_sexpr};
