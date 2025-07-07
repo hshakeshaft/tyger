@@ -284,14 +284,20 @@ const char *operator_to_string(Operator op)
 
 const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl)
 {
-  char *result;
-  if (hndl > p->context.identifiers.len)
-  {
-    result = NULL;
-  }
-  else
+  char *result = NULL;
+  if (hndl < p->context.identifiers.len)
   {
     result = &(p->context.identifiers.elems[hndl]);
+  }
+  return result;
+}
+
+const Expression *expression_handle_to_expression(const Program *p, Expression_Handle hndl)
+{
+  Expression *result = NULL;
+  if (hndl < p->context.expressions.len)
+  {
+    return &(p->context.expressions.elems[hndl]);
   }
   return result;
 }
@@ -387,7 +393,7 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
     return err;
   }
 
-  Ident_Handle handle = va_array_next_handle(ctx->identifiers);
+  Ident_Handle ident_handle = va_array_next_handle(ctx->identifiers);
   { // copy ident into dynamic array
     assert(p->cur_token.literal.str);
     assert(p->cur_token.literal.len > 0);
@@ -409,7 +415,7 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
   parser_next_token(p);
 
-  Expression *hexpr = va_array_next(ctx->expressions);
+  Expression_Handle expression_handle = va_array_next_handle(ctx->expressions);
   Expression expr;
   err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
   if (err.kind != TYERR_NONE)
@@ -425,9 +431,8 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
   stmt->kind = STMT_VAR;
   stmt->statement.var_statement = (Var_Statement) {
-    // .ident = ident_start,
-    .ident_handle = handle,
-    .expression = hexpr
+    .ident_handle = ident_handle,
+    .expression_handle = expression_handle,
   };
 
   return err;

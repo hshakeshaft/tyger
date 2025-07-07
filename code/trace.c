@@ -86,18 +86,20 @@ static void yaml_print_statement(
   yaml_print_indent(sb, *indent_level);
   string_builder_append_fmt(sb, "- kind: %s\n", statement_kind_to_string(stmt->kind));
 
-  // TODO(HS): write YAML body for statement kinds
   switch (stmt->kind)
   {
   case STMT_VAR:
   {
+    const Var_Statement *vs = &stmt->statement.var_statement;
+    const char *ident = ident_handle_to_ident(prog, vs->ident_handle);
+    const Expression *expr = expression_handle_to_expression(prog, vs->expression_handle);
+
     yaml_print_indent(sb, *indent_level);
-    const char *ident = ident_handle_to_ident(prog, stmt->statement.var_statement.ident_handle);
     string_builder_append_fmt(sb, "  ident: %s\n", ident);
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "  expression:\n");
     *indent_level += 1;
-    yaml_print_expression(stmt->statement.var_statement.expression, sb, indent_level);
+    yaml_print_expression(expr, sb, indent_level);
     *indent_level -= 1;
   } break;
 
@@ -208,9 +210,12 @@ static void sexpr_print_statement(const Program *prog, const Statement *stmt, St
   {
   case STMT_VAR:
   {
-    const char *ident = ident_handle_to_ident(prog, stmt->statement.var_statement.ident_handle);
+    const Var_Statement *vs = &stmt->statement.var_statement;
+    const char *ident = ident_handle_to_ident(prog, vs->ident_handle);
+    const Expression *expr = expression_handle_to_expression(prog, vs->expression_handle);
+
     string_builder_append_fmt(sb, "(var %s ", ident);
-    sexpr_print_expression(stmt->statement.var_statement.expression, sb);
+    sexpr_print_expression(expr, sb);
     string_builder_append(sb, ")");
   } break;
 
