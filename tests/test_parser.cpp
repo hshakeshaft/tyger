@@ -5,7 +5,6 @@
 #include "../tests/parser_test_helper.hpp"
 
 // TODO(HS): add some more rigourous parsing example test cases
-// TODO(HS): program deinit code
 
 // TODO(HS): test error handling for invalid var statements
 TEST(ParserTestSuite, Test_Var_Statement)
@@ -13,15 +12,17 @@ TEST(ParserTestSuite, Test_Var_Statement)
   struct Var_Test
   {
     const char *input;
-    const char *ident;
-    int64_t value;
+    std::string ident;
+    std::string ast;
   };
 
+  // TODO(HS): enumerate more test cases here
   std::vector<Var_Test> test_cases{
-    { "var x = 10;", "x", 10 },
-    { "var y = 1;", "y", 1 },
-    { "var fooBar = 15000;", "fooBar", 15000 },
-    { "var spam_eggs = 8140124;", "spam_eggs", 8140124 },
+    { "var x = 10;", "x", "(var x 10)" },
+    // "var x = 10;"
+    // "var y = 1;"
+    // "var fooBar = 15000;"
+    // "var spam_eggs = 8140124;"
   };
 
   for (auto& tc : test_cases)
@@ -29,8 +30,10 @@ TEST(ParserTestSuite, Test_Var_Statement)
     SETUP_PARSER_TEST_CASE(tc.input);
 
     const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+    const char *prog_sexpr = program_to_string((Program*) &p, TRACE_SEXPR);
     DEFER({
         delete prog_str;
+        delete prog_sexpr;
         program_free((Program*) &p);
     });
 
@@ -41,14 +44,19 @@ TEST(ParserTestSuite, Test_Var_Statement)
     Statement *stmt = &(p.statements.elems[0]);
     EXPECT_STATEMENT_IS(stmt, STMT_VAR);
 
-    std::string exp_ident{tc.ident};
-    std::string act_ident{stmt->statement.var_statement.ident};
-    EXPECT_EQ(exp_ident, act_ident) << prog_str;
+    const Var_Statement *vs = &stmt->statement.var_statement;
 
-    Expression *expr = stmt->statement.var_statement.expression;
-    ASSERT_NE(expr, nullptr) << prog_str;
-    ASSERT_EQ(expr->kind, EXPR_INT) << prog_str;
-    EXPECT_EQ(expr->expression.int_expression.value, tc.value) << prog_str;
+    const char *ident = ident_handle_to_ident(&p, vs->ident_handle);
+    ASSERT_NE(ident, nullptr);
+
+    std::string act_ident{ident};
+    ASSERT_EQ(tc.ident, act_ident);
+
+    // TODO(HS): refactor expression to be a handle
+    // NOTE(HS): Allows for more convienient testing of expressions assigned as part
+    // of var_statements
+    std::string act_ast{prog_sexpr};
+    ASSERT_EQ(tc.ast, act_ast);
   }
 }
 

@@ -5,6 +5,8 @@
 #include "tstrings.h"
 #include "lexer.h"
 
+typedef size_t Ident_Handle;
+
 typedef enum tyger_error_kind
 {
 #define X(NAME) TYERR_##NAME,
@@ -93,7 +95,7 @@ struct expression
 
 typedef struct var_statement
 {
-  const char *ident;
+  Ident_Handle ident_handle;
   Expression *expression;
 } Var_Statement;
 
@@ -173,6 +175,8 @@ const char *tyger_error_kind_to_string(Tyger_Error_Kind kind);
 const char *statement_kind_to_string(Statement_Kind kind);
 const char *expression_kind_to_string(Expression_Kind kind);
 const char *operator_to_string(Operator op);
+
+const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl);
 
 Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
 Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt);

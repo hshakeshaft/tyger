@@ -8,10 +8,12 @@
 #define TRACE_YAML_SPACES_PER_INDENT_LEVEL 4
 
 static void yaml_print_header(const Program *p, String_Builder *sb);
-static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int *indent_level);
+static void yaml_print_statement(
+  const Program *prog, const Statement *stmt, String_Builder *sb, int *indent_level
+);
 static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level);
 
-static void sexpr_print_statement(const Statement *stmt, String_Builder *sb);
+static void sexpr_print_statement(const Program *prog, const Statement *stmt, String_Builder *sb);
 static void sexpr_print_expression(const Expression *expr, String_Builder *sb);
 
 const char *program_to_string(const Program *p, Trace_Format kind)
@@ -29,7 +31,7 @@ const char *program_to_string(const Program *p, Trace_Format kind)
     {
       int indent_level = 1;
       Statement *stmt = &(p->statements.elems[i]);
-      yaml_print_statement(stmt, &sb, &indent_level);
+      yaml_print_statement(p, stmt, &sb, &indent_level);
     }
   } break;
 
@@ -38,7 +40,7 @@ const char *program_to_string(const Program *p, Trace_Format kind)
     for (size_t i = 0; i < p->statements.len; ++i)
     {
       Statement *stmt = &(p->statements.elems[i]);
-      sexpr_print_statement(stmt, &sb);
+      sexpr_print_statement(p, stmt, &sb);
     }
   } break;
   }
@@ -77,7 +79,9 @@ static void yaml_print_header(const Program *p, String_Builder *sb)
 
 
 // TODO(HS): improve num indent spaces calculation
-static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int *indent_level)
+static void yaml_print_statement(
+  const Program *prog, const Statement *stmt, String_Builder *sb, int *indent_level
+)
 {
   yaml_print_indent(sb, *indent_level);
   string_builder_append_fmt(sb, "- kind: %s\n", statement_kind_to_string(stmt->kind));
@@ -88,7 +92,8 @@ static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int 
   case STMT_VAR:
   {
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "  ident: %s\n", stmt->statement.var_statement.ident);
+    const char *ident = ident_handle_to_ident(prog, stmt->statement.var_statement.ident_handle);
+    string_builder_append_fmt(sb, "  ident: %s\n", ident);
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "  expression:\n");
     *indent_level += 1;
@@ -197,13 +202,15 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
   }
 }
 
-static void sexpr_print_statement(const Statement *stmt, String_Builder *sb)
+static void sexpr_print_statement(const Program *prog, const Statement *stmt, String_Builder *sb)
 {
   switch (stmt->kind)
   {
   case STMT_VAR:
   {
-    string_builder_append_fmt(sb, "(var %s ", stmt->statement.var_statement.ident);
+    const char *ident = ident_handle_to_ident(prog, stmt->statement.var_statement.ident_handle);
+    string_builder_append_fmt(sb, "(var %s ", ident);
+    sexpr_print_expression(stmt->statement.var_statement.expression, sb);
     string_builder_append(sb, ")");
   } break;
 

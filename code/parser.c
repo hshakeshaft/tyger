@@ -192,6 +192,10 @@ static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *
 /// public functions
 ///
 
+///
+/// to_string functions
+///
+
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind)
 {
   const char *str;
@@ -273,6 +277,29 @@ const char *operator_to_string(Operator op)
   }
   return str;
 }
+
+///
+/// Handle converter functions
+///
+
+const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl)
+{
+  char *result;
+  if (hndl > p->context.identifiers.len)
+  {
+    result = NULL;
+  }
+  else
+  {
+    result = &(p->context.identifiers.elems[hndl]);
+  }
+  return result;
+}
+
+
+///
+/// Parser functions
+///
 
 void parser_init(Parser *p, Lexer *lx)
 {
@@ -360,11 +387,10 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
     return err;
   }
 
-  char *ident_start;
+  Ident_Handle handle = va_array_next_handle(ctx->identifiers);
   { // copy ident into dynamic array
     assert(p->cur_token.literal.str);
     assert(p->cur_token.literal.len > 0);
-    ident_start = &(ctx->identifiers.elems[ctx->identifiers.len]);
     va_array_append_n(ctx->identifiers, p->cur_token.literal.str, p->cur_token.literal.len);
     va_array_append_n(ctx->identifiers, PARSER_NULL_TERMINATOR, 1);
   }
@@ -399,7 +425,8 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
   stmt->kind = STMT_VAR;
   stmt->statement.var_statement = (Var_Statement) {
-    .ident = ident_start,
+    // .ident = ident_start,
+    .ident_handle = handle,
     .expression = hexpr
   };
 
