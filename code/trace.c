@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "trace.h"
 #include "tstrings.h"
 
@@ -137,7 +138,7 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
   case EXPR_INT:
   {
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "    value: %i\n", expr->expression.int_expression.value);
+    string_builder_append_fmt(sb, "    value: %" PRId64 "\n", expr->expression.int_expression.value);
   } break;
 
   case EXPR_STRING:
@@ -251,7 +252,7 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
   {
   case EXPR_INT:
   {
-    string_builder_append_fmt(sb, "%i", expr->expression.int_expression.value);
+    string_builder_append_fmt(sb, "%" PRId64 "", expr->expression.int_expression.value);
   } break;
 
   case EXPR_STRING:
