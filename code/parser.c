@@ -292,6 +292,16 @@ const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl)
   return result;
 }
 
+const char *string_handle_to_cstring(const Program *p, String_Handle hndl)
+{
+  char *result = NULL;
+  if (hndl < p->context.strings.len)
+  {
+    result = &(p->context.strings.elems[hndl]);
+  }
+  return result;
+}
+
 const Expression *expression_handle_to_expression(const Program *p, Expression_Handle hndl)
 {
   Expression *result = NULL;
@@ -492,15 +502,14 @@ Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *
 {
   Tyger_Error err = {0};
 
-  size_t str_value_handle = va_array_next_handle(ctx->strings);
+  size_t handle = va_array_next_handle(ctx->strings);
   va_array_append_n(ctx->strings, p->cur_token.literal.str, p->cur_token.literal.len);
   va_array_append_n(ctx->strings, PARSER_NULL_TERMINATOR, 1);
-  const char *str_value = va_array_address_of(ctx->strings, str_value_handle);
 
   *expr = (Expression) {
     .kind = EXPR_STRING,
     .expression.string_expression = (String_Expression) {
-      .value = str_value,
+      .string_handle = handle,
       .len = p->cur_token.literal.len
     }
   };

@@ -7,6 +7,7 @@
 
 typedef size_t Ident_Handle;
 typedef size_t Expression_Handle;
+typedef size_t String_Handle;
 
 typedef enum tyger_error_kind
 {
@@ -50,7 +51,7 @@ typedef struct int_expression
 
 typedef struct string_expression
 {
-  const char *value;
+  String_Handle string_handle;
   size_t len;
 } String_Expression;
 
@@ -178,6 +179,7 @@ const char *expression_kind_to_string(Expression_Kind kind);
 const char *operator_to_string(Operator op);
 
 const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl);
+const char *string_handle_to_cstring(const Program *p, String_Handle hndl);
 const Expression *expression_handle_to_expression(const Program *p, Expression_Handle hndl);
 
 Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *stmt);

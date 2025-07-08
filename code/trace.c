@@ -12,10 +12,12 @@ static void yaml_print_header(const Program *p, String_Builder *sb);
 static void yaml_print_statement(
   const Program *prog, const Statement *stmt, String_Builder *sb, int *indent_level
 );
-static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level);
+static void yaml_print_expression(
+  const Program *prog, const Expression *expr, String_Builder *sb, int *indent_level
+);
 
 static void sexpr_print_statement(const Program *prog, const Statement *stmt, String_Builder *sb);
-static void sexpr_print_expression(const Expression *expr, String_Builder *sb);
+static void sexpr_print_expression(const Program *prog, const Expression *expr, String_Builder *sb);
 
 const char *program_to_string(const Program *p, Trace_Format kind)
 {
@@ -100,7 +102,7 @@ static void yaml_print_statement(
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "  expression:\n");
     *indent_level += 1;
-    yaml_print_expression(expr, sb, indent_level);
+    yaml_print_expression(prog, expr, sb, indent_level);
     *indent_level -= 1;
   } break;
 
@@ -113,7 +115,7 @@ static void yaml_print_statement(
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "  expression:\n");
     *indent_level += 1;
-    yaml_print_expression(expr, sb, indent_level);
+    yaml_print_expression(prog, expr, sb, indent_level);
     *indent_level -= 1;
   } break;
 
@@ -128,7 +130,9 @@ static void yaml_print_statement(
   }
 }
 
-static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level)
+static void yaml_print_expression(
+  const Program *prog, const Expression *expr, String_Builder *sb, int *indent_level
+)
 {
   yaml_print_indent(sb, *indent_level);
   string_builder_append_fmt(sb, "  - kind: %s\n", expression_kind_to_string(expr->kind));
@@ -144,8 +148,9 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
   case EXPR_STRING:
   {
     const String_Expression *sexpr = &(expr->expression.string_expression);
+    const char *str_value = string_handle_to_cstring(prog, sexpr->string_handle);
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "    value: \"%s\"\n", sexpr->value);
+    string_builder_append_fmt(sb, "    value: \"%s\"\n", str_value);
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    len: %lu\n", sexpr->len);
   } break;
@@ -168,13 +173,13 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    lhs:\n");
     *indent_level += 1;
-    yaml_print_expression(iexpr->lhs, sb, indent_level);
+    yaml_print_expression(prog, iexpr->lhs, sb, indent_level);
     *indent_level -= 1;
 
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    rhs:\n");
     *indent_level += 1;
-    yaml_print_expression(iexpr->rhs, sb, indent_level);
+    yaml_print_expression(prog, iexpr->rhs, sb, indent_level);
     *indent_level -= 1;
   } break;
 
@@ -192,7 +197,7 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
     for (size_t i = 0; i < cexpr->args.len; ++i)
     {
       const Expression *arg = &(cexpr->args.elems[i]);
-      yaml_print_expression(arg, sb, indent_level);
+      yaml_print_expression(prog, arg, sb, indent_level);
     }
     *indent_level -= 1;
   } break;
@@ -219,7 +224,7 @@ static void sexpr_print_statement(const Program *prog, const Statement *stmt, St
     const Expression *expr = expression_handle_to_expression(prog, vs->expression_handle);
 
     string_builder_append_fmt(sb, "(var %s ", ident);
-    sexpr_print_expression(expr, sb);
+    sexpr_print_expression(prog, expr, sb);
     string_builder_append(sb, ")");
   } break;
 
@@ -229,7 +234,7 @@ static void sexpr_print_statement(const Program *prog, const Statement *stmt, St
       prog, stmt->statement.expression_statement.expression_handle
     );
     string_builder_append_fmt(sb, "(");
-    sexpr_print_expression(expr, sb);
+    sexpr_print_expression(prog, expr, sb);
     string_builder_append_fmt(sb, ")");
   } break;
 
@@ -246,7 +251,7 @@ static void sexpr_print_statement(const Program *prog, const Statement *stmt, St
   }
 }
 
-static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
+static void sexpr_print_expression(const Program *prog, const Expression *expr, String_Builder *sb)
 {
   switch (expr->kind)
   {
@@ -257,7 +262,10 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
 
   case EXPR_STRING:
   {
-    string_builder_append_fmt(sb, "\"%s\"", expr->expression.string_expression.value);
+    const char *str_value = string_handle_to_cstring(
+      prog, expr->expression.string_expression.string_handle
+    );
+    string_builder_append_fmt(sb, "\"%s\"", str_value);
   } break;
 
   case EXPR_IDENT:
@@ -272,9 +280,9 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
       const Infix_Expression *iexpr = &expr->expression.infix_expression;
       const char *op_str = operator_to_string(iexpr->op);
       string_builder_append_fmt(sb, "%s ", op_str);
-      sexpr_print_expression(iexpr->lhs, sb);
+      sexpr_print_expression(prog, iexpr->lhs, sb);
       string_builder_append_fmt(sb, " ", op_str);
-      sexpr_print_expression(iexpr->rhs, sb);
+      sexpr_print_expression(prog, iexpr->rhs, sb);
     }
     string_builder_append(sb, ")");
   } break;
@@ -289,7 +297,7 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
     for (size_t i = 0; i < cexpr->args.len; ++i)
     {
       const Expression *arg = &(cexpr->args.elems[i]);
-      sexpr_print_expression(arg, sb);
+      sexpr_print_expression(prog, arg, sb);
       if (!(i + 1 >= cexpr->args.len))
       {
         string_builder_append_fmt(sb, " ; ");

@@ -103,7 +103,6 @@ TEST(ParserTestSuite, Test_Int_Expression)
 
 // NOTE(HS): comment out as these are all about to break horribly with handle refactor
 // TODO(HS): reimplement test by test
-# if 0
 TEST(ParserTestSuite, Test_String_Expression)
 {
   struct String_Test
@@ -139,16 +138,18 @@ TEST(ParserTestSuite, Test_String_Expression)
     Statement *stmt = &(p.statements.elems[0]);
     EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
 
-    Expression *expr = stmt->statement.expression_statement.expression;
+    const Expression *expr = expression_handle_to_expression(
+      &p, stmt->statement.expression_statement.expression_handle
+    );
     EXPECT_EXPRESSION_IS(expr, EXPR_STRING);
 
-    String_Expression se = expr->expression.string_expression;
-    std::string act_value{se.value};
+    std::string act_value{string_handle_to_cstring(&p, expr->expression.string_expression.string_handle)};
     EXPECT_EQ(tc.expected, act_value) << prog_str;
     EXPECT_EQ(tc.expected.size(), act_value.size()) << prog_str;
   }
 }
 
+# if 0
 TEST(ParserTestSuite, Test_Ident_Expression)
 {
   struct Ident_Test
