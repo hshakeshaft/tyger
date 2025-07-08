@@ -184,8 +184,6 @@ static void yaml_print_expression(
     *indent_level -= 1;
   } break;
 
-  // NOTE(HS): doesn't allow code to compile
-#if 0
   case EXPR_CALL:
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
@@ -204,7 +202,6 @@ static void yaml_print_expression(
     }
     *indent_level -= 1;
   } break;
-#endif
 
   default:
   {
@@ -294,8 +291,6 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
     string_builder_append(sb, ")");
   } break;
 
-  // NOTE(HS): disallows compilation
-#if 0
   case EXPR_CALL:
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
@@ -315,7 +310,6 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
 
     string_builder_append(sb, "])");
   } break;
-#endif
   
   default:
   {
