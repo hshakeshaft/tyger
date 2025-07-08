@@ -57,7 +57,7 @@ typedef struct string_expression
 
 typedef struct ident_expression
 {
-  const char *ident;
+  Ident_Handle ident_handle;
 } Ident_Expression;
 
 typedef struct infix_expression
@@ -179,6 +179,7 @@ const char *expression_kind_to_string(Expression_Kind kind);
 const char *operator_to_string(Operator op);
 
 const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl);
+const char *ident_handle_to_evaluated_ident(const Program *p, Ident_Handle hndl);
 const char *string_handle_to_cstring(const Program *p, String_Handle hndl);
 const Expression *expression_handle_to_expression(const Program *p, Expression_Handle hndl);
 

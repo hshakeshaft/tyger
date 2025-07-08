@@ -292,6 +292,16 @@ const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl)
   return result;
 }
 
+const char *ident_handle_to_evaluated_ident(const Program *p, Ident_Handle hndl)
+{
+  char *result = NULL;
+  if (hndl < p->context.evaluated_identifiers.len)
+  {
+    result = &(p->context.evaluated_identifiers.elems[hndl]);
+  }
+  return result;
+}
+
 const char *string_handle_to_cstring(const Program *p, String_Handle hndl)
 {
   char *result = NULL;
@@ -521,14 +531,14 @@ Tyger_Error parse_ident_expression(Parser *p, Parser_Context *ctx, Expression *e
 {
   Tyger_Error err= {0};
 
-  const char *ident = va_array_next(ctx->evaluated_identifiers);
+  Ident_Handle handle = va_array_next_handle(ctx->evaluated_identifiers);
   va_array_append_n(ctx->evaluated_identifiers, p->cur_token.literal.str, p->cur_token.literal.len);
   va_array_append_n(ctx->evaluated_identifiers, PARSER_NULL_TERMINATOR, 1);
 
   *expr = (Expression) {
     .kind = EXPR_IDENT,
     .expression.ident_expression = (Ident_Expression) {
-      .ident = ident
+      .ident_handle = handle
     }
   };
 

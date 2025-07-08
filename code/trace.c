@@ -158,8 +158,9 @@ static void yaml_print_expression(
   case EXPR_IDENT:
   {
     const Ident_Expression *iexpr = &(expr->expression.ident_expression);
+    const char *ident = ident_handle_to_evaluated_ident(prog, iexpr->ident_handle);
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "    ident: %s\n", iexpr->ident);
+    string_builder_append_fmt(sb, "    ident: %s\n", ident);
   } break;
 
   case EXPR_INFIX:
@@ -183,6 +184,8 @@ static void yaml_print_expression(
     *indent_level -= 1;
   } break;
 
+  // NOTE(HS): doesn't allow code to compile
+#if 0
   case EXPR_CALL:
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
@@ -201,6 +204,7 @@ static void yaml_print_expression(
     }
     *indent_level -= 1;
   } break;
+#endif
 
   default:
   {
@@ -270,7 +274,10 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
 
   case EXPR_IDENT:
   {
-    string_builder_append_fmt(sb, "%s", expr->expression.ident_expression.ident);
+    const char *ident = ident_handle_to_evaluated_ident(
+      prog, expr->expression.ident_expression.ident_handle
+    );
+    string_builder_append_fmt(sb, "%s", ident);
   } break;
 
   case EXPR_INFIX:
@@ -287,6 +294,8 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
     string_builder_append(sb, ")");
   } break;
 
+  // NOTE(HS): disallows compilation
+#if 0
   case EXPR_CALL:
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
@@ -306,7 +315,8 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
 
     string_builder_append(sb, "])");
   } break;
-
+#endif
+  
   default:
   {
     fprintf(

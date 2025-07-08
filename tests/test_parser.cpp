@@ -101,8 +101,6 @@ TEST(ParserTestSuite, Test_Int_Expression)
   }
 }
 
-// NOTE(HS): comment out as these are all about to break horribly with handle refactor
-// TODO(HS): reimplement test by test
 TEST(ParserTestSuite, Test_String_Expression)
 {
   struct String_Test
@@ -149,19 +147,20 @@ TEST(ParserTestSuite, Test_String_Expression)
   }
 }
 
-# if 0
 TEST(ParserTestSuite, Test_Ident_Expression)
 {
   struct Ident_Test
   {
     const char *input;
-    const char *ident;
+    std::string ast;
   };
 
   std::vector<Ident_Test> test_cases{
-    { "x;", "x" },
-    { "foo;", "foo" },
-    { "fooBarBaz;", "fooBarBaz" },
+    { "x;", "(x)" },
+    { "foo;", "(foo)" },
+    { "fooBarBaz;", "(fooBarBaz)" },
+    { "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;", "(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa)" },
+    { "thequickbrownfoxjumpsoverthelazydog123456789;", "(thequickbrownfoxjumpsoverthelazydog123456789)" },
   };
 
   for (auto& tc : test_cases)
@@ -169,8 +168,10 @@ TEST(ParserTestSuite, Test_Ident_Expression)
     SETUP_PARSER_TEST_CASE(tc.input);
 
     const char *prog_str = program_to_string((Program*) &p, TRACE_YAML);
+    const char *act_ast = program_to_string((Program*) &p, TRACE_SEXPR);
     DEFER({
         delete prog_str;
+        delete act_ast;
         program_free((Program*) &p);
     });
 
@@ -180,15 +181,15 @@ TEST(ParserTestSuite, Test_Ident_Expression)
     Statement *stmt = &(p.statements.elems[0]);
     EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
 
-    Expression *expr = stmt->statement.expression_statement.expression;
+    const Expression *expr = expression_handle_to_expression(
+      &p, stmt->statement.expression_statement.expression_handle
+    );
     EXPECT_EXPRESSION_IS(expr, EXPR_IDENT);
-
-    std::string exp_ident{tc.ident};
-    std::string act_ident{expr->expression.ident_expression.ident};
-    EXPECT_EQ(exp_ident, act_ident);
+    EXPECT_EQ(tc.ast, act_ast);
   }
 }
 
+# if 0
 TEST(ParserTestSuite, Test_Infix_Expression)
 {
   struct Infix_Test
