@@ -188,8 +188,10 @@ static void yaml_print_expression(
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
     assert(cexpr->function->kind == EXPR_IDENT);
+    Ident_Handle ident_handle = cexpr->function->expression.ident_expression.ident_handle;
+    const char *ident = ident_handle_to_evaluated_ident(prog, ident_handle);
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "    name: %s\n", cexpr->function->expression.ident_expression.ident);
+    string_builder_append_fmt(sb, "    name: %s\n", ident);
 
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    args:\n");
@@ -295,8 +297,10 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
     assert(cexpr->function->kind == EXPR_IDENT);
+    Ident_Handle ident_handle = cexpr->function->expression.ident_expression.ident_handle;
+    const char *ident = ident_handle_to_evaluated_ident(prog, ident_handle);
 
-    string_builder_append_fmt(sb, "(%s [", cexpr->function->expression.ident_expression.ident);
+    string_builder_append_fmt(sb, "%s [", ident);
 
     for (size_t i = 0; i < cexpr->args.len; ++i)
     {
@@ -308,7 +312,7 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
       }
     }
 
-    string_builder_append(sb, "])");
+    string_builder_append(sb, "]");
   } break;
   
   default:

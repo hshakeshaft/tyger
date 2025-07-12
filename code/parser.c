@@ -281,6 +281,8 @@ const char *operator_to_string(Operator op)
 ///
 /// Handle converter functions
 ///
+// TODO(HS): need to update functions here to accept the raw dynamic array which
+// can then be operated on (otherwise we get problems).
 
 const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl)
 {

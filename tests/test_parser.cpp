@@ -7,6 +7,7 @@
 // TODO(HS): add some more rigourous parsing example test cases
 // TODO(HS): test error handling for invalid var statements
 
+// TODO(HS): check parsing infix expressions from here too (partly for trace)
 // TODO(HS): might be able to just run asserts on the `sexpr` trace form,
 TEST(ParserTestSuite, Test_Var_Statement)
 {
@@ -318,6 +319,7 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
     EXPECT_EQ(exp_ast_string, act_ast_string) << prog_str;
   }
 }
+#endif
 
 // TODO(HS): add more test cases when support added for other function idents
 TEST(ParserTestSuite, Test_Call_Expression)
@@ -359,10 +361,12 @@ TEST(ParserTestSuite, Test_Call_Expression)
     Statement *stmt = &(p.statements.elems[0]);
     EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION) << prog_str;
 
-    Expression *expr = stmt->statement.expression_statement.expression;
+    const Expression *expr = expression_handle_to_expression(
+      &p, stmt->statement.expression_statement.expression_handle
+    );
     EXPECT_EXPRESSION_IS(expr, EXPR_CALL) << prog_str;
 
-    Call_Expression *ce = &(expr->expression.call_expression);
+    const Call_Expression *ce = &(expr->expression.call_expression);
     ASSERT_EQ(ce->args.len, tc.arg_count) << prog_str;
 
     std::string act_ast_string{act_ast};
@@ -370,4 +374,3 @@ TEST(ParserTestSuite, Test_Call_Expression)
     EXPECT_EQ(act_ast_string, exp_ast_string) << prog_str;
   }
 }
-#endif
