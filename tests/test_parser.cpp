@@ -190,7 +190,6 @@ TEST(ParserTestSuite, Test_Ident_Expression)
   }
 }
 
-# if 0
 TEST(ParserTestSuite, Test_Infix_Expression)
 {
   struct Infix_Test
@@ -201,15 +200,16 @@ TEST(ParserTestSuite, Test_Infix_Expression)
     const char *ast;    // S-expression like formatted representation of AST
   };
 
+  // TODO(HS): figure out a better way to handle the nesting of `()¬
   std::vector<Infix_Test> test_cases{
-    { "1 + 1;",  0, 1, "(+ 1 1)" },
-    { "1 - 1;",  0, 1, "(- 1 1)" },
-    { "1 * 1;",  0, 1, "(* 1 1)" },
-    { "1 / 1;",  0, 1, "(/ 1 1)" },
-    { "1 < 1;",  0, 1, "(< 1 1)" },
-    { "1 > 1;",  0, 1, "(> 1 1)" },
-    { "1 == 1;", 0, 1, "(== 1 1)" },
-    { "1 != 1;", 0, 1, "(!= 1 1)" },
+    { "1 + 1;",  0, 1, "((+ 1 1))" },
+    { "1 - 1;",  0, 1, "((- 1 1))" },
+    { "1 * 1;",  0, 1, "((* 1 1))" },
+    { "1 / 1;",  0, 1, "((/ 1 1))" },
+    { "1 < 1;",  0, 1, "((< 1 1))" },
+    { "1 > 1;",  0, 1, "((> 1 1))" },
+    { "1 == 1;", 0, 1, "((== 1 1))" },
+    { "1 != 1;", 0, 1, "((!= 1 1))" },
   };
 
   for (auto& tc : test_cases)
@@ -230,7 +230,9 @@ TEST(ParserTestSuite, Test_Infix_Expression)
     Statement *stmt = &(p.statements.elems[0]);
     EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION);
 
-    Expression *expr = stmt->statement.expression_statement.expression;
+    const Expression *expr = expression_handle_to_expression(
+      &p, stmt->statement.expression_statement.expression_handle
+    );
     EXPECT_EXPRESSION_IS(expr, EXPR_INFIX);
 
     std::string act_ast_string{act_ast};
@@ -239,6 +241,7 @@ TEST(ParserTestSuite, Test_Infix_Expression)
   }
 }
 
+# if 0
 // TODO(HS): some more rigourous test cases to robustly check arbitrary nesting
 // TODO(HS): add logical operators to test cases
 TEST(ParserTestSuite, Test_Operator_Precidence)
