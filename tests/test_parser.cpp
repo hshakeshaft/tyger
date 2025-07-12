@@ -241,7 +241,6 @@ TEST(ParserTestSuite, Test_Infix_Expression)
   }
 }
 
-# if 0
 // TODO(HS): some more rigourous test cases to robustly check arbitrary nesting
 // TODO(HS): add logical operators to test cases
 TEST(ParserTestSuite, Test_Operator_Precidence)
@@ -253,18 +252,18 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
   };
 
   std::vector<Precidence_Test> test_cases{
-    { "1 + 2 + 3;", "(+ (+ 1 2) 3)" },
-    { "1 - 2 - 3;", "(- (- 1 2) 3)" },
-    { "1 + 2 - 3;", "(- (+ 1 2) 3)" },
+    { "1 + 2 + 3;", "((+ (+ 1 2) 3))" },
+    { "1 - 2 - 3;", "((- (- 1 2) 3))" },
+    { "1 + 2 - 3;", "((- (+ 1 2) 3))" },
 
-    { "1 * 2;", "(* 1 2)" },
-    { "4 / 2;", "(/ 4 2)" },
-    { "4 * 3 / 2", "(/ (* 4 3) 2)" },
+    { "1 * 2;", "((* 1 2))" },
+    { "4 / 2;", "((/ 4 2))" },
+    { "4 * 3 / 2", "((/ (* 4 3) 2))" },
 
-    { "1 + 2 * 3;", "(+ 1 (* 2 3))" },
-    { "4 + 9 / 3;", "(+ 4 (/ 9 3))" },
+    { "1 + 2 * 3;", "((+ 1 (* 2 3)))" },
+    { "4 + 9 / 3;", "((+ 4 (/ 9 3)))" },
 
-    { "1 + 2 - 3 * 4 / 5;", "(- (+ 1 2) (/ (* 3 4) 5))" },
+    { "1 + 2 - 3 * 4 / 5;", "((- (+ 1 2) (/ (* 3 4) 5)))" },
                                                      /*
                                                             (-)
                                                            /   \
@@ -277,10 +276,10 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
                                                            (3)  (4)
                                                      */
 
-    { "5 > 4 == 3 < 4;", "(== (> 5 4) (< 3 4))" },
-    { "5 > 4 != 3 < 4;", "(!= (> 5 4) (< 3 4))" },
+    { "5 > 4 == 3 < 4;", "((== (> 5 4) (< 3 4)))" },
+    { "5 > 4 != 3 < 4;", "((!= (> 5 4) (< 3 4)))" },
 
-    { "a + b * c + d / e - f;", "(- (+ (+ a (* b c)) (/ d e)) f)" },
+    { "a + b * c + d / e - f;", "((- (+ (+ a (* b c)) (/ d e)) f))" },
                                                             /*
                                                                         (-)
                                                                        /   \
@@ -314,7 +313,9 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
     Statement *stmt = &(p.statements.elems[0]);
     EXPECT_STATEMENT_IS(stmt, STMT_EXPRESSION) << prog_str;
 
-    Expression *expr = stmt->statement.expression_statement.expression;
+    const Expression *expr = expression_handle_to_expression(
+      &p, stmt->statement.expression_statement.expression_handle
+    );
     EXPECT_EXPRESSION_IS(expr, EXPR_INFIX) << prog_str;
 
     std::string act_ast_string{act_ast};
@@ -322,7 +323,6 @@ TEST(ParserTestSuite, Test_Operator_Precidence)
     EXPECT_EQ(exp_ast_string, act_ast_string) << prog_str;
   }
 }
-#endif
 
 // TODO(HS): add more test cases when support added for other function idents
 TEST(ParserTestSuite, Test_Call_Expression)
