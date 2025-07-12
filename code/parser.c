@@ -573,7 +573,7 @@ Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *e
   Operator op = token_kind_to_operator(p->cur_token.kind);
   parser_next_token(p);
 
-  Expression *lhs_handle = va_array_next(ctx->expressions);
+  Expression_Handle lhs_handle = va_array_next_handle(ctx->expressions);
   va_array_append(ctx->expressions, *expr);
 
   Expression rhs;
@@ -582,7 +582,7 @@ Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *e
   {
     return err;
   }
-  Expression *rhs_handle = va_array_next(ctx->expressions);
+  Expression_Handle rhs_handle = va_array_next_handle(ctx->expressions);
   va_array_append(ctx->expressions, rhs);
 
   *expr = (Expression) {

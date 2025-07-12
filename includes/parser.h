@@ -63,8 +63,8 @@ typedef struct ident_expression
 typedef struct infix_expression
 {
   Operator op;
-  Expression *lhs;
-  Expression *rhs;
+  Expression_Handle lhs;
+  Expression_Handle rhs;
 } Infix_Expression;
 
 typedef struct argument_list

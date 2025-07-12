@@ -174,13 +174,15 @@ static void yaml_print_expression(
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    lhs:\n");
     *indent_level += 1;
-    yaml_print_expression(prog, iexpr->lhs, sb, indent_level);
+    const Expression *lhs = expression_handle_to_expression(prog, iexpr->lhs);
+    yaml_print_expression(prog, lhs, sb, indent_level);
     *indent_level -= 1;
 
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    rhs:\n");
     *indent_level += 1;
-    yaml_print_expression(prog, iexpr->rhs, sb, indent_level);
+    const Expression *rhs = expression_handle_to_expression(prog, iexpr->rhs);
+    yaml_print_expression(prog, rhs, sb, indent_level);
     *indent_level -= 1;
   } break;
 
@@ -285,11 +287,13 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
     string_builder_append(sb, "(");
     {
       const Infix_Expression *iexpr = &expr->expression.infix_expression;
+      const Expression *lhs = expression_handle_to_expression(prog, iexpr->lhs);
+      const Expression *rhs = expression_handle_to_expression(prog, iexpr->rhs);
       const char *op_str = operator_to_string(iexpr->op);
       string_builder_append_fmt(sb, "%s ", op_str);
-      sexpr_print_expression(prog, iexpr->lhs, sb);
+      sexpr_print_expression(prog, lhs, sb);
       string_builder_append_fmt(sb, " ", op_str);
-      sexpr_print_expression(prog, iexpr->rhs, sb);
+      sexpr_print_expression(prog, rhs, sb);
     }
     string_builder_append(sb, ")");
   } break;
