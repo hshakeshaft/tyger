@@ -609,7 +609,7 @@ Tyger_Error parse_call_expression(Parser *p, Parser_Context *ctx, Expression *ex
     return err;
   }
 
-  Expression *function_handle = va_array_next(ctx->expressions);
+  Expression_Handle function_handle = va_array_next_handle(ctx->expressions);
   va_array_append(ctx->expressions, function);
 
   if (!expect_peek(p, TK_LPAREN))

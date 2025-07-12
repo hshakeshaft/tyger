@@ -187,8 +187,9 @@ static void yaml_print_expression(
   case EXPR_CALL:
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
-    assert(cexpr->function->kind == EXPR_IDENT);
-    Ident_Handle ident_handle = cexpr->function->expression.ident_expression.ident_handle;
+    const Expression *function = expression_handle_to_expression(prog, cexpr->function);
+    assert(function->kind == EXPR_IDENT);
+    Ident_Handle ident_handle = function->expression.ident_expression.ident_handle;
     const char *ident = ident_handle_to_evaluated_ident(prog, ident_handle);
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    name: %s\n", ident);
@@ -296,8 +297,9 @@ static void sexpr_print_expression(const Program *prog, const Expression *expr, 
   case EXPR_CALL:
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
-    assert(cexpr->function->kind == EXPR_IDENT);
-    Ident_Handle ident_handle = cexpr->function->expression.ident_expression.ident_handle;
+    const Expression *function = expression_handle_to_expression(prog, cexpr->function);
+    assert(function->kind == EXPR_IDENT);
+    Ident_Handle ident_handle = function->expression.ident_expression.ident_handle;
     const char *ident = ident_handle_to_evaluated_ident(prog, ident_handle);
 
     string_builder_append_fmt(sb, "%s [", ident);

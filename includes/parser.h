@@ -76,7 +76,7 @@ typedef struct argument_list
 
 typedef struct call_expression
 {
-  Expression *function;
+  Expression_Handle function;
   Argument_List args;
 } Call_Expression;
 
