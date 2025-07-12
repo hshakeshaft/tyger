@@ -6,6 +6,9 @@
 #include "lexer.h"
 #include "util.h"
 
+// TODO(HS): refactor all instances of `va_array_next` out - may cause bugs if reallocs
+// occur (use the `next_handle` pattern)
+
 // NOTE(HS): way to fudge being able to pass a string containing the null terminator
 // into va_array_append_n calls.
 static const char *PARSER_NULL_TERMINATOR = "\0";
@@ -189,6 +192,10 @@ static Tyger_Error parse_expression(Parser *p, Parser_Context *ctx, Expression *
 /// public functions
 ///
 
+///
+/// to_string functions
+///
+
 const char *tyger_error_kind_to_string(Tyger_Error_Kind kind)
 {
   const char *str;
@@ -270,6 +277,57 @@ const char *operator_to_string(Operator op)
   }
   return str;
 }
+
+///
+/// Handle converter functions
+///
+// TODO(HS): need to update functions here to accept the raw dynamic array which
+// can then be operated on (otherwise we get problems).
+
+const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl)
+{
+  char *result = NULL;
+  if (hndl < p->context.identifiers.len)
+  {
+    result = &(p->context.identifiers.elems[hndl]);
+  }
+  return result;
+}
+
+const char *ident_handle_to_evaluated_ident(const Program *p, Ident_Handle hndl)
+{
+  char *result = NULL;
+  if (hndl < p->context.evaluated_identifiers.len)
+  {
+    result = &(p->context.evaluated_identifiers.elems[hndl]);
+  }
+  return result;
+}
+
+const char *string_handle_to_cstring(const Program *p, String_Handle hndl)
+{
+  char *result = NULL;
+  if (hndl < p->context.strings.len)
+  {
+    result = &(p->context.strings.elems[hndl]);
+  }
+  return result;
+}
+
+const Expression *expression_handle_to_expression(const Program *p, Expression_Handle hndl)
+{
+  Expression *result = NULL;
+  if (hndl < p->context.expressions.len)
+  {
+    return &(p->context.expressions.elems[hndl]);
+  }
+  return result;
+}
+
+
+///
+/// Parser functions
+///
 
 void parser_init(Parser *p, Lexer *lx)
 {
@@ -357,11 +415,10 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
     return err;
   }
 
-  char *ident_start;
+  Ident_Handle ident_handle = va_array_next_handle(ctx->identifiers);
   { // copy ident into dynamic array
     assert(p->cur_token.literal.str);
     assert(p->cur_token.literal.len > 0);
-    ident_start = &(ctx->identifiers.elems[ctx->identifiers.len]);
     va_array_append_n(ctx->identifiers, p->cur_token.literal.str, p->cur_token.literal.len);
     va_array_append_n(ctx->identifiers, PARSER_NULL_TERMINATOR, 1);
   }
@@ -380,7 +437,7 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
   parser_next_token(p);
 
-  Expression *hexpr = va_array_next(ctx->expressions);
+  Expression_Handle expression_handle = va_array_next_handle(ctx->expressions);
   Expression expr;
   err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
   if (err.kind != TYERR_NONE)
@@ -396,8 +453,8 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
   stmt->kind = STMT_VAR;
   stmt->statement.var_statement = (Var_Statement) {
-    .ident = ident_start,
-    .expression = hexpr
+    .ident_handle = ident_handle,
+    .expression_handle = expression_handle,
   };
 
   return err;
@@ -405,34 +462,32 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
 Tyger_Error parse_expression_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 {
-  Expression expr;
-  Tyger_Error err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
+  Tyger_Error err = {0};
 
-  Expression *hexpr = &(ctx->expressions.elems[ctx->expressions.len]);
-  if (err.kind == TYERR_NONE)
-  {
-    va_array_append(ctx->expressions, expr);
-  }
-  else
+  Expression expr;
+  err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
+  if (err.kind != TYERR_NONE)
   {
     return err;
   }
 
+  Expression_Handle handle = va_array_next_handle(ctx->expressions);
+  va_array_append(ctx->expressions, expr);
+
   *stmt = (Statement) {
     .kind = STMT_EXPRESSION,
     .statement.expression_statement = (Expression_Statement) {
-      .expression = hexpr,
+      .expression_handle = handle
     }
   };
 
-  if (peek_token_is(p, TK_SEMICOLON))
-  {
-    parser_next_token(p);
-  }
+  expect_peek(p, TK_SEMICOLON);
 
   return err;
 }
 
+// TODO(HS): handle overflow cases for INT64_MAX when parsing `- INT64_MIN`
+// NOTE(HS): this is probably something for eval time
 Tyger_Error parse_int_expression(Parser *p, Expression *expr)
 {
   Tyger_Error err = {0};
@@ -455,21 +510,18 @@ Tyger_Error parse_int_expression(Parser *p, Expression *expr)
 } 
 
 // TODO(HS): more robust string parsing
-// TODO(HS): refactor all instances of `va_array_next` out - may cause bugs if reallocs
-// occur (use the `next_handle` pattern)
 Tyger_Error parse_string_expression(Parser *p, Parser_Context *ctx, Expression *expr)
 {
   Tyger_Error err = {0};
 
-  size_t str_value_handle = va_array_next_handle(ctx->strings);
+  size_t handle = va_array_next_handle(ctx->strings);
   va_array_append_n(ctx->strings, p->cur_token.literal.str, p->cur_token.literal.len);
   va_array_append_n(ctx->strings, PARSER_NULL_TERMINATOR, 1);
-  const char *str_value = va_array_address_of(ctx->strings, str_value_handle);
 
   *expr = (Expression) {
     .kind = EXPR_STRING,
     .expression.string_expression = (String_Expression) {
-      .value = str_value,
+      .string_handle = handle,
       .len = p->cur_token.literal.len
     }
   };
@@ -481,14 +533,14 @@ Tyger_Error parse_ident_expression(Parser *p, Parser_Context *ctx, Expression *e
 {
   Tyger_Error err= {0};
 
-  const char *ident = va_array_next(ctx->evaluated_identifiers);
+  Ident_Handle handle = va_array_next_handle(ctx->evaluated_identifiers);
   va_array_append_n(ctx->evaluated_identifiers, p->cur_token.literal.str, p->cur_token.literal.len);
   va_array_append_n(ctx->evaluated_identifiers, PARSER_NULL_TERMINATOR, 1);
 
   *expr = (Expression) {
     .kind = EXPR_IDENT,
     .expression.ident_expression = (Ident_Expression) {
-      .ident = ident
+      .ident_handle = handle
     }
   };
 
@@ -521,7 +573,7 @@ Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *e
   Operator op = token_kind_to_operator(p->cur_token.kind);
   parser_next_token(p);
 
-  Expression *lhs_handle = va_array_next(ctx->expressions);
+  Expression_Handle lhs_handle = va_array_next_handle(ctx->expressions);
   va_array_append(ctx->expressions, *expr);
 
   Expression rhs;
@@ -530,7 +582,7 @@ Tyger_Error parse_infix_expression(Parser *p, Parser_Context *ctx, Expression *e
   {
     return err;
   }
-  Expression *rhs_handle = va_array_next(ctx->expressions);
+  Expression_Handle rhs_handle = va_array_next_handle(ctx->expressions);
   va_array_append(ctx->expressions, rhs);
 
   *expr = (Expression) {
@@ -557,7 +609,7 @@ Tyger_Error parse_call_expression(Parser *p, Parser_Context *ctx, Expression *ex
     return err;
   }
 
-  Expression *function_handle = va_array_next(ctx->expressions);
+  Expression_Handle function_handle = va_array_next_handle(ctx->expressions);
   va_array_append(ctx->expressions, function);
 
   if (!expect_peek(p, TK_LPAREN))

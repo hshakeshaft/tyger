@@ -5,6 +5,10 @@
 #include "tstrings.h"
 #include "lexer.h"
 
+typedef size_t Ident_Handle;
+typedef size_t Expression_Handle;
+typedef size_t String_Handle;
+
 typedef enum tyger_error_kind
 {
 #define X(NAME) TYERR_##NAME,
@@ -47,20 +51,20 @@ typedef struct int_expression
 
 typedef struct string_expression
 {
-  const char *value;
+  String_Handle string_handle;
   size_t len;
 } String_Expression;
 
 typedef struct ident_expression
 {
-  const char *ident;
+  Ident_Handle ident_handle;
 } Ident_Expression;
 
 typedef struct infix_expression
 {
   Operator op;
-  Expression *lhs;
-  Expression *rhs;
+  Expression_Handle lhs;
+  Expression_Handle rhs;
 } Infix_Expression;
 
 typedef struct argument_list
@@ -72,7 +76,7 @@ typedef struct argument_list
 
 typedef struct call_expression
 {
-  Expression *function;
+  Expression_Handle function;
   Argument_List args;
 } Call_Expression;
 
@@ -93,13 +97,13 @@ struct expression
 
 typedef struct var_statement
 {
-  const char *ident;
-  Expression *expression;
+  Ident_Handle ident_handle;
+  Expression_Handle expression_handle;
 } Var_Statement;
 
 typedef struct expression_statement
 {
-  Expression *expression;
+  Expression_Handle expression_handle;
 } Expression_Statement;
 
 typedef union ustatement
@@ -173,6 +177,11 @@ const char *tyger_error_kind_to_string(Tyger_Error_Kind kind);
 const char *statement_kind_to_string(Statement_Kind kind);
 const char *expression_kind_to_string(Expression_Kind kind);
 const char *operator_to_string(Operator op);
+
+const char *ident_handle_to_ident(const Program *p, Ident_Handle hndl);
+const char *ident_handle_to_evaluated_ident(const Program *p, Ident_Handle hndl);
+const char *string_handle_to_cstring(const Program *p, String_Handle hndl);
+const Expression *expression_handle_to_expression(const Program *p, Expression_Handle hndl);
 
 Tyger_Error parser_parse_statement(Parser *p, Parser_Context *ctx, Statement *stmt);
 Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt);

@@ -2,17 +2,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "trace.h"
 #include "tstrings.h"
 
 #define TRACE_YAML_SPACES_PER_INDENT_LEVEL 4
 
 static void yaml_print_header(const Program *p, String_Builder *sb);
-static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int *indent_level);
-static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level);
+static void yaml_print_statement(
+  const Program *prog, const Statement *stmt, String_Builder *sb, int *indent_level
+);
+static void yaml_print_expression(
+  const Program *prog, const Expression *expr, String_Builder *sb, int *indent_level
+);
 
-static void sexpr_print_statement(const Statement *stmt, String_Builder *sb);
-static void sexpr_print_expression(const Expression *expr, String_Builder *sb);
+static void sexpr_print_statement(const Program *prog, const Statement *stmt, String_Builder *sb);
+static void sexpr_print_expression(const Program *prog, const Expression *expr, String_Builder *sb);
 
 const char *program_to_string(const Program *p, Trace_Format kind)
 {
@@ -29,7 +34,7 @@ const char *program_to_string(const Program *p, Trace_Format kind)
     {
       int indent_level = 1;
       Statement *stmt = &(p->statements.elems[i]);
-      yaml_print_statement(stmt, &sb, &indent_level);
+      yaml_print_statement(p, stmt, &sb, &indent_level);
     }
   } break;
 
@@ -38,7 +43,7 @@ const char *program_to_string(const Program *p, Trace_Format kind)
     for (size_t i = 0; i < p->statements.len; ++i)
     {
       Statement *stmt = &(p->statements.elems[i]);
-      sexpr_print_statement(stmt, &sb);
+      sexpr_print_statement(p, stmt, &sb);
     }
   } break;
   }
@@ -77,32 +82,40 @@ static void yaml_print_header(const Program *p, String_Builder *sb)
 
 
 // TODO(HS): improve num indent spaces calculation
-static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int *indent_level)
+static void yaml_print_statement(
+  const Program *prog, const Statement *stmt, String_Builder *sb, int *indent_level
+)
 {
   yaml_print_indent(sb, *indent_level);
   string_builder_append_fmt(sb, "- kind: %s\n", statement_kind_to_string(stmt->kind));
 
-  // TODO(HS): write YAML body for statement kinds
   switch (stmt->kind)
   {
   case STMT_VAR:
   {
+    const Var_Statement *vs = &stmt->statement.var_statement;
+    const char *ident = ident_handle_to_ident(prog, vs->ident_handle);
+    const Expression *expr = expression_handle_to_expression(prog, vs->expression_handle);
+
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "  ident: %s\n", stmt->statement.var_statement.ident);
+    string_builder_append_fmt(sb, "  ident: %s\n", ident);
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "  expression:\n");
     *indent_level += 1;
-    yaml_print_expression(stmt->statement.var_statement.expression, sb, indent_level);
+    yaml_print_expression(prog, expr, sb, indent_level);
     *indent_level -= 1;
   } break;
 
   case STMT_EXPRESSION:
   {
+    const Expression *expr = expression_handle_to_expression(
+      prog, stmt->statement.expression_statement.expression_handle
+    );
+
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "  expression:\n");
-    const Expression *expr = stmt->statement.expression_statement.expression;
     *indent_level += 1;
-    yaml_print_expression(expr, sb, indent_level);
+    yaml_print_expression(prog, expr, sb, indent_level);
     *indent_level -= 1;
   } break;
 
@@ -117,7 +130,9 @@ static void yaml_print_statement(const Statement *stmt, String_Builder *sb, int 
   }
 }
 
-static void yaml_print_expression(const Expression *expr, String_Builder *sb, int *indent_level)
+static void yaml_print_expression(
+  const Program *prog, const Expression *expr, String_Builder *sb, int *indent_level
+)
 {
   yaml_print_indent(sb, *indent_level);
   string_builder_append_fmt(sb, "  - kind: %s\n", expression_kind_to_string(expr->kind));
@@ -127,14 +142,15 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
   case EXPR_INT:
   {
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "    value: %i\n", expr->expression.int_expression.value);
+    string_builder_append_fmt(sb, "    value: %" PRId64 "\n", expr->expression.int_expression.value);
   } break;
 
   case EXPR_STRING:
   {
     const String_Expression *sexpr = &(expr->expression.string_expression);
+    const char *str_value = string_handle_to_cstring(prog, sexpr->string_handle);
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "    value: \"%s\"\n", sexpr->value);
+    string_builder_append_fmt(sb, "    value: \"%s\"\n", str_value);
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    len: %lu\n", sexpr->len);
   } break;
@@ -142,8 +158,9 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
   case EXPR_IDENT:
   {
     const Ident_Expression *iexpr = &(expr->expression.ident_expression);
+    const char *ident = ident_handle_to_evaluated_ident(prog, iexpr->ident_handle);
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "    ident: %s\n", iexpr->ident);
+    string_builder_append_fmt(sb, "    ident: %s\n", ident);
   } break;
 
   case EXPR_INFIX:
@@ -157,22 +174,27 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    lhs:\n");
     *indent_level += 1;
-    yaml_print_expression(iexpr->lhs, sb, indent_level);
+    const Expression *lhs = expression_handle_to_expression(prog, iexpr->lhs);
+    yaml_print_expression(prog, lhs, sb, indent_level);
     *indent_level -= 1;
 
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    rhs:\n");
     *indent_level += 1;
-    yaml_print_expression(iexpr->rhs, sb, indent_level);
+    const Expression *rhs = expression_handle_to_expression(prog, iexpr->rhs);
+    yaml_print_expression(prog, rhs, sb, indent_level);
     *indent_level -= 1;
   } break;
 
   case EXPR_CALL:
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
-    assert(cexpr->function->kind == EXPR_IDENT);
+    const Expression *function = expression_handle_to_expression(prog, cexpr->function);
+    assert(function->kind == EXPR_IDENT);
+    Ident_Handle ident_handle = function->expression.ident_expression.ident_handle;
+    const char *ident = ident_handle_to_evaluated_ident(prog, ident_handle);
     yaml_print_indent(sb, *indent_level);
-    string_builder_append_fmt(sb, "    name: %s\n", cexpr->function->expression.ident_expression.ident);
+    string_builder_append_fmt(sb, "    name: %s\n", ident);
 
     yaml_print_indent(sb, *indent_level);
     string_builder_append_fmt(sb, "    args:\n");
@@ -181,7 +203,7 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
     for (size_t i = 0; i < cexpr->args.len; ++i)
     {
       const Expression *arg = &(cexpr->args.elems[i]);
-      yaml_print_expression(arg, sb, indent_level);
+      yaml_print_expression(prog, arg, sb, indent_level);
     }
     *indent_level -= 1;
   } break;
@@ -197,20 +219,29 @@ static void yaml_print_expression(const Expression *expr, String_Builder *sb, in
   }
 }
 
-static void sexpr_print_statement(const Statement *stmt, String_Builder *sb)
+static void sexpr_print_statement(const Program *prog, const Statement *stmt, String_Builder *sb)
 {
   switch (stmt->kind)
   {
   case STMT_VAR:
   {
-    string_builder_append_fmt(sb, "(var %s ", stmt->statement.var_statement.ident);
+    const Var_Statement *vs = &stmt->statement.var_statement;
+    const char *ident = ident_handle_to_ident(prog, vs->ident_handle);
+    const Expression *expr = expression_handle_to_expression(prog, vs->expression_handle);
+
+    string_builder_append_fmt(sb, "(var %s ", ident);
+    sexpr_print_expression(prog, expr, sb);
     string_builder_append(sb, ")");
   } break;
 
   case STMT_EXPRESSION:
   {
-    const Expression *expr = stmt->statement.expression_statement.expression;
-    sexpr_print_expression(expr, sb);
+    const Expression *expr = expression_handle_to_expression(
+      prog, stmt->statement.expression_statement.expression_handle
+    );
+    string_builder_append_fmt(sb, "(");
+    sexpr_print_expression(prog, expr, sb);
+    string_builder_append_fmt(sb, ")");
   } break;
 
   default:
@@ -226,23 +257,29 @@ static void sexpr_print_statement(const Statement *stmt, String_Builder *sb)
   }
 }
 
-static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
+static void sexpr_print_expression(const Program *prog, const Expression *expr, String_Builder *sb)
 {
   switch (expr->kind)
   {
   case EXPR_INT:
   {
-    string_builder_append_fmt(sb, "%i", expr->expression.int_expression.value);
+    string_builder_append_fmt(sb, "%" PRId64 "", expr->expression.int_expression.value);
   } break;
 
   case EXPR_STRING:
   {
-    string_builder_append_fmt(sb, "\"%s\"", expr->expression.string_expression.value);
+    const char *str_value = string_handle_to_cstring(
+      prog, expr->expression.string_expression.string_handle
+    );
+    string_builder_append_fmt(sb, "\"%s\"", str_value);
   } break;
 
   case EXPR_IDENT:
   {
-    string_builder_append_fmt(sb, "%s", expr->expression.ident_expression.ident);
+    const char *ident = ident_handle_to_evaluated_ident(
+      prog, expr->expression.ident_expression.ident_handle
+    );
+    string_builder_append_fmt(sb, "%s", ident);
   } break;
 
   case EXPR_INFIX:
@@ -250,11 +287,13 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
     string_builder_append(sb, "(");
     {
       const Infix_Expression *iexpr = &expr->expression.infix_expression;
+      const Expression *lhs = expression_handle_to_expression(prog, iexpr->lhs);
+      const Expression *rhs = expression_handle_to_expression(prog, iexpr->rhs);
       const char *op_str = operator_to_string(iexpr->op);
       string_builder_append_fmt(sb, "%s ", op_str);
-      sexpr_print_expression(iexpr->lhs, sb);
+      sexpr_print_expression(prog, lhs, sb);
       string_builder_append_fmt(sb, " ", op_str);
-      sexpr_print_expression(iexpr->rhs, sb);
+      sexpr_print_expression(prog, rhs, sb);
     }
     string_builder_append(sb, ")");
   } break;
@@ -262,23 +301,26 @@ static void sexpr_print_expression(const Expression *expr, String_Builder *sb)
   case EXPR_CALL:
   {
     const Call_Expression *cexpr = &expr->expression.call_expression;
-    assert(cexpr->function->kind == EXPR_IDENT);
+    const Expression *function = expression_handle_to_expression(prog, cexpr->function);
+    assert(function->kind == EXPR_IDENT);
+    Ident_Handle ident_handle = function->expression.ident_expression.ident_handle;
+    const char *ident = ident_handle_to_evaluated_ident(prog, ident_handle);
 
-    string_builder_append_fmt(sb, "(%s [", cexpr->function->expression.ident_expression.ident);
+    string_builder_append_fmt(sb, "%s [", ident);
 
     for (size_t i = 0; i < cexpr->args.len; ++i)
     {
       const Expression *arg = &(cexpr->args.elems[i]);
-      sexpr_print_expression(arg, sb);
+      sexpr_print_expression(prog, arg, sb);
       if (!(i + 1 >= cexpr->args.len))
       {
         string_builder_append_fmt(sb, " ; ");
       }
     }
 
-    string_builder_append(sb, "])");
+    string_builder_append(sb, "]");
   } break;
-
+  
   default:
   {
     fprintf(
