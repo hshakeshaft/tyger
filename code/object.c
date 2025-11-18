@@ -23,7 +23,7 @@ void tyobj_inspect(const TyObj *obj)
   {
   case TYOBJ_INT:
   {
-    printf("%I64i", obj->o.integer.val);
+    printf("%I64i", obj->o.integer.value);
   } break;
 
   default:

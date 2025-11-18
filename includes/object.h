@@ -11,7 +11,7 @@ typedef enum tyobject_kind
 
 typedef struct tyinteger
 {
-  int64_t val;
+  int64_t value;
 } TyInteger;
 
 typedef union utyobj
@@ -27,5 +27,6 @@ typedef struct tyobj
 
 const char *tyobj_kind_to_string(TyObject_Kind k);
 void tyobj_inspect(const TyObj *obj);
+
 
 #endif  // TYGER_OBJECT_H_
