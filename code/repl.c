@@ -4,7 +4,8 @@
 #include "repl.h"
 #include "lexer.h"
 #include "parser.h"
-#include "trace.h"
+#include "eval.h"
+#include "object.h"
 
 // TODO(HS): handle Ctrl+c/d exits nicely?
 // TODO(HS): control sequences
@@ -31,10 +32,9 @@ void repl_run(void)
     parser_init(&parser, &lexer);
 
     Program program = parser_parse_program(&parser);
-    const char *yaml = program_to_string(&program, TRACE_YAML);
-    fprintf(stdout, "%s\n", yaml);
+    TyObj res = eval(&program);
+    tyobj_inspect(&res);
 
-    free((void*) yaml);
     program_free(&program);
   }
 }

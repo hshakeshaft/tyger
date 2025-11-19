@@ -17,19 +17,16 @@ const char *tyobj_kind_to_string(TyObject_Kind k)
 
 void tyobj_inspect(const TyObj *obj)
 {
-  const char *tstr = tyobj_kind_to_string(obj->kind);
-  printf("  TyObj( type=%s, value=", tstr);
   switch (obj->kind)
   {
   case TYOBJ_INT:
   {
-    printf("%I64i", obj->o.integer.value);
+    printf("%I64i\n", obj->o.integer.value);
   } break;
 
   default:
   {
-    printf("<Unrepresentable Value>");
+    printf("[TypeError] unrepresentable type found");
   } break;
   }
-  printf(")\n");
 }
