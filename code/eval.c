@@ -2,6 +2,136 @@
 #include <stddef.h>
 #include "eval.h"
 
+// TODO(HS): implement error handling/reporting here at evaluation
+
+///
+/// Internal forward declarations
+///
+static TyObj eval_int(const Int_Expression *expr);
+static TyObj eval_infix(const Infix_Expression *expr, const Parser_Context *ctx);
+static TyObj eval_expression(const Expression *expr, const Parser_Context *ctx);
+
+
+///
+/// Implementations
+///
+static int eval__do_add(TyObj *out, TyObj lhs, TyObj rhs)
+{
+  int success = 0;
+
+  switch (lhs.kind)
+  {
+  case TYOBJ_INT:
+  {
+    int64_t lval = lhs.o.integer.value;
+    int64_t rval = rhs.o.integer.value;
+    out->kind = TYOBJ_INT;
+    out->o.integer.value = lval + rval;
+  } break;
+
+  default:
+  {
+    return success;
+  } break;
+  }
+
+  success = 1;
+  return success;
+}
+
+static int eval__do_sub(TyObj *out, TyObj lhs, TyObj rhs)
+{
+  int success = 0;
+
+  switch (lhs.kind)
+  {
+  case TYOBJ_INT:
+  {
+    int64_t lval = lhs.o.integer.value;
+    int64_t rval = rhs.o.integer.value;
+    out->kind = TYOBJ_INT;
+    out->o.integer.value = lval - rval;
+  } break;
+
+  default:
+  {
+    return success;
+  } break;
+  }
+
+  success = 1;
+  return success;
+}
+
+static int eval__do_mul(TyObj *out, TyObj lhs, TyObj rhs)
+{
+  int success = 0;
+
+  switch (lhs.kind)
+  {
+  case TYOBJ_INT:
+  {
+    int64_t lval = lhs.o.integer.value;
+    int64_t rval = rhs.o.integer.value;
+    out->kind = TYOBJ_INT;
+    out->o.integer.value = lval * rval;
+  } break;
+
+  default:
+  {
+    return success;
+  } break;
+  }
+
+  success = 1;
+  return success;
+}
+
+static int eval__do_div(TyObj *out, TyObj lhs, TyObj rhs)
+{
+  int success = 0;
+
+  switch (lhs.kind)
+  {
+  case TYOBJ_INT:
+  {
+    int64_t lval = lhs.o.integer.value;
+    int64_t rval = rhs.o.integer.value;
+    out->kind = TYOBJ_INT;
+    out->o.integer.value = lval / rval;
+  } break;
+
+  default:
+  {
+    return success;
+  } break;
+  }
+
+  success = 1;
+  return success;
+}
+
+static int eval__do_op(TyObj *out, Operator op, TyObj lhs, TyObj rhs)
+{
+  // NOTE(HS): `success` is set to 1 by succss of result of operator functions
+  int success = 0;
+  if (lhs.kind == rhs.kind)
+  {
+    switch (op)
+    {
+    case OP_PLUS:     { success = eval__do_add(out, lhs, rhs); } break;
+    case OP_MINUS:    { success = eval__do_sub(out, lhs, rhs); } break;
+    case OP_ASTERISK: { success = eval__do_mul(out, lhs, rhs); } break;
+    case OP_SLASH:    { success = eval__do_div(out, lhs, rhs); } break;
+    }
+  }
+  else
+  {
+    return success;
+  }
+  return success;
+}
+
 static TyObj eval_int(const Int_Expression *expr)
 {
   TyObj res;
@@ -10,10 +140,24 @@ static TyObj eval_int(const Int_Expression *expr)
   return res;
 }
 
-static TyObj eval_expression_statement(Expression_Handle handle, const Parser_Context *ctx)
+static TyObj eval_infix(const Infix_Expression *expr, const Parser_Context *ctx)
 {
   TyObj res;
-  const Expression *expr = &(ctx->expressions.elems[handle]);
+
+  const Expression *lhs = &(ctx->expressions.elems[expr->lhs]);
+  const Expression *rhs = &(ctx->expressions.elems[expr->rhs]);
+
+  TyObj lhs_res = eval_expression(lhs, ctx);
+  TyObj rhs_res = eval_expression(rhs, ctx);
+  assert(eval__do_op(&res, expr->op, lhs_res, rhs_res));
+
+  return res;
+}
+
+static TyObj eval_expression(const Expression *expr, const Parser_Context *ctx)
+{
+  TyObj res;
+
   switch (expr->kind)
   {
   case EXPR_INT:
@@ -22,12 +166,27 @@ static TyObj eval_expression_statement(Expression_Handle handle, const Parser_Co
     res = eval_int(ie);
   } break;
 
+  case EXPR_INFIX:
+  {
+    const Infix_Expression *ie = &(expr->expression.infix_expression);
+    res = eval_infix(ie, ctx);
+  } break;
+
   default:
   {
     res = (TyObj) {0};
     assert(0 && "Invalid expression kind");
   } break;
   }
+
+  return res;
+}
+
+static TyObj eval_expression_statement(Expression_Handle handle, const Parser_Context *ctx)
+{
+  TyObj res;
+  const Expression *expr = &(ctx->expressions.elems[handle]);
+  res = eval_expression(expr, ctx);
   return res;
 }
 
