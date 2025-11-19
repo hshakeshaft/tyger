@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 #include "eval.h"
 
 // TODO(HS): implement error handling/reporting here at evaluation
@@ -140,6 +142,28 @@ static TyObj eval_int(const Int_Expression *expr)
   return res;
 }
 
+// NOTE(HS): this leaks
+// TODO(HS): string allocation should be pooled in VM memory, not randomly here
+static TyObj eval_string(const String_Expression *expr, const Parser_Context *ctx)
+{
+  TyObj res;
+
+  char *buffer = malloc(sizeof(char) * (expr->len + 1));
+  assert(buffer && "failed to malloc string memory");
+
+  const char *string = &(ctx->strings.elems[expr->string_handle]);
+  strncpy(buffer, string, expr->len);
+  buffer[expr->len] = '\0';
+
+  res.kind = TYOBJ_STRING;
+  res.o.string = (TyString) {
+    .value = buffer,
+    .len = expr->len,
+  };
+
+  return res;
+}
+
 static TyObj eval_infix(const Infix_Expression *expr, const Parser_Context *ctx)
 {
   TyObj res;
@@ -164,6 +188,12 @@ static TyObj eval_expression(const Expression *expr, const Parser_Context *ctx)
   {
     const Int_Expression *ie = &(expr->expression.int_expression);
     res = eval_int(ie);
+  } break;
+
+  case EXPR_STRING:
+  {
+    const String_Expression *se = &(expr->expression.string_expression);
+    res = eval_string(se, ctx);
   } break;
 
   case EXPR_INFIX:

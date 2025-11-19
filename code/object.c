@@ -24,6 +24,11 @@ void tyobj_inspect(const TyObj *obj)
     printf("%I64i\n", obj->o.integer.value);
   } break;
 
+  case TYOBJ_STRING:
+  {
+    printf("\"%.*s\"\n", (int) obj->o.string.len, obj->o.string.value);
+  } break;
+
   default:
   {
     printf("[TypeError] unrepresentable type found");

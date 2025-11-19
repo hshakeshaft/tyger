@@ -1,2 +1,3 @@
-X(NONE) \
-X(INT)
+X(NONE)   \
+X(INT)    \
+X(STRING)
