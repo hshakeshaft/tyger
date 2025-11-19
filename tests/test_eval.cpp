@@ -13,6 +13,9 @@ TEST(EvalTestSuite, Test_Eval_Int_Expression)
 
   auto test_cases = std::vector<Int_Eval_TC>{
     { "5;", 5 },
+    { "100;", 100 },
+    { "0;", 0 },
+    { "314159;", 314159 },
   };
 
   for (auto& tc : test_cases)
@@ -24,5 +27,6 @@ TEST(EvalTestSuite, Test_Eval_Int_Expression)
                                    << tyobj_kind_to_string(TYOBJ_INT)
                                    << " (integer), got "
                                    << tyobj_kind_to_string(val.kind);
+    ASSERT_EQ(val.o.integer.value, tc.exp);
   }
 }
