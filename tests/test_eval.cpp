@@ -5,6 +5,10 @@
 #include "tyger_test.hpp"
 #include "../tests/parser_test_helper.hpp"
 
+///
+/// Expression Eval Tests
+///
+
 TEST(EvalTestSuite, Test_Eval_Int_Expression)
 {
   struct Int_Eval_TC {
@@ -87,5 +91,33 @@ TEST(EvalTestSuite, Test_Eval_Infix_Expression)
       << "Expected object to be " << tyobj_kind_to_string(TYOBJ_INT)
       << " (integer), got " << tyobj_kind_to_string(val.kind);
     ASSERT_EQ(val.o.integer.value, tc.exp);
+  }
+}
+
+
+///
+/// Statement Eval Tests
+/// NOTE(HS): not expression_statements, those covered above
+///
+TEST(EvalTestSuite, Test_Eval_Var_Statement)
+{
+  struct Eval_Var_Stmt_Tc {
+    const char *input;
+  };
+
+  auto test_cases = std::vector<Eval_Var_Stmt_Tc>{
+    { "var x = 10;" },
+    { "var msg = \"Hello, World!\";" },
+  };
+
+  for (auto& tc : test_cases)
+  {
+    SETUP_PARSER_TEST_CASE(tc.input);
+    DEFER({ program_free((Program*) &p); });
+
+    TyObj val = eval(&p);
+    ASSERT_EQ(val.kind, TYOBJ_NONE)
+      << "Expected result of variable binding to be NONE, got "
+      << tyobj_kind_to_string(val.kind);
   }
 }

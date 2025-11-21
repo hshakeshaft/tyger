@@ -19,6 +19,11 @@ void tyobj_inspect(const TyObj *obj)
 {
   switch (obj->kind)
   {
+  // NOTE(HS): this does nothing and is intentional - for `Var_Statements` which
+  // don't themselves yield an object as the result of binding a variable
+  case TYOBJ_NONE:
+  {} break;
+
   case TYOBJ_INT:
   {
     printf("%I64i\n", obj->o.integer.value);

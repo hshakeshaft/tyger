@@ -220,11 +220,35 @@ static TyObj eval_expression_statement(Expression_Handle handle, const Parser_Co
   return res;
 }
 
+static TyObj eval_var_statement(const Var_Statement *stmt, const Parser_Context *ctx)
+{
+  TyObj res;
+
+  // TODO(HS): register ident
+  const char *ident = &(ctx->identifiers.elems[stmt->ident_handle]);
+  (void) ident;
+
+  // TODO(HS): register object in VM
+  const Expression *expr = &(ctx->expressions.elems[stmt->expression_handle]);
+  TyObj val = eval_expression(expr, ctx);
+  (void) val;
+
+  res.kind = TYOBJ_NONE;
+
+  return res;
+}
+
 static TyObj eval_statement(const Statement *stmt, const Parser_Context *ctx)
 {
   TyObj res;
   switch (stmt->kind)
   {
+  case STMT_VAR:
+  {
+    const Var_Statement *vs = &(stmt->statement.var_statement);
+    res = eval_var_statement(vs, ctx);
+  } break;
+
   case STMT_EXPRESSION:
   {
     Expression_Handle handle = stmt->statement.expression_statement.expression_handle;
