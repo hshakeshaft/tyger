@@ -5,11 +5,48 @@
 #include "tyger_test.hpp"
 #include "../tests/parser_test_helper.hpp"
 
+/// Custom fixture for evaluation tests - makes life easier with less macro hell
+class TestEval : public ::testing::Test
+{
+protected:
+  Lexer l;
+  Parser parser;
+  Program prog;
+  TyEnv env;
+
+  void setup_test(const char *input)
+  {
+    lexer_init(&this->l, input);
+    parser_init(&this->parser, &this->l);
+    this->prog = parser_parse_program(&this->parser);
+    tyenv_init(&this->env, 16);
+  }
+
+  void teardown_test()
+  {
+    program_free(&this->prog);
+    tyenv_free(&this->env);
+  }
+
+  static void assert_object_type_is(TyObj act, TyObject_Kind exp)
+  {
+    ASSERT_EQ(act.kind, exp) 
+      << "Expected Object of type [" << tyobj_kind_to_string(exp)
+      << "], got [" << tyobj_kind_to_string(act.kind) << "]";
+  }
+
+  static void assert_object_eq_int(TyObj act, int64_t exp)
+  {
+    assert_object_type_is(act, TYOBJ_INT);
+    ASSERT_EQ(act.o.integer.value, exp);
+  }
+};
+
 ///
 /// Expression Eval Tests
 ///
 
-TEST(EvalTestSuite, Test_Eval_Int_Expression)
+TEST_F(TestEval, Test_Eval_Int_Expression)
 {
   struct Int_Eval_TC {
     const char *input;
@@ -25,16 +62,10 @@ TEST(EvalTestSuite, Test_Eval_Int_Expression)
 
   for (auto& tc : test_cases)
   {
-    SETUP_PARSER_TEST_CASE(tc.input);
-    DEFER({ program_free((Program*) &p); });
-    TyEnv env;
-    tyenv_init(&env, 16);
-    DEFER({ tyenv_free((TyEnv*) &env); });
-    TyObj val = eval(&env, &p);
-    ASSERT_EQ(val.kind, TYOBJ_INT)
-      << "Expected object to be " << tyobj_kind_to_string(TYOBJ_INT)
-      << " (integer), got " << tyobj_kind_to_string(val.kind);
-    ASSERT_EQ(val.o.integer.value, tc.exp);
+    setup_test(tc.input);
+    DEFER({ teardown_test(); });
+    TyObj act = eval(&this->env, &this->prog);
+    assert_object_eq_int(act, tc.exp);
   }
 }
 
