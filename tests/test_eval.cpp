@@ -29,6 +29,7 @@ TEST(EvalTestSuite, Test_Eval_Int_Expression)
     DEFER({ program_free((Program*) &p); });
     TyEnv env;
     tyenv_init(&env, 16);
+    DEFER({ tyenv_free((TyEnv*) &env); });
     TyObj val = eval(&env, &p);
     ASSERT_EQ(val.kind, TYOBJ_INT)
       << "Expected object to be " << tyobj_kind_to_string(TYOBJ_INT)
@@ -61,6 +62,7 @@ TEST(EvalTestSuite, Test_Eval_String_Expression)
     TyEnv env;
     tyenv_init(&env, 16);
     TyObj val = eval(&env, &p);
+    DEFER({ tyenv_free((TyEnv*) &env); });
     ASSERT_EQ(val.kind, TYOBJ_STRING)
       << "Expected object to be " << tyobj_kind_to_string(TYOBJ_STRING)
       << " (string), got " << tyobj_kind_to_string(val.kind);
@@ -92,6 +94,7 @@ TEST(EvalTestSuite, Test_Eval_Infix_Expression)
     DEFER({ program_free((Program*) &p); });
     TyEnv env;
     tyenv_init(&env, 16);
+    DEFER({ tyenv_free((TyEnv*) &env); });
     TyObj val = eval(&env, &p);
     ASSERT_EQ(val.kind, TYOBJ_INT)
       << "Expected object to be " << tyobj_kind_to_string(TYOBJ_INT)
