@@ -220,25 +220,22 @@ static TyObj eval_expression_statement(Expression_Handle handle, const Parser_Co
   return res;
 }
 
-static TyObj eval_var_statement(const Var_Statement *stmt, const Parser_Context *ctx)
+static TyObj eval_var_statement(TyEnv *env, const Var_Statement *stmt, const Parser_Context *ctx)
 {
   TyObj res;
 
-  // TODO(HS): register ident
-  const char *ident = &(ctx->identifiers.elems[stmt->ident_handle]);
-  (void) ident;
-
   // TODO(HS): register object in VM
+  const char *ident = &(ctx->identifiers.elems[stmt->ident_handle]);
   const Expression *expr = &(ctx->expressions.elems[stmt->expression_handle]);
   TyObj val = eval_expression(expr, ctx);
-  (void) val;
+  tyenv_insert(env, ident, &val);
 
   res.kind = TYOBJ_NONE;
 
   return res;
 }
 
-static TyObj eval_statement(const Statement *stmt, const Parser_Context *ctx)
+static TyObj eval_statement(TyEnv *env, const Statement *stmt, const Parser_Context *ctx)
 {
   TyObj res;
   switch (stmt->kind)
@@ -246,7 +243,7 @@ static TyObj eval_statement(const Statement *stmt, const Parser_Context *ctx)
   case STMT_VAR:
   {
     const Var_Statement *vs = &(stmt->statement.var_statement);
-    res = eval_var_statement(vs, ctx);
+    res = eval_var_statement(env, vs, ctx);
   } break;
 
   case STMT_EXPRESSION:
@@ -264,7 +261,7 @@ static TyObj eval_statement(const Statement *stmt, const Parser_Context *ctx)
   return res;
 }
 
-static TyObj eval_program_statements(const Program *prog)
+static TyObj eval_program_statements(TyEnv *env, const Program *prog)
 {
   TyObj res;
   
@@ -272,7 +269,7 @@ static TyObj eval_program_statements(const Program *prog)
   {
     const Statement *stmt = &(prog->statements.elems[i]);
     const Parser_Context *ctx = &(prog->context);
-    res = eval_statement(stmt, ctx);
+    res = eval_statement(env, stmt, ctx);
   }
 
   return res;
@@ -280,8 +277,7 @@ static TyObj eval_program_statements(const Program *prog)
 
 TyObj eval(TyEnv *global_env, const Program *prog)
 {
-  (void) global_env;
   TyObj obj;
-  obj = eval_program_statements(prog);
+  obj = eval_program_statements(global_env, prog);
   return obj;
 }

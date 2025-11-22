@@ -110,11 +110,12 @@ TEST(EvalTestSuite, Test_Eval_Var_Statement)
   struct Eval_Var_Stmt_Tc {
     const char *input;
     const char *ident;
+    TyObject_Kind exp_kind;
   };
 
   auto test_cases = std::vector<Eval_Var_Stmt_Tc>{
-    { "var x = 10;", "x" },
-    { "var msg = \"Hello, World!\";", "msg" },
+    { "var x = 10;", "x", TYOBJ_INT },
+    { "var msg = \"Hello, World!\";", "msg", TYOBJ_STRING },
   };
 
   for (auto& tc : test_cases)
@@ -133,5 +134,10 @@ TEST(EvalTestSuite, Test_Eval_Var_Statement)
     // NOTE(HS): assert variable is in environment
     TyObj *obj_inserted = tyenv_get(&global, tc.ident);
     ASSERT_NE(obj_inserted, nullptr);
+
+    // NOTE(HS): check correct value type stored
+    ASSERT_EQ(obj_inserted->kind, tc.exp_kind)
+      << "Expected variable to store value type " << tyobj_kind_to_string(tc.exp_kind)
+      << ", got " << tyobj_kind_to_string(obj_inserted->kind);
   }
 }
