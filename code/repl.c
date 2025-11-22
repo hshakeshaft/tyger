@@ -6,12 +6,16 @@
 #include "parser.h"
 #include "eval.h"
 #include "object.h"
+#include "environment.h"
 
 // TODO(HS): handle Ctrl+c/d exits nicely?
 // TODO(HS): control sequences
 // TODO(HS): implement a "history" buffer
 void repl_run(void)
 {
+  TyEnv global;
+  tyenv_init(&global, 16);
+
   while (true)
   {
     fprintf(stdout, "tyger> ");
@@ -32,7 +36,7 @@ void repl_run(void)
     parser_init(&parser, &lexer);
 
     Program program = parser_parse_program(&parser);
-    TyObj res = eval(&program);
+    TyObj res = eval(&global, &program);
     tyobj_inspect(&res);
 
     program_free(&program);

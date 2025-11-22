@@ -13,6 +13,7 @@ extern "C" {
   #include "trace.h"
   #include "object.h"
   #include "eval.h"
+  #include "environment.h"
 }
 
 #endif // TYGER_TEST_HPP_

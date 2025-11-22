@@ -278,8 +278,9 @@ static TyObj eval_program_statements(const Program *prog)
   return res;
 }
 
-TyObj eval(const Program *prog)
+TyObj eval(TyEnv *global_env, const Program *prog)
 {
+  (void) global_env;
   TyObj obj;
   obj = eval_program_statements(prog);
   return obj;

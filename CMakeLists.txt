@@ -46,6 +46,7 @@ set(
     code/trace.c
     code/object.c
     code/eval.c
+    code/environment.c
 )
 add_library(${LIB_NAME} STATIC ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)

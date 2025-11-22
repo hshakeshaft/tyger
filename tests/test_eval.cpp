@@ -27,7 +27,9 @@ TEST(EvalTestSuite, Test_Eval_Int_Expression)
   {
     SETUP_PARSER_TEST_CASE(tc.input);
     DEFER({ program_free((Program*) &p); });
-    TyObj val = eval(&p);
+    TyEnv env;
+    tyenv_init(&env, 16);
+    TyObj val = eval(&env, &p);
     ASSERT_EQ(val.kind, TYOBJ_INT)
       << "Expected object to be " << tyobj_kind_to_string(TYOBJ_INT)
       << " (integer), got " << tyobj_kind_to_string(val.kind);
@@ -56,7 +58,9 @@ TEST(EvalTestSuite, Test_Eval_String_Expression)
   {
     SETUP_PARSER_TEST_CASE(tc.input);
     DEFER({ program_free((Program*) &p); });
-    TyObj val = eval(&p);
+    TyEnv env;
+    tyenv_init(&env, 16);
+    TyObj val = eval(&env, &p);
     ASSERT_EQ(val.kind, TYOBJ_STRING)
       << "Expected object to be " << tyobj_kind_to_string(TYOBJ_STRING)
       << " (string), got " << tyobj_kind_to_string(val.kind);
@@ -86,7 +90,9 @@ TEST(EvalTestSuite, Test_Eval_Infix_Expression)
   {
     SETUP_PARSER_TEST_CASE(tc.input);
     DEFER({ program_free((Program*) &p); });
-    TyObj val = eval(&p);
+    TyEnv env;
+    tyenv_init(&env, 16);
+    TyObj val = eval(&env, &p);
     ASSERT_EQ(val.kind, TYOBJ_INT)
       << "Expected object to be " << tyobj_kind_to_string(TYOBJ_INT)
       << " (integer), got " << tyobj_kind_to_string(val.kind);
@@ -103,11 +109,12 @@ TEST(EvalTestSuite, Test_Eval_Var_Statement)
 {
   struct Eval_Var_Stmt_Tc {
     const char *input;
+    const char *ident;
   };
 
   auto test_cases = std::vector<Eval_Var_Stmt_Tc>{
-    { "var x = 10;" },
-    { "var msg = \"Hello, World!\";" },
+    { "var x = 10;", "x" },
+    { "var msg = \"Hello, World!\";", "msg" },
   };
 
   for (auto& tc : test_cases)
@@ -115,9 +122,16 @@ TEST(EvalTestSuite, Test_Eval_Var_Statement)
     SETUP_PARSER_TEST_CASE(tc.input);
     DEFER({ program_free((Program*) &p); });
 
-    TyObj val = eval(&p);
+    TyEnv global;
+    tyenv_init(&global, 16);
+    TyObj val = eval(&global, &p);
+
     ASSERT_EQ(val.kind, TYOBJ_NONE)
       << "Expected result of variable binding to be NONE, got "
       << tyobj_kind_to_string(val.kind);
+
+    // NOTE(HS): assert variable is in environment
+    TyObj *obj_inserted = tyenv_get(&global, tc.ident);
+    ASSERT_NE(obj_inserted, nullptr);
   }
 }
