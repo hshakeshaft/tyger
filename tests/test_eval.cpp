@@ -35,10 +35,19 @@ protected:
       << "], got [" << tyobj_kind_to_string(act.kind) << "]";
   }
 
-  static void assert_object_eq_int(TyObj act, int64_t exp)
+  static void assert_object_value_eq(TyObj act, int64_t exp)
   {
     assert_object_type_is(act, TYOBJ_INT);
     ASSERT_EQ(act.o.integer.value, exp);
+  }
+
+  static void assert_object_value_eq(TyObj act, const char *exp, size_t exp_len)
+  {
+    assert_object_type_is(act, TYOBJ_STRING);
+    ASSERT_EQ(act.o.string.len, exp_len) << "String lengths do not match";
+    auto act_s = std::string{act.o.string.value, act.o.string.len};
+    auto exp_s = std::string{exp, exp_len};
+    ASSERT_EQ(exp_s, act_s);
   }
 };
 
@@ -65,11 +74,11 @@ TEST_F(TestEval, Test_Eval_Int_Expression)
     setup_test(tc.input);
     DEFER({ teardown_test(); });
     TyObj act = eval(&this->env, &this->prog);
-    assert_object_eq_int(act, tc.exp);
+    assert_object_value_eq(act, tc.exp);
   }
 }
 
-TEST(EvalTestSuite, Test_Eval_String_Expression)
+TEST_F(TestEval, Test_Eval_String_Expressions)
 {
   struct String_Eval_Tc {
     const char *input;
@@ -88,22 +97,14 @@ TEST(EvalTestSuite, Test_Eval_String_Expression)
 
   for (auto& tc : test_cases)
   {
-    SETUP_PARSER_TEST_CASE(tc.input);
-    DEFER({ program_free((Program*) &p); });
-    TyEnv env;
-    tyenv_init(&env, 16);
-    TyObj val = eval(&env, &p);
-    DEFER({ tyenv_free((TyEnv*) &env); });
-    ASSERT_EQ(val.kind, TYOBJ_STRING)
-      << "Expected object to be " << tyobj_kind_to_string(TYOBJ_STRING)
-      << " (string), got " << tyobj_kind_to_string(val.kind);
-    auto exp_s = std::string{tc.exp};
-    auto act_s = std::string{val.o.string.value};
-    ASSERT_EQ(exp_s, act_s);
+    setup_test(tc.input);
+    DEFER({ teardown_test(); });
+    TyObj act = eval(&this->env, &this->prog);
+    assert_object_value_eq(act, tc.exp, tc.exp_len);
   }
 }
 
-TEST(EvalTestSuite, Test_Eval_Infix_Expression)
+TEST_F(TestEval, Test_Eval_Infix_Expression)
 {
   struct Infix_Eval_Int_Tc {
     const char *input;
@@ -121,16 +122,10 @@ TEST(EvalTestSuite, Test_Eval_Infix_Expression)
 
   for (auto& tc : test_cases)
   {
-    SETUP_PARSER_TEST_CASE(tc.input);
-    DEFER({ program_free((Program*) &p); });
-    TyEnv env;
-    tyenv_init(&env, 16);
-    DEFER({ tyenv_free((TyEnv*) &env); });
-    TyObj val = eval(&env, &p);
-    ASSERT_EQ(val.kind, TYOBJ_INT)
-      << "Expected object to be " << tyobj_kind_to_string(TYOBJ_INT)
-      << " (integer), got " << tyobj_kind_to_string(val.kind);
-    ASSERT_EQ(val.o.integer.value, tc.exp);
+    setup_test(tc.input);
+    DEFER({ teardown_test(); });
+    TyObj act = eval(&this->env, &this->prog);
+    assert_object_value_eq(act, tc.exp);
   }
 }
 
