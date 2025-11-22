@@ -34,6 +34,8 @@ typedef struct tyobj
 } TyObj;
 
 const char *tyobj_kind_to_string(TyObject_Kind k);
+
 void tyobj_inspect(const TyObj *obj);
+void tyobj_delete(TyObj *obj);
 
 #endif  // TYGER_OBJECT_H_

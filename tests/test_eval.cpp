@@ -125,6 +125,8 @@ TEST(EvalTestSuite, Test_Eval_Var_Statement)
 
     TyEnv global;
     tyenv_init(&global, 16);
+    DEFER({ tyenv_free((TyEnv*) &global); });
+
     TyObj val = eval(&global, &p);
 
     ASSERT_EQ(val.kind, TYOBJ_NONE)

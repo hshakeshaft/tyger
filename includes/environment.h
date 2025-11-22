@@ -21,6 +21,7 @@ typedef struct tyenv
 } TyEnv;
 
 int tyenv_init(TyEnv *env, size_t capacity);
+int tyenv_free(TyEnv *env);
 
 void tyenv_insert(TyEnv *env, const char *ident, TyObj *obj);
 TyObj *tyenv_get(const TyEnv *env, const char *ident);

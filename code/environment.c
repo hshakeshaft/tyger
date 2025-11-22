@@ -41,6 +41,14 @@ static void tyenv__var_inplace_update(TyEnv_Var *var, const char *ident, size_t 
   var->next = NULL;
 }
 
+static void tyenv__free_var(TyEnv_Var *var)
+{
+  if (var->next) { tyenv__free_var(var->next); }
+  free(var->ident);
+  tyobj_delete(var->object);
+  free(var);
+}
+
 
 int tyenv_init(TyEnv *env, size_t capacity)
 {
@@ -52,6 +60,24 @@ int tyenv_init(TyEnv *env, size_t capacity)
   env->capacity = capacity;
 
   result = 1;
+  return result;
+}
+
+int tyenv_free(TyEnv *env)
+{
+  (void) env;
+  int result = 0;
+
+  for (size_t i = 0; i < env->capacity; ++i)
+  {
+    TyEnv_Var *var = &(env->variables[i]);
+    (void) var;
+    if (var->next) { tyenv__free_var(var->next); }
+    if (var->ident) { free(var->ident); }
+    if (var->object) { tyobj_delete(var->object); }
+  }
+  free(env->variables);
+
   return result;
 }
 
