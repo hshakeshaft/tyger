@@ -49,6 +49,20 @@ protected:
     auto exp_s = std::string{exp, exp_len};
     ASSERT_EQ(exp_s, act_s);
   }
+
+  // TODO(HS): dump environment if can't find symbol?
+  void assert_var_added_to_env(const char *ident)
+  {
+    TyObj *stored = tyenv_get(&this->env, ident);
+    ASSERT_NE(stored, nullptr) << "Variable with ident [" << ident << "] not found in environment";
+  }
+
+  void assert_env_var_has_type(const char *ident, TyObject_Kind exp)
+  {
+    assert_var_added_to_env(ident);
+    TyObj *stored = tyenv_get(&this->env, ident);
+    assert_object_type_is(*stored, exp);
+  }
 };
 
 ///
@@ -134,7 +148,7 @@ TEST_F(TestEval, Test_Eval_Infix_Expression)
 /// Statement Eval Tests
 /// NOTE(HS): not expression_statements, those covered above
 ///
-TEST(EvalTestSuite, Test_Eval_Var_Statement)
+TEST_F(TestEval, Test_Eval_Var_Statement)
 {
   struct Eval_Var_Stmt_Tc {
     const char *input;
@@ -149,26 +163,11 @@ TEST(EvalTestSuite, Test_Eval_Var_Statement)
 
   for (auto& tc : test_cases)
   {
-    SETUP_PARSER_TEST_CASE(tc.input);
-    DEFER({ program_free((Program*) &p); });
-
-    TyEnv global;
-    tyenv_init(&global, 16);
-    DEFER({ tyenv_free((TyEnv*) &global); });
-
-    TyObj val = eval(&global, &p);
-
-    ASSERT_EQ(val.kind, TYOBJ_NONE)
-      << "Expected result of variable binding to be NONE, got "
-      << tyobj_kind_to_string(val.kind);
-
-    // NOTE(HS): assert variable is in environment
-    TyObj *obj_inserted = tyenv_get(&global, tc.ident);
-    ASSERT_NE(obj_inserted, nullptr);
-
-    // NOTE(HS): check correct value type stored
-    ASSERT_EQ(obj_inserted->kind, tc.exp_kind)
-      << "Expected variable to store value type " << tyobj_kind_to_string(tc.exp_kind)
-      << ", got " << tyobj_kind_to_string(obj_inserted->kind);
+    setup_test(tc.input);
+    DEFER({ teardown_test(); });
+    TyObj act = eval(&this->env, &this->prog);
+    assert_object_type_is(act, TYOBJ_NONE);
+    assert_var_added_to_env(tc.ident);
+    assert_env_var_has_type(tc.ident, tc.exp_kind);
   }
 }
