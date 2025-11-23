@@ -10,8 +10,8 @@
 /// Internal forward declarations
 ///
 static TyObj eval_int(const Int_Expression *expr);
-static TyObj eval_infix(const Infix_Expression *expr, const Parser_Context *ctx);
-static TyObj eval_expression(const Expression *expr, const Parser_Context *ctx);
+static TyObj eval_infix(TyEnv *env, const Infix_Expression *expr, const Parser_Context *ctx);
+static TyObj eval_expression(TyEnv *env, const Expression *expr, const Parser_Context *ctx);
 
 
 ///
@@ -164,21 +164,31 @@ static TyObj eval_string(const String_Expression *expr, const Parser_Context *ct
   return res;
 }
 
-static TyObj eval_infix(const Infix_Expression *expr, const Parser_Context *ctx)
+static TyObj eval_ident(TyEnv *env, const Ident_Expression *expr, const Parser_Context *ctx)
+{
+  const char *ident = &(ctx->evaluated_identifiers.elems[expr->ident_handle]);
+  assert(ident && "ident lookup from parser failed (returned NULL)");
+  TyObj *env_obj = tyenv_get(env, ident);
+  assert(env_obj && "Invalid ident used in env lookup");
+  TyObj res = *env_obj;
+  return res;
+}
+
+static TyObj eval_infix(TyEnv *env, const Infix_Expression *expr, const Parser_Context *ctx)
 {
   TyObj res;
 
   const Expression *lhs = &(ctx->expressions.elems[expr->lhs]);
   const Expression *rhs = &(ctx->expressions.elems[expr->rhs]);
 
-  TyObj lhs_res = eval_expression(lhs, ctx);
-  TyObj rhs_res = eval_expression(rhs, ctx);
+  TyObj lhs_res = eval_expression(env, lhs, ctx);
+  TyObj rhs_res = eval_expression(env, rhs, ctx);
   assert(eval__do_op(&res, expr->op, lhs_res, rhs_res));
 
   return res;
 }
 
-static TyObj eval_expression(const Expression *expr, const Parser_Context *ctx)
+static TyObj eval_expression(TyEnv *env, const Expression *expr, const Parser_Context *ctx)
 {
   TyObj res;
 
@@ -196,10 +206,16 @@ static TyObj eval_expression(const Expression *expr, const Parser_Context *ctx)
     res = eval_string(se, ctx);
   } break;
 
+  case EXPR_IDENT:
+  {
+    const Ident_Expression *ie = &(expr->expression.ident_expression);
+    res = eval_ident(env, ie, ctx);
+  } break;
+
   case EXPR_INFIX:
   {
     const Infix_Expression *ie = &(expr->expression.infix_expression);
-    res = eval_infix(ie, ctx);
+    res = eval_infix(env, ie, ctx);
   } break;
 
   default:
@@ -212,11 +228,11 @@ static TyObj eval_expression(const Expression *expr, const Parser_Context *ctx)
   return res;
 }
 
-static TyObj eval_expression_statement(Expression_Handle handle, const Parser_Context *ctx)
+static TyObj eval_expression_statement(TyEnv *env, Expression_Handle handle, const Parser_Context *ctx)
 {
   TyObj res;
   const Expression *expr = &(ctx->expressions.elems[handle]);
-  res = eval_expression(expr, ctx);
+  res = eval_expression(env, expr, ctx);
   return res;
 }
 
@@ -227,7 +243,7 @@ static TyObj eval_var_statement(TyEnv *env, const Var_Statement *stmt, const Par
   // TODO(HS): register object in VM
   const char *ident = &(ctx->identifiers.elems[stmt->ident_handle]);
   const Expression *expr = &(ctx->expressions.elems[stmt->expression_handle]);
-  TyObj val = eval_expression(expr, ctx);
+  TyObj val = eval_expression(env, expr, ctx);
   tyenv_insert(env, ident, &val);
 
   res.kind = TYOBJ_NONE;
@@ -249,7 +265,7 @@ static TyObj eval_statement(TyEnv *env, const Statement *stmt, const Parser_Cont
   case STMT_EXPRESSION:
   {
     Expression_Handle handle = stmt->statement.expression_statement.expression_handle;
-    res = eval_expression_statement(handle, ctx);
+    res = eval_expression_statement(env, handle, ctx);
   } break;
 
   default:

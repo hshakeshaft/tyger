@@ -143,6 +143,29 @@ TEST_F(TestEval, Test_Eval_Infix_Expression)
   }
 }
 
+// `var x = 10; x;` should eval to `10`
+TEST_F(TestEval, Test_Eval_Ident_Expression)
+{
+  // Test eval of non-int types (figure out some bettter way of doing it)
+  struct Ident_Eval_Int_Tc {
+    const char *input;
+    int64_t exp;
+  };
+
+  auto test_cases = std::vector<Ident_Eval_Int_Tc>{
+    { "var x = 10; x;", 10 },
+    { "var y = 3; y;", 3 },
+  };
+
+  for (auto& tc : test_cases)
+  {
+    setup_test(tc.input);
+    DEFER({ teardown_test(); });
+    TyObj act = eval(&this->env, &this->prog);
+    assert_object_value_eq(act, tc.exp);
+  }
+}
+
 
 ///
 /// Statement Eval Tests
