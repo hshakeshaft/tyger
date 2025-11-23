@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "eval.h"
 
@@ -174,6 +175,61 @@ static TyObj eval_ident(TyEnv *env, const Ident_Expression *expr, const Parser_C
   return res;
 }
 
+static int compare_function_names_eq(const char *exp, const char *act)
+{
+  size_t exp_len = strlen(exp);
+  size_t act_len = strlen(act);
+  if (exp_len != act_len) { return 0; }
+  return strncmp(exp, act, exp_len) == 0;
+}
+
+// TODO(HS): handle more than "println" builtin
+static void eval_function_builtin(TyEnv *env, const Argument_List *args, const Parser_Context *ctx)
+{
+  // NOTE(HS): all println handling
+  {
+    TyObj *evaluated_args = malloc(sizeof(TyObj) * args->len);
+    for (size_t i = 0; i < args->len; ++i)
+    {
+      const Expression *expr = &(args->elems[i]);
+      TyObj o = eval_expression(env, expr, ctx);
+      memcpy(&(evaluated_args[i]), &o, sizeof(TyObj));
+    }
+
+    for (size_t i = 0; i < args->len; ++i)
+    {
+      TyObj *obj = &(evaluated_args[i]);
+      switch (obj->kind)
+      {
+      case TYOBJ_INT: { printf("%I64i", obj->o.integer.value); } break;
+      case TYOBJ_STRING: { printf("%s", obj->o.string.value); } break;
+      case TYOBJ_NONE: { printf("<NONE>"); } break;
+      }
+      tyobj_delete(obj);
+      if (i + 1 < args->len) { printf(", "); }
+    }
+    free(evaluated_args);
+    printf("\n");
+  }
+}
+
+static TyObj eval_call_expression(TyEnv *env, const Call_Expression *expr, const Parser_Context *ctx)
+{
+  TyObj res = {0};
+
+  const Expression *function = &(ctx->expressions.elems[expr->function]);
+  assert(function->kind == EXPR_IDENT);
+  const Ident_Expression *ie = &(function->expression.ident_expression);
+  const char *ident = &(ctx->evaluated_identifiers.elems[ie->ident_handle]);
+
+  // TODO(HS): hanlde more than just the "println" function
+  assert(compare_function_names_eq("println", ident));
+  eval_function_builtin(env, &expr->args, ctx);
+  res.kind = TYOBJ_NONE;
+
+  return res;
+}
+
 static TyObj eval_infix(TyEnv *env, const Infix_Expression *expr, const Parser_Context *ctx)
 {
   TyObj res;
@@ -216,6 +272,12 @@ static TyObj eval_expression(TyEnv *env, const Expression *expr, const Parser_Co
   {
     const Infix_Expression *ie = &(expr->expression.infix_expression);
     res = eval_infix(env, ie, ctx);
+  } break;
+
+  case EXPR_CALL:
+  {
+    const Call_Expression *ce = &(expr->expression.call_expression);
+    res = eval_call_expression(env, ce, ctx);
   } break;
 
   default:

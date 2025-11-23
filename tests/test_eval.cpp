@@ -185,6 +185,28 @@ TEST_F(TestEval, Test_Eval_Ident_Expression)
   }
 }
 
+TEST_F(TestEval, Test_Eval_Call_Expressoin)
+{
+  // TODO(HS): compare return of call expressions when more functions and user defined
+  // functions implemented (use obj compare from idents)
+  struct Call_Expression_Tc {
+    const char *input;
+  };
+
+  auto test_cases = std::vector<Call_Expression_Tc>{
+    { "println(10);" },
+    { "println(1, 1, 2, 3, 5, 8, 13, 21);" },
+    { "println(\"Hello, World!\");" },
+  };
+
+  for (auto& tc : test_cases)
+  {
+    setup_test(tc.input);
+    DEFER({ teardown_test(); });
+    TyObj act = eval(&this->env, &this->prog);
+    assert_object_type_is(act, TYOBJ_NONE);
+  }
+}
 
 ///
 /// Statement Eval Tests
