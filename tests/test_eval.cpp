@@ -50,6 +50,17 @@ protected:
     ASSERT_EQ(exp_s, act_s);
   }
 
+  static void assert_object_eq(TyObj act, TyObj exp)
+  {
+    assert_object_type_is(act, exp.kind);
+    switch (act.kind)
+    {
+    case TYOBJ_INT: { assert_object_value_eq(act, exp.o.integer.value); } break;
+    case TYOBJ_STRING: { assert_object_value_eq(act, exp.o.string.value, exp.o.string.len); } break;
+    case TYOBJ_NONE: {} break;
+    }
+  }
+
   // TODO(HS): dump environment if can't find symbol?
   void assert_var_added_to_env(const char *ident)
   {
@@ -146,15 +157,23 @@ TEST_F(TestEval, Test_Eval_Infix_Expression)
 // `var x = 10; x;` should eval to `10`
 TEST_F(TestEval, Test_Eval_Ident_Expression)
 {
-  // Test eval of non-int types (figure out some bettter way of doing it)
-  struct Ident_Eval_Int_Tc {
+  struct Ident_Eval_Tc {
     const char *input;
-    int64_t exp;
+    TyObj *exp;
   };
 
-  auto test_cases = std::vector<Ident_Eval_Int_Tc>{
-    { "var x = 10; x;", 10 },
-    { "var y = 3; y;", 3 },
+  int64_t ival = 10;
+  const char *sval = "Hello, World!";
+  TyObj *o1 = tyobj_new(TYOBJ_INT, (void*) &ival);
+  TyObj *o2 = tyobj_new(TYOBJ_STRING, (void*) sval);
+  DEFER({
+    tyobj_delete(o1);
+    tyobj_delete(o2);
+  });
+
+  auto test_cases = std::vector<Ident_Eval_Tc>{
+    { "var x = 10; x;", o1 },
+    { "var y =\"Hello, World!\"; y;", o2 },
   };
 
   for (auto& tc : test_cases)
@@ -162,7 +181,7 @@ TEST_F(TestEval, Test_Eval_Ident_Expression)
     setup_test(tc.input);
     DEFER({ teardown_test(); });
     TyObj act = eval(&this->env, &this->prog);
-    assert_object_value_eq(act, tc.exp);
+    assert_object_eq(act, *(tc.exp));
   }
 }
 
