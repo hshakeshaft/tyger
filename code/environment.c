@@ -35,6 +35,66 @@ static void tyenv__free_entry__(TyEnv_Var__ *var)
   tyobj_delete(var->object);
 }
 
+static int tyenv__compare_keys_eq(
+  const char *k1, size_t k1_len,
+  const char *k2, size_t k2_len
+)
+{
+  int res = 0;
+  if (k1_len != k2_len) { return res; }
+  if (strncmp(k1, k2, k2_len) == 0) { res = 1; }
+  return res;
+}
+
+static TyEnv_Var__ *tyvar_new(const char *ident, size_t ident_len, TyObj *obj)
+{
+  assert(ident && "Cannot copy [NULL] identifier");
+  assert(ident_len > 0 && "Cannot copy [0] lengthed identifier");
+  assert(obj && "Cannot coppy pointer to object which has value [NULL]");
+
+  TyEnv_Var__ *var = malloc(sizeof(struct tyenv_var__));
+  assert(var && "failed to allocate space for TyEnv_Var entry");
+
+  var->ident = malloc(sizeof(char) * (ident_len + 1));
+  assert(var->ident && "failed to allocate space for TyEnv_Var ident");
+
+  strncpy((char*) var->ident, ident, ident_len);
+  ((char*) var->ident)[ident_len] = '\0';
+
+  var->ident_len = ident_len;
+  var->object = obj;
+  var->next = NULL;
+  return var;
+}
+
+static int tyenv__handle_collision__(TyEnv_Var__ *cur, const char *ident, size_t ident_len, TyObj *obj)
+{
+  (void) obj;
+  int res = 0;
+
+  if (cur->ident_len == ident_len && strncmp(cur->ident, ident, ident_len) == 0)
+  {
+    TODO("handle inplace updates");
+  }
+  else
+  {
+    if (cur->next)
+    {
+      res = tyenv__handle_collision__(cur->next, ident, ident_len, obj);
+    }
+    else
+    {
+      TyEnv_Var__ *next = tyvar_new(ident, ident_len, obj);
+      assert(next && "[next] insertion value in TyEnv was NULL");
+      cur->next = next;
+      res = 1;
+    }
+  }
+
+  return res;
+}
+
+
 int tyenv_init__(TyEnv__ *env, size_t capacity)
 {
   int res = 0;
@@ -66,8 +126,6 @@ int tyenv_free__(TyEnv__ *env)
 int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
 {
   int res = 0;
-  (void) env, (void) ident, (void) obj;
-
   size_t ident_len = strlen(ident);
   uint32_t hash = fnv1a_u32(ident, ident_len);
   hash %= env->capacity;
@@ -75,7 +133,24 @@ int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
   TyEnv_Var__ *var = &(env->vars[hash]);
   if (var->ident)
   {
-    TODO("handle inplace updates to objects");
+    if (tyenv__compare_keys_eq(var->ident, var->ident_len, ident, ident_len))
+    {
+      TODO("handle inplace updates to objects");
+    }
+    else
+    {
+      if (var->next)
+      {
+        res = tyenv__handle_collision__(var->next, ident, ident_len, obj);
+      }
+      else
+      {
+        TyEnv_Var__ *next = tyvar_new(ident, ident_len, obj);
+        assert(next && "[next] insertion value in TyEnv was NULL");
+        var->next = next;
+        res = 1;
+      }
+    }
   }
   else
   {
