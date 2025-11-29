@@ -25,6 +25,79 @@ static uint32_t fnv1a_u32(const char *ident, size_t ident_len)
   return hash;
 }
 
+///
+/// "New" implementations
+///
+static void tyenv__free_entry__(TyEnv_Var__ *var)
+{
+  if (var->next) { tyenv__free_entry__(var->next); }
+  free((void*) var->ident);
+  tyobj_delete(var->object);
+}
+
+int tyenv_init__(TyEnv__ *env, size_t capacity)
+{
+  int res = 0;
+  env->vars = calloc(capacity, sizeof(struct tyenv_var__));
+  if (!env->vars) { return res; }
+  env->capacity = capacity;
+  res = 1;
+  return res;
+}
+
+int tyenv_free__(TyEnv__ *env)
+{
+  for (size_t i = 0; i < env->capacity; ++i)
+  {
+    TyEnv_Var__ *var = &(env->vars[i]);
+    if (var->next)
+    {
+      tyenv__free_entry__(var->next);
+    }
+    if (var->ident) { free((void*) var->ident); }
+    var->ident_len = 0;
+    if (var->object) { tyobj_delete(var->object); };
+  }
+  free(env->vars);
+  env->capacity = 0;
+  return 1;
+}
+
+int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
+{
+  int res = 0;
+  (void) env, (void) ident, (void) obj;
+
+  size_t ident_len = strlen(ident);
+  uint32_t hash = fnv1a_u32(ident, ident_len);
+  hash %= env->capacity;
+
+  TyEnv_Var__ *var = &(env->vars[hash]);
+  if (var->ident)
+  {
+    TODO("handle inplace updates to objects");
+  }
+  else
+  {
+    char *ident_buffer = malloc(sizeof(char) * (ident_len + 1));
+    if (!ident_buffer) { return res; }
+    strncpy(ident_buffer, ident, ident_len);
+    ident_buffer[ident_len] = '\0';
+    var->ident = ident_buffer;
+    var->ident_len = ident_len;
+    var->object = obj;
+    var->next = NULL;
+    res = 1;
+  }
+
+  return res;
+}
+
+
+
+///
+/// "Original Implementations"
+///
 
 static void tyenv__var_inplace_update(TyEnv_Var *var, const char *ident, size_t ident_len, TyObj *obj)
 {

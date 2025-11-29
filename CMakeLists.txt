@@ -70,6 +70,7 @@ set(
     tests/test_lexer.cpp
     tests/test_parser.cpp
     tests/test_eval.cpp
+    tests/test_tyger_env.cpp
 )
 
 add_executable(${TEST_EXE} ${TEST_SOURCES})
