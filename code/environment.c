@@ -278,7 +278,7 @@ TyObj *tyenv_get__(TyEnv__ *env, const char *ident)
 }
 
 
-
+#if 0
 ///
 /// "Original Implementations"
 ///
@@ -380,3 +380,4 @@ TyObj *tyenv_get(const TyEnv *env, const char *ident)
   }
   return NULL;
 }
+#endif

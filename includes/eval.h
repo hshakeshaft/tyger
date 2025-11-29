@@ -4,6 +4,6 @@
 #include "parser.h"
 #include "environment.h"
 
-TyObj eval(TyEnv *global_env, const Program *prog);
+TyObj eval(TyEnv__ *global_env, const Program *prog);
 
 #endif  // TYGER_EVAL_H_

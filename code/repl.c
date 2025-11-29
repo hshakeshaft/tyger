@@ -13,8 +13,8 @@
 // TODO(HS): implement a "history" buffer
 void repl_run(void)
 {
-  TyEnv global;
-  tyenv_init(&global, 16);
+  TyEnv__ global;
+  tyenv_init__(&global, 16);
 
   while (true)
   {
@@ -41,4 +41,6 @@ void repl_run(void)
 
     program_free(&program);
   }
+
+  tyenv_free__(&global);
 }

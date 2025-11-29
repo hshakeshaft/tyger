@@ -10,24 +10,24 @@
 ///
 /// Internal forward declarations
 ///
-static TyObj eval_int(const Int_Expression *expr);
-static TyObj eval_infix(TyEnv *env, const Infix_Expression *expr, const Parser_Context *ctx);
-static TyObj eval_expression(TyEnv *env, const Expression *expr, const Parser_Context *ctx);
+static TyObj *eval_int(const Int_Expression *expr);
+static TyObj *eval_infix(TyEnv__ *env, const Infix_Expression *expr, const Parser_Context *ctx);
+static TyObj *eval_expression(TyEnv__ *env, const Expression *expr, const Parser_Context *ctx);
 
 
 ///
 /// Implementations
 ///
-static int eval__do_add(TyObj *out, TyObj lhs, TyObj rhs)
+static int eval__do_add(TyObj *out, const TyObj *lhs, const TyObj *rhs)
 {
   int success = 0;
 
-  switch (lhs.kind)
+  switch (lhs->kind)
   {
   case TYOBJ_INT:
   {
-    int64_t lval = lhs.o.integer.value;
-    int64_t rval = rhs.o.integer.value;
+    int64_t lval = lhs->o.integer.value;
+    int64_t rval = rhs->o.integer.value;
     out->kind = TYOBJ_INT;
     out->o.integer.value = lval + rval;
   } break;
@@ -42,16 +42,16 @@ static int eval__do_add(TyObj *out, TyObj lhs, TyObj rhs)
   return success;
 }
 
-static int eval__do_sub(TyObj *out, TyObj lhs, TyObj rhs)
+static int eval__do_sub(TyObj *out, const TyObj *lhs, const TyObj *rhs)
 {
   int success = 0;
 
-  switch (lhs.kind)
+  switch (lhs->kind)
   {
   case TYOBJ_INT:
   {
-    int64_t lval = lhs.o.integer.value;
-    int64_t rval = rhs.o.integer.value;
+    int64_t lval = lhs->o.integer.value;
+    int64_t rval = rhs->o.integer.value;
     out->kind = TYOBJ_INT;
     out->o.integer.value = lval - rval;
   } break;
@@ -66,16 +66,16 @@ static int eval__do_sub(TyObj *out, TyObj lhs, TyObj rhs)
   return success;
 }
 
-static int eval__do_mul(TyObj *out, TyObj lhs, TyObj rhs)
+static int eval__do_mul(TyObj *out, const TyObj *lhs, const TyObj *rhs)
 {
   int success = 0;
 
-  switch (lhs.kind)
+  switch (lhs->kind)
   {
   case TYOBJ_INT:
   {
-    int64_t lval = lhs.o.integer.value;
-    int64_t rval = rhs.o.integer.value;
+    int64_t lval = lhs->o.integer.value;
+    int64_t rval = rhs->o.integer.value;
     out->kind = TYOBJ_INT;
     out->o.integer.value = lval * rval;
   } break;
@@ -90,16 +90,16 @@ static int eval__do_mul(TyObj *out, TyObj lhs, TyObj rhs)
   return success;
 }
 
-static int eval__do_div(TyObj *out, TyObj lhs, TyObj rhs)
+static int eval__do_div(TyObj *out, const TyObj *lhs, const TyObj *rhs)
 {
   int success = 0;
 
-  switch (lhs.kind)
+  switch (lhs->kind)
   {
   case TYOBJ_INT:
   {
-    int64_t lval = lhs.o.integer.value;
-    int64_t rval = rhs.o.integer.value;
+    int64_t lval = lhs->o.integer.value;
+    int64_t rval = rhs->o.integer.value;
     out->kind = TYOBJ_INT;
     out->o.integer.value = lval / rval;
   } break;
@@ -114,11 +114,11 @@ static int eval__do_div(TyObj *out, TyObj lhs, TyObj rhs)
   return success;
 }
 
-static int eval__do_op(TyObj *out, Operator op, TyObj lhs, TyObj rhs)
+static int eval__do_op(TyObj *out, Operator op, const TyObj *lhs, const TyObj *rhs)
 {
   // NOTE(HS): `success` is set to 1 by succss of result of operator functions
   int success = 0;
-  if (lhs.kind == rhs.kind)
+  if (lhs->kind == rhs->kind)
   {
     switch (op)
     {
@@ -135,20 +135,15 @@ static int eval__do_op(TyObj *out, Operator op, TyObj lhs, TyObj rhs)
   return success;
 }
 
-static TyObj eval_int(const Int_Expression *expr)
+static TyObj *eval_int(const Int_Expression *expr)
 {
-  TyObj res;
-  res.kind = TYOBJ_INT;
-  res.o.integer.value = expr->value;
+  TyObj *res = tyobj_new(TYOBJ_INT, (void*) &expr->value);
   return res;
 }
 
-// NOTE(HS): this leaks
 // TODO(HS): string allocation should be pooled in VM memory, not randomly here
-static TyObj eval_string(const String_Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_string(const String_Expression *expr, const Parser_Context *ctx)
 {
-  TyObj res;
-
   char *buffer = malloc(sizeof(char) * (expr->len + 1));
   assert(buffer && "failed to malloc string memory");
 
@@ -156,8 +151,10 @@ static TyObj eval_string(const String_Expression *expr, const Parser_Context *ct
   strncpy(buffer, string, expr->len);
   buffer[expr->len] = '\0';
 
-  res.kind = TYOBJ_STRING;
-  res.o.string = (TyString) {
+  TyObj *res = malloc(sizeof(TyObj));
+  assert(res && "failed to allocate space for [TyObj::String]");
+  res->kind = TYOBJ_STRING;
+  res->o.string = (TyString) {
     .value = buffer,
     .len = expr->len,
   };
@@ -165,13 +162,12 @@ static TyObj eval_string(const String_Expression *expr, const Parser_Context *ct
   return res;
 }
 
-static TyObj eval_ident(TyEnv *env, const Ident_Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_ident(TyEnv__ *env, const Ident_Expression *expr, const Parser_Context *ctx)
 {
   const char *ident = &(ctx->evaluated_identifiers.elems[expr->ident_handle]);
   assert(ident && "ident lookup from parser failed (returned NULL)");
-  TyObj *env_obj = tyenv_get(env, ident);
-  assert(env_obj && "Invalid ident used in env lookup");
-  TyObj res = *env_obj;
+  TyObj *res = tyenv_get__(env, ident);
+  assert(res && "Invalid ident used in env lookup");
   return res;
 }
 
@@ -184,7 +180,7 @@ static int compare_function_names_eq(const char *exp, const char *act)
 }
 
 // TODO(HS): handle more than "println" builtin
-static void eval_function_builtin(TyEnv *env, const Argument_List *args, const Parser_Context *ctx)
+static void eval_function_builtin(TyEnv__ *env, const Argument_List *args, const Parser_Context *ctx)
 {
   // NOTE(HS): all println handling
   {
@@ -192,8 +188,8 @@ static void eval_function_builtin(TyEnv *env, const Argument_List *args, const P
     for (size_t i = 0; i < args->len; ++i)
     {
       const Expression *expr = &(args->elems[i]);
-      TyObj o = eval_expression(env, expr, ctx);
-      memcpy(&(evaluated_args[i]), &o, sizeof(TyObj));
+      TyObj *o = eval_expression(env, expr, ctx);
+      memcpy(&(evaluated_args[i]), o, sizeof(TyObj));
     }
 
     for (size_t i = 0; i < args->len; ++i)
@@ -213,9 +209,9 @@ static void eval_function_builtin(TyEnv *env, const Argument_List *args, const P
   }
 }
 
-static TyObj eval_call_expression(TyEnv *env, const Call_Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_call_expression(TyEnv__ *env, const Call_Expression *expr, const Parser_Context *ctx)
 {
-  TyObj res = {0};
+  TyObj *res = tyobj_new(TYOBJ_NONE, NULL);
 
   const Expression *function = &(ctx->expressions.elems[expr->function]);
   assert(function->kind == EXPR_IDENT);
@@ -225,28 +221,27 @@ static TyObj eval_call_expression(TyEnv *env, const Call_Expression *expr, const
   // TODO(HS): hanlde more than just the "println" function
   assert(compare_function_names_eq("println", ident));
   eval_function_builtin(env, &expr->args, ctx);
-  res.kind = TYOBJ_NONE;
 
   return res;
 }
 
-static TyObj eval_infix(TyEnv *env, const Infix_Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_infix(TyEnv__ *env, const Infix_Expression *expr, const Parser_Context *ctx)
 {
-  TyObj res;
+  TyObj *res = NULL;
 
   const Expression *lhs = &(ctx->expressions.elems[expr->lhs]);
   const Expression *rhs = &(ctx->expressions.elems[expr->rhs]);
 
-  TyObj lhs_res = eval_expression(env, lhs, ctx);
-  TyObj rhs_res = eval_expression(env, rhs, ctx);
-  assert(eval__do_op(&res, expr->op, lhs_res, rhs_res));
+  TyObj *lhs_res = eval_expression(env, lhs, ctx);
+  TyObj *rhs_res = eval_expression(env, rhs, ctx);
+  assert(eval__do_op(res, expr->op, lhs_res, rhs_res));
 
   return res;
 }
 
-static TyObj eval_expression(TyEnv *env, const Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_expression(TyEnv__ *env, const Expression *expr, const Parser_Context *ctx)
 {
-  TyObj res;
+  TyObj *res = NULL;
 
   switch (expr->kind)
   {
@@ -282,7 +277,6 @@ static TyObj eval_expression(TyEnv *env, const Expression *expr, const Parser_Co
 
   default:
   {
-    res = (TyObj) {0};
     assert(0 && "Invalid expression kind");
   } break;
   }
@@ -290,32 +284,32 @@ static TyObj eval_expression(TyEnv *env, const Expression *expr, const Parser_Co
   return res;
 }
 
-static TyObj eval_expression_statement(TyEnv *env, Expression_Handle handle, const Parser_Context *ctx)
+static TyObj *eval_expression_statement(TyEnv__ *env, Expression_Handle handle, const Parser_Context *ctx)
 {
-  TyObj res;
+  TyObj *res;
   const Expression *expr = &(ctx->expressions.elems[handle]);
   res = eval_expression(env, expr, ctx);
   return res;
 }
 
-static TyObj eval_var_statement(TyEnv *env, const Var_Statement *stmt, const Parser_Context *ctx)
+static TyObj *eval_var_statement(TyEnv__ *env, const Var_Statement *stmt, const Parser_Context *ctx)
 {
-  TyObj res;
+  TyObj *res;
 
   // TODO(HS): register object in VM
   const char *ident = &(ctx->identifiers.elems[stmt->ident_handle]);
   const Expression *expr = &(ctx->expressions.elems[stmt->expression_handle]);
-  TyObj val = eval_expression(env, expr, ctx);
-  tyenv_insert(env, ident, &val);
+  TyObj *val = eval_expression(env, expr, ctx);
+  tyenv_insert__(env, ident, val);
 
-  res.kind = TYOBJ_NONE;
+  res = tyobj_new(TYOBJ_NONE, NULL);
 
   return res;
 }
 
-static TyObj eval_statement(TyEnv *env, const Statement *stmt, const Parser_Context *ctx)
+static TyObj *eval_statement(TyEnv__ *env, const Statement *stmt, const Parser_Context *ctx)
 {
-  TyObj res;
+  TyObj *res = NULL;
   switch (stmt->kind)
   {
   case STMT_VAR:
@@ -332,16 +326,15 @@ static TyObj eval_statement(TyEnv *env, const Statement *stmt, const Parser_Cont
 
   default:
   {
-    res = (TyObj) {0};
     assert(0 && "Invalid statement type");
   } break;
   }
   return res;
 }
 
-static TyObj eval_program_statements(TyEnv *env, const Program *prog)
+static TyObj *eval_program_statements(TyEnv__ *env, const Program *prog)
 {
-  TyObj res;
+  TyObj *res = NULL;
   
   for (size_t i = 0; i < prog->statements.len; ++i)
   {
@@ -353,9 +346,10 @@ static TyObj eval_program_statements(TyEnv *env, const Program *prog)
   return res;
 }
 
-TyObj eval(TyEnv *global_env, const Program *prog)
+// TODO(HS): do I want to break current interface and return pointer?
+TyObj eval(TyEnv__ *global_env, const Program *prog)
 {
-  TyObj obj;
+  TyObj *obj;
   obj = eval_program_statements(global_env, prog);
-  return obj;
+  return *obj;
 }
