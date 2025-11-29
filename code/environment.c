@@ -94,6 +94,28 @@ static int tyenv__handle_collision__(TyEnv_Var__ *cur, const char *ident, size_t
   return res;
 }
 
+static TyObj *tyenv__handle_get__(TyEnv_Var__ *cur, const char *ident, size_t ident_len)
+{
+  TyObj *res = NULL;
+
+  if (tyenv__compare_keys_eq(cur->ident, cur->ident_len, ident, ident_len))
+  {
+    assert(cur->object && "[cur] points to NULL object");
+    return cur->object;
+  }
+  else
+  {
+    if (cur->next)
+    {
+      res = tyenv__handle_get__(cur->next, ident, ident_len);
+    }
+    // else => return NULL
+  }
+
+  return res;
+}
+
+
 
 int tyenv_init__(TyEnv__ *env, size_t capacity)
 {
@@ -163,6 +185,35 @@ int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
     var->object = obj;
     var->next = NULL;
     res = 1;
+  }
+
+  return res;
+}
+
+TyObj *tyenv_get__(TyEnv__ *env, const char *ident)
+{
+  TyObj *res = NULL;
+
+  size_t ident_len = strlen(ident);
+  uint32_t hash = fnv1a_u32(ident, ident_len);
+  hash %= env->capacity;
+
+  TyEnv_Var__ *var = &(env->vars[hash]);
+  if (var->ident)
+  {
+    if (tyenv__compare_keys_eq(var->ident, var->ident_len, ident, ident_len))
+    {
+      assert(var->object && "object pointed to by key was [NULL]");
+      return var->object;
+    }
+    else
+    {
+      if (var->next)
+      {
+        res = tyenv__handle_get__(var->next, ident, ident_len);
+      }
+      // else => return NULL
+    }
   }
 
   return res;
