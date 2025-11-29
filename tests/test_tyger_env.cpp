@@ -117,7 +117,7 @@ TEST(TyEnvTestSuite, TestExistingKeysCanBeUpdated)
   TyEnv__ env;
   tyenv_init__(&env, 16);
 
-  int64_t init =16, update1 = 7, update2 = 0;
+  int64_t init = 16, update1 = 7, update2 = 0;
   TyObj *o1 = tyobj_new(TYOBJ_INT, &init);
   TyObj *o2 = tyobj_new(TYOBJ_INT, &update1);
   TyObj *o3 = tyobj_new(TYOBJ_INT, &update2);
@@ -160,6 +160,16 @@ TEST(TyEnvTestSuite, TestExistingKeysCanBeUpdated)
     auto exp_str = std::string{o4->o.string.value};
     ASSERT_EQ(res_str, exp_str);
   }
+}
+
+TEST(TyEnvTestSuite, TestKeysNotFoundCantBeUpdated)
+{
+  TyEnv__ env;
+  tyenv_init__(&env, 16);
+  int64_t init = 16;
+  TyObj *o1 = tyobj_new(TYOBJ_INT, &init);
+  DEFER({ tyenv_free__((TyEnv__*) &env); });
+  ASSERT_FALSE(tyenv_update__(&env, "x", o1));
 }
 
 
