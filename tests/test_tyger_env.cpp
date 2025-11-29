@@ -48,7 +48,6 @@ TEST(TyEnvTestSuite, TestKeyCollisionResolution)
   }
 }
 
-// TODO(HS): get by key
 TEST(TyEnvTestSuite, TestValidKeyRetrieved)
 {
   TyEnv__ env;
@@ -66,7 +65,6 @@ TEST(TyEnvTestSuite, TestValidKeyRetrieved)
   ASSERT_EQ(res->o.integer.value, obj_val);
 }
 
-// TODO(HS): collision resolution in get
 TEST(TyEnvTestSuite, TestKeyGetResolution)
 {
   TyEnv__ env;
@@ -93,8 +91,24 @@ TEST(TyEnvTestSuite, TestKeyGetResolution)
   ASSERT_EQ(res2->o.integer.value, v2);
 }
 
+TEST(TyEnvTestSuite, TestInvalidKeyLookupReturnsNULL)
+{
+  TyEnv__ env;
+  tyenv_init__(&env, 16);
+  DEFER({ tyenv_free__((TyEnv__*) &env); });
 
-// TODO(HS): handle case where no matching key
+  auto idents = std::vector<const char *>{
+    "x", "foo", "seven",
+    "flocinocipifilification",
+    "supercalifragilisticexpialidocious",
+  };
+
+  for (auto& ident : idents)
+  {
+    ASSERT_EQ(tyenv_get__(&env, ident), nullptr)
+      << "Expected key \"" << ident << "\" to return NULL (i.e. be invalid)";
+  }
+}
 
 
 // TODO(HS): update existing keys
