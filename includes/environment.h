@@ -47,6 +47,7 @@ typedef struct tyenv__
 int tyenv_init__(TyEnv__ *env, size_t capacity);
 int tyenv_free__(TyEnv__ *env);
 int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj);
+int tyenv_update__(TyEnv__ *env, const char *ident, TyObj *obj);
 TyObj *tyenv_get__(TyEnv__ *env, const char *ident);
 
 #endif  // TYGER_ENVIRONMENT_H_

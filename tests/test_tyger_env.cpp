@@ -111,6 +111,57 @@ TEST(TyEnvTestSuite, TestInvalidKeyLookupReturnsNULL)
 }
 
 
-// TODO(HS): update existing keys
+// NOTE(HS): no language semantics yet to support this but may as well include
+TEST(TyEnvTestSuite, TestExistingKeysCanBeUpdated)
+{
+  TyEnv__ env;
+  tyenv_init__(&env, 16);
+
+  int64_t init =16, update1 = 7, update2 = 0;
+  TyObj *o1 = tyobj_new(TYOBJ_INT, &init);
+  TyObj *o2 = tyobj_new(TYOBJ_INT, &update1);
+  TyObj *o3 = tyobj_new(TYOBJ_INT, &update2);
+
+  DEFER({ tyenv_free__((TyEnv__*) &env); });
+
+  tyenv_insert__(&env, "x", o1);
+
+  { // "re-inserting" existing key should work
+    ASSERT_TRUE(tyenv_insert__(&env, "x", o2));
+    TyObj *res = tyenv_get__(&env, "x");
+    ASSERT_NE(res, nullptr);
+    ASSERT_EQ(res->kind, o2->kind)
+      << "Expected object to be updated to have type " << tyobj_kind_to_string(o2->kind)
+      << ", got " << tyobj_kind_to_string(res->kind);
+    ASSERT_EQ(res->o.integer.value, o2->o.integer.value);
+  }
+
+  { // explicit call to update should work also
+    ASSERT_TRUE(tyenv_update__(&env, "x", o3));
+    TyObj *res = tyenv_get__(&env, "x");
+    ASSERT_NE(res, nullptr);
+    ASSERT_EQ(res->kind, o3->kind)
+      << "Expected object to be updated to have type " << tyobj_kind_to_string(o3->kind)
+      << ", got " << tyobj_kind_to_string(res->kind);
+    ASSERT_EQ(res->o.integer.value, o3->o.integer.value);
+  }
+
+  const char *sval = "foo";
+  TyObj *o4 = tyobj_new(TYOBJ_STRING, &sval);
+  { // check types update too
+    ASSERT_TRUE(tyenv_update__(&env, "x", o4));
+    TyObj *res = tyenv_get__(&env, "x");
+    ASSERT_NE(res, nullptr);
+    ASSERT_EQ(res->kind, o4->kind)
+      << "Expected object to be updated to have type " << tyobj_kind_to_string(o4->kind)
+      << ", got " << tyobj_kind_to_string(res->kind);
+
+    auto res_str = std::string{res->o.string.value};
+    auto exp_str = std::string{o4->o.string.value};
+    ASSERT_EQ(res_str, exp_str);
+  }
+}
+
 
 // TODO(HS): handle key deletions
+// NOTE(HS): no language semantics yet to support this but may as well include

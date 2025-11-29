@@ -115,6 +115,28 @@ static TyObj *tyenv__handle_get__(TyEnv_Var__ *cur, const char *ident, size_t id
   return res;
 }
 
+static int tyenv__handle_update__(TyEnv_Var__ *cur, const char *ident, size_t ident_len, TyObj *obj)
+{
+  int res = 0;
+
+  if (tyenv__compare_keys_eq(cur->ident, cur->ident_len, ident, ident_len))
+  {
+    // TODO(HS): handle with garbage collection
+    tyobj_delete(cur->object);
+    cur->object = obj;
+    res = 1;
+  }
+  else
+  {
+    if (cur->next)
+    {
+      res = tyenv__handle_update__(cur->next, ident, ident_len, obj);
+    }
+    // else => return 0  <-- name lookup error
+  }
+
+  return res;
+}
 
 
 int tyenv_init__(TyEnv__ *env, size_t capacity)
@@ -157,7 +179,10 @@ int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
   {
     if (tyenv__compare_keys_eq(var->ident, var->ident_len, ident, ident_len))
     {
-      TODO("handle inplace updates to objects");
+      // TODO(HS): move this into garbage collection
+      tyobj_delete(var->object);
+      var->object = obj;
+      res = 1;
     }
     else
     {
@@ -185,6 +210,39 @@ int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
     var->object = obj;
     var->next = NULL;
     res = 1;
+  }
+
+  return res;
+}
+
+int tyenv_update__(TyEnv__ *env, const char *ident, TyObj *obj)
+{
+  int res = 0;
+
+  size_t ident_len = strlen(ident);
+  uint32_t hash = fnv1a_u32(ident, ident_len);
+  hash %= env->capacity;
+
+  // NOTE(HS): if returned bucket does not contain an ident, this is likely a failure
+  // in lookup as key is non-existent
+  TyEnv_Var__ *var = &(env->vars[hash]);
+  if (var->ident)
+  {
+    if (tyenv__compare_keys_eq(var->ident, var->ident_len, ident, ident_len))
+    {
+      // TODO(HS): handle this in garbage collection
+      tyobj_delete(var->object);
+      var->object = obj;
+      res = 1;
+    }
+    else
+    {
+      if (var->next)
+      {
+        res = tyenv__handle_update__(var->next, ident, ident_len, obj);
+      }
+      // else => return  <-- name lookup error
+    }
   }
 
   return res;
