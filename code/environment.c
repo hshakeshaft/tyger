@@ -25,12 +25,10 @@ static uint32_t fnv1a_u32(const char *ident, size_t ident_len)
   return hash;
 }
 
-///
-/// "New" implementations
-///
-static void tyenv__free_entry__(TyEnv_Var__ *var)
+
+static void tyenv__free_entry(TyEnv_Var *var)
 {
-  if (var->next) { tyenv__free_entry__(var->next); }
+  if (var->next) { tyenv__free_entry(var->next); }
   free((void*) var->ident);
   tyobj_delete(var->object);
 }
@@ -46,13 +44,13 @@ static int tyenv__compare_keys_eq(
   return res;
 }
 
-static TyEnv_Var__ *tyvar_new(const char *ident, size_t ident_len, TyObj *obj)
+static TyEnv_Var *tyvar_new(const char *ident, size_t ident_len, TyObj *obj)
 {
   assert(ident && "Cannot copy [NULL] identifier");
   assert(ident_len > 0 && "Cannot copy [0] lengthed identifier");
   assert(obj && "Cannot coppy pointer to object which has value [NULL]");
 
-  TyEnv_Var__ *var = malloc(sizeof(struct tyenv_var__));
+  TyEnv_Var *var = malloc(sizeof(struct tyenv_var));
   assert(var && "failed to allocate space for TyEnv_Var entry");
 
   var->ident = malloc(sizeof(char) * (ident_len + 1));
@@ -67,7 +65,7 @@ static TyEnv_Var__ *tyvar_new(const char *ident, size_t ident_len, TyObj *obj)
   return var;
 }
 
-static int tyenv__handle_collision__(TyEnv_Var__ *cur, const char *ident, size_t ident_len, TyObj *obj)
+static int tyenv__handle_collision(TyEnv_Var *cur, const char *ident, size_t ident_len, TyObj *obj)
 {
   (void) obj;
   int res = 0;
@@ -80,11 +78,11 @@ static int tyenv__handle_collision__(TyEnv_Var__ *cur, const char *ident, size_t
   {
     if (cur->next)
     {
-      res = tyenv__handle_collision__(cur->next, ident, ident_len, obj);
+      res = tyenv__handle_collision(cur->next, ident, ident_len, obj);
     }
     else
     {
-      TyEnv_Var__ *next = tyvar_new(ident, ident_len, obj);
+      TyEnv_Var *next = tyvar_new(ident, ident_len, obj);
       assert(next && "[next] insertion value in TyEnv was NULL");
       cur->next = next;
       res = 1;
@@ -94,7 +92,7 @@ static int tyenv__handle_collision__(TyEnv_Var__ *cur, const char *ident, size_t
   return res;
 }
 
-static TyObj *tyenv__handle_get__(TyEnv_Var__ *cur, const char *ident, size_t ident_len)
+static TyObj *tyenv__handle_get(TyEnv_Var *cur, const char *ident, size_t ident_len)
 {
   TyObj *res = NULL;
 
@@ -107,7 +105,7 @@ static TyObj *tyenv__handle_get__(TyEnv_Var__ *cur, const char *ident, size_t id
   {
     if (cur->next)
     {
-      res = tyenv__handle_get__(cur->next, ident, ident_len);
+      res = tyenv__handle_get(cur->next, ident, ident_len);
     }
     // else => return NULL
   }
@@ -115,7 +113,7 @@ static TyObj *tyenv__handle_get__(TyEnv_Var__ *cur, const char *ident, size_t id
   return res;
 }
 
-static int tyenv__handle_update__(TyEnv_Var__ *cur, const char *ident, size_t ident_len, TyObj *obj)
+static int tyenv__handle_update(TyEnv_Var *cur, const char *ident, size_t ident_len, TyObj *obj)
 {
   int res = 0;
 
@@ -130,7 +128,7 @@ static int tyenv__handle_update__(TyEnv_Var__ *cur, const char *ident, size_t id
   {
     if (cur->next)
     {
-      res = tyenv__handle_update__(cur->next, ident, ident_len, obj);
+      res = tyenv__handle_update(cur->next, ident, ident_len, obj);
     }
     // else => return 0  <-- name lookup error
   }
@@ -139,24 +137,24 @@ static int tyenv__handle_update__(TyEnv_Var__ *cur, const char *ident, size_t id
 }
 
 
-int tyenv_init__(TyEnv__ *env, size_t capacity)
+int tyenv_init(TyEnv *env, size_t capacity)
 {
   int res = 0;
-  env->vars = calloc(capacity, sizeof(struct tyenv_var__));
+  env->vars = calloc(capacity, sizeof(struct tyenv_var));
   if (!env->vars) { return res; }
   env->capacity = capacity;
   res = 1;
   return res;
 }
 
-int tyenv_free__(TyEnv__ *env)
+int tyenv_free(TyEnv *env)
 {
   for (size_t i = 0; i < env->capacity; ++i)
   {
-    TyEnv_Var__ *var = &(env->vars[i]);
+    TyEnv_Var *var = &(env->vars[i]);
     if (var->next)
     {
-      tyenv__free_entry__(var->next);
+      tyenv__free_entry(var->next);
     }
     if (var->ident) { free((void*) var->ident); }
     var->ident_len = 0;
@@ -167,14 +165,14 @@ int tyenv_free__(TyEnv__ *env)
   return 1;
 }
 
-int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
+int tyenv_insert(TyEnv *env, const char *ident, TyObj *obj)
 {
   int res = 0;
   size_t ident_len = strlen(ident);
   uint32_t hash = fnv1a_u32(ident, ident_len);
   hash %= env->capacity;
 
-  TyEnv_Var__ *var = &(env->vars[hash]);
+  TyEnv_Var *var = &(env->vars[hash]);
   if (var->ident)
   {
     if (tyenv__compare_keys_eq(var->ident, var->ident_len, ident, ident_len))
@@ -188,11 +186,11 @@ int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
     {
       if (var->next)
       {
-        res = tyenv__handle_collision__(var->next, ident, ident_len, obj);
+        res = tyenv__handle_collision(var->next, ident, ident_len, obj);
       }
       else
       {
-        TyEnv_Var__ *next = tyvar_new(ident, ident_len, obj);
+        TyEnv_Var *next = tyvar_new(ident, ident_len, obj);
         assert(next && "[next] insertion value in TyEnv was NULL");
         var->next = next;
         res = 1;
@@ -215,7 +213,7 @@ int tyenv_insert__(TyEnv__ *env, const char *ident, TyObj *obj)
   return res;
 }
 
-int tyenv_update__(TyEnv__ *env, const char *ident, TyObj *obj)
+int tyenv_update(TyEnv *env, const char *ident, TyObj *obj)
 {
   int res = 0;
 
@@ -225,7 +223,7 @@ int tyenv_update__(TyEnv__ *env, const char *ident, TyObj *obj)
 
   // NOTE(HS): if returned bucket does not contain an ident, this is likely a failure
   // in lookup as key is non-existent
-  TyEnv_Var__ *var = &(env->vars[hash]);
+  TyEnv_Var *var = &(env->vars[hash]);
   if (var->ident)
   {
     if (tyenv__compare_keys_eq(var->ident, var->ident_len, ident, ident_len))
@@ -239,7 +237,7 @@ int tyenv_update__(TyEnv__ *env, const char *ident, TyObj *obj)
     {
       if (var->next)
       {
-        res = tyenv__handle_update__(var->next, ident, ident_len, obj);
+        res = tyenv__handle_update(var->next, ident, ident_len, obj);
       }
       // else => return  <-- name lookup error
     }
@@ -248,7 +246,7 @@ int tyenv_update__(TyEnv__ *env, const char *ident, TyObj *obj)
   return res;
 }
 
-TyObj *tyenv_get__(TyEnv__ *env, const char *ident)
+TyObj *tyenv_get(TyEnv *env, const char *ident)
 {
   TyObj *res = NULL;
 
@@ -256,7 +254,7 @@ TyObj *tyenv_get__(TyEnv__ *env, const char *ident)
   uint32_t hash = fnv1a_u32(ident, ident_len);
   hash %= env->capacity;
 
-  TyEnv_Var__ *var = &(env->vars[hash]);
+  TyEnv_Var *var = &(env->vars[hash]);
   if (var->ident)
   {
     if (tyenv__compare_keys_eq(var->ident, var->ident_len, ident, ident_len))
@@ -268,7 +266,7 @@ TyObj *tyenv_get__(TyEnv__ *env, const char *ident)
     {
       if (var->next)
       {
-        res = tyenv__handle_get__(var->next, ident, ident_len);
+        res = tyenv__handle_get(var->next, ident, ident_len);
       }
       // else => return NULL
     }
@@ -276,108 +274,3 @@ TyObj *tyenv_get__(TyEnv__ *env, const char *ident)
 
   return res;
 }
-
-
-#if 0
-///
-/// "Original Implementations"
-///
-
-static void tyenv__var_inplace_update(TyEnv_Var *var, const char *ident, size_t ident_len, TyObj *obj)
-{
-  char *ident_buffer = NULL;
-  ident_buffer = malloc(sizeof(char) * (ident_len + 1));
-  strncpy(ident_buffer, ident, ident_len);
-  ident_buffer[ident_len] = '\0';
-
-  TyObj *new = malloc(sizeof(TyObj));
-  *new = *obj;
-
-  var->ident = ident_buffer;
-  var->object = new;
-  var->next = NULL;
-}
-
-static void tyenv__free_var(TyEnv_Var *var)
-{
-  if (var->next) { tyenv__free_var(var->next); }
-  free(var->ident);
-  tyobj_delete(var->object);
-  free(var);
-}
-
-
-int tyenv_init(TyEnv *env, size_t capacity)
-{
-  int result = 0;
-  TyEnv_Var *vars = calloc(capacity, sizeof(struct tyenv_var));
-  if (!vars) { return result; }
-
-  env->variables = vars;
-  env->capacity = capacity;
-
-  result = 1;
-  return result;
-}
-
-int tyenv_free(TyEnv *env)
-{
-  (void) env;
-  int result = 0;
-
-  for (size_t i = 0; i < env->capacity; ++i)
-  {
-    TyEnv_Var *var = &(env->variables[i]);
-    (void) var;
-    if (var->next) { tyenv__free_var(var->next); }
-    if (var->ident) { free(var->ident); }
-    if (var->object) { tyobj_delete(var->object); }
-  }
-  free(env->variables);
-
-  return result;
-}
-
-void tyenv_insert(TyEnv *env, const char *ident, TyObj *obj)
-{
-  size_t ident_len = strlen(ident);
-  uint32_t hash = fnv1a_u32(ident, ident_len);
-  uint32_t index = hash % env->capacity;
-
-  TyEnv_Var *existing_var = &(env->variables[index]);
-  if (existing_var->ident)
-  {
-    TODO("Handle updates to existing entries/collisions");
-  }
-  else
-  {
-    tyenv__var_inplace_update(existing_var, ident, ident_len, obj);
-  }
-}
-
-TyObj *tyenv_get(const TyEnv *env, const char *ident)
-{
-  size_t ident_len = strlen(ident);
-  uint32_t hash = fnv1a_u32(ident, ident_len);
-  uint32_t index = hash % env->capacity;
-
-  TyEnv_Var *var = &(env->variables[index]);
-  if (var->ident)
-  {
-    size_t var_ident_len = strlen(var->ident);
-    if ((var_ident_len == ident_len) && strncmp(var->ident, ident, ident_len) == 0)
-    {
-      return var->object;
-    }
-    else
-    {
-      TODO("Handle collisions in lookup");
-    }
-  }
-  else
-  {
-    return NULL;
-  }
-  return NULL;
-}
-#endif

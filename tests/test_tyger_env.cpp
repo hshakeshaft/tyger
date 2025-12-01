@@ -7,57 +7,54 @@
 #include "parser_test_helper.hpp"
 #include "tyger_test.hpp"
 
-// TODO(HS): refactor to remove `__` suffix when this works and works well
-
 TEST(TyEnvTestSuite, TestNewKeyInsertion)
 {
-  TyEnv__ env;
-  tyenv_init__(&env, 16);
+  TyEnv env;
+  tyenv_init(&env, 16);
   int obj_val = 16;
   TyObj *obj = tyobj_new(TYOBJ_INT, &obj_val);
-  DEFER({ tyenv_free__((TyEnv__*) &env); });
-  ASSERT_TRUE(tyenv_insert__(&env, "x", obj)) << "Failed to insert object with key `x`";
+  DEFER({ tyenv_free((TyEnv*) &env); });
+  ASSERT_TRUE(tyenv_insert(&env, "x", obj)) << "Failed to insert object with key `x`";
 }
 
 TEST(TyEnvTestSuite, TestMultipleKeyInsertion)
 {
-  TyEnv__ env;
-  tyenv_init__(&env, 16);
+  TyEnv env;
+  tyenv_init(&env, 16);
   int obj_val = 16;
   TyObj *obj = tyobj_new(TYOBJ_INT, &obj_val);
-  DEFER({ tyenv_free__((TyEnv__*) &env); });
-  ASSERT_TRUE(tyenv_insert__(&env, "x", obj)) << "Failed to insert object with key `x`";
-  ASSERT_TRUE(tyenv_insert__(&env, "y", obj)) << "Failed to insert object with key `y`";
+  DEFER({ tyenv_free((TyEnv*) &env); });
+  ASSERT_TRUE(tyenv_insert(&env, "x", obj)) << "Failed to insert object with key `x`";
+  ASSERT_TRUE(tyenv_insert(&env, "y", obj)) << "Failed to insert object with key `y`";
 }
 
-// TOOD(HS): collision resolution on insert
 TEST(TyEnvTestSuite, TestKeyCollisionResolution)
 {
-  TyEnv__ env;
-  tyenv_init__(&env, 1);  // NOTE(HS): guarentees all insertions are at same index
+  TyEnv env;
+  tyenv_init(&env, 1);  // NOTE(HS): guarentees all insertions are at same index
   int obj_val = 16;
   TyObj *obj = tyobj_new(TYOBJ_INT, &obj_val);
-  DEFER({ tyenv_free__((TyEnv__*) &env); });
+  DEFER({ tyenv_free((TyEnv*) &env); });
 
   auto idents = std::vector<const char*>{ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j" };
 
   for (auto& ident : idents)
   {
-    ASSERT_TRUE(tyenv_insert__(&env, ident, obj))
+    ASSERT_TRUE(tyenv_insert(&env, ident, obj))
       << "Failed to inser object with key: " << ident;
   }
 }
 
 TEST(TyEnvTestSuite, TestValidKeyRetrieved)
 {
-  TyEnv__ env;
-  tyenv_init__(&env, 16);
+  TyEnv env;
+  tyenv_init(&env, 16);
   int64_t obj_val = 16;
   TyObj *obj = tyobj_new(TYOBJ_INT, &obj_val);
-  DEFER({ tyenv_free__((TyEnv__*) &env); });
-  ASSERT_TRUE(tyenv_insert__(&env, "x", obj));
+  DEFER({ tyenv_free((TyEnv*) &env); });
+  ASSERT_TRUE(tyenv_insert(&env, "x", obj));
 
-  TyObj *res = tyenv_get__(&env, "x");
+  TyObj *res = tyenv_get(&env, "x");
   ASSERT_NE(res, nullptr);
   ASSERT_EQ(res->kind, obj->kind)
     << "Expected retrieved object to be of type " << tyobj_kind_to_string(obj->kind)
@@ -67,19 +64,19 @@ TEST(TyEnvTestSuite, TestValidKeyRetrieved)
 
 TEST(TyEnvTestSuite, TestKeyGetResolution)
 {
-  TyEnv__ env;
-  tyenv_init__(&env, 1);  // NOTE(HS): guarentees hash collision
+  TyEnv env;
+  tyenv_init(&env, 1);  // NOTE(HS): guarentees hash collision
 
   int64_t v1 = 10, v2 = 20;
   TyObj *o1 = tyobj_new(TYOBJ_INT, &v1), *o2 = tyobj_new(TYOBJ_INT, &v2);
 
-  DEFER({ tyenv_free__((TyEnv__*) &env); });
+  DEFER({ tyenv_free((TyEnv*) &env); });
 
-  ASSERT_TRUE(tyenv_insert__(&env, "x", o1));
-  ASSERT_TRUE(tyenv_insert__(&env, "y", o2));
+  ASSERT_TRUE(tyenv_insert(&env, "x", o1));
+  ASSERT_TRUE(tyenv_insert(&env, "y", o2));
 
-  TyObj *res1 = tyenv_get__(&env, "x");
-  TyObj *res2 = tyenv_get__(&env, "y");
+  TyObj *res1 = tyenv_get(&env, "x");
+  TyObj *res2 = tyenv_get(&env, "y");
   ASSERT_NE(res1, nullptr);
   ASSERT_NE(res2, nullptr);
   ASSERT_NE(res1, res2);
@@ -93,9 +90,9 @@ TEST(TyEnvTestSuite, TestKeyGetResolution)
 
 TEST(TyEnvTestSuite, TestInvalidKeyLookupReturnsNULL)
 {
-  TyEnv__ env;
-  tyenv_init__(&env, 16);
-  DEFER({ tyenv_free__((TyEnv__*) &env); });
+  TyEnv env;
+  tyenv_init(&env, 16);
+  DEFER({ tyenv_free((TyEnv*) &env); });
 
   auto idents = std::vector<const char *>{
     "x", "foo", "seven",
@@ -105,7 +102,7 @@ TEST(TyEnvTestSuite, TestInvalidKeyLookupReturnsNULL)
 
   for (auto& ident : idents)
   {
-    ASSERT_EQ(tyenv_get__(&env, ident), nullptr)
+    ASSERT_EQ(tyenv_get(&env, ident), nullptr)
       << "Expected key \"" << ident << "\" to return NULL (i.e. be invalid)";
   }
 }
@@ -114,21 +111,21 @@ TEST(TyEnvTestSuite, TestInvalidKeyLookupReturnsNULL)
 // NOTE(HS): no language semantics yet to support this but may as well include
 TEST(TyEnvTestSuite, TestExistingKeysCanBeUpdated)
 {
-  TyEnv__ env;
-  tyenv_init__(&env, 16);
+  TyEnv env;
+  tyenv_init(&env, 16);
 
   int64_t init = 16, update1 = 7, update2 = 0;
   TyObj *o1 = tyobj_new(TYOBJ_INT, &init);
   TyObj *o2 = tyobj_new(TYOBJ_INT, &update1);
   TyObj *o3 = tyobj_new(TYOBJ_INT, &update2);
 
-  DEFER({ tyenv_free__((TyEnv__*) &env); });
+  DEFER({ tyenv_free((TyEnv*) &env); });
 
-  tyenv_insert__(&env, "x", o1);
+  tyenv_insert(&env, "x", o1);
 
   { // "re-inserting" existing key should work
-    ASSERT_TRUE(tyenv_insert__(&env, "x", o2));
-    TyObj *res = tyenv_get__(&env, "x");
+    ASSERT_TRUE(tyenv_insert(&env, "x", o2));
+    TyObj *res = tyenv_get(&env, "x");
     ASSERT_NE(res, nullptr);
     ASSERT_EQ(res->kind, o2->kind)
       << "Expected object to be updated to have type " << tyobj_kind_to_string(o2->kind)
@@ -137,8 +134,8 @@ TEST(TyEnvTestSuite, TestExistingKeysCanBeUpdated)
   }
 
   { // explicit call to update should work also
-    ASSERT_TRUE(tyenv_update__(&env, "x", o3));
-    TyObj *res = tyenv_get__(&env, "x");
+    ASSERT_TRUE(tyenv_update(&env, "x", o3));
+    TyObj *res = tyenv_get(&env, "x");
     ASSERT_NE(res, nullptr);
     ASSERT_EQ(res->kind, o3->kind)
       << "Expected object to be updated to have type " << tyobj_kind_to_string(o3->kind)
@@ -149,8 +146,8 @@ TEST(TyEnvTestSuite, TestExistingKeysCanBeUpdated)
   const char *sval = "foo";
   TyObj *o4 = tyobj_new(TYOBJ_STRING, &sval);
   { // check types update too
-    ASSERT_TRUE(tyenv_update__(&env, "x", o4));
-    TyObj *res = tyenv_get__(&env, "x");
+    ASSERT_TRUE(tyenv_update(&env, "x", o4));
+    TyObj *res = tyenv_get(&env, "x");
     ASSERT_NE(res, nullptr);
     ASSERT_EQ(res->kind, o4->kind)
       << "Expected object to be updated to have type " << tyobj_kind_to_string(o4->kind)
@@ -164,12 +161,12 @@ TEST(TyEnvTestSuite, TestExistingKeysCanBeUpdated)
 
 TEST(TyEnvTestSuite, TestKeysNotFoundCantBeUpdated)
 {
-  TyEnv__ env;
-  tyenv_init__(&env, 16);
+  TyEnv env;
+  tyenv_init(&env, 16);
   int64_t init = 16;
   TyObj *o1 = tyobj_new(TYOBJ_INT, &init);
-  DEFER({ tyenv_free__((TyEnv__*) &env); });
-  ASSERT_FALSE(tyenv_update__(&env, "x", o1));
+  DEFER({ tyenv_free((TyEnv*) &env); });
+  ASSERT_FALSE(tyenv_update(&env, "x", o1));
 }
 
 

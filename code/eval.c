@@ -11,8 +11,8 @@
 /// Internal forward declarations
 ///
 static TyObj *eval_int(const Int_Expression *expr);
-static TyObj *eval_infix(TyEnv__ *env, const Infix_Expression *expr, const Parser_Context *ctx);
-static TyObj *eval_expression(TyEnv__ *env, const Expression *expr, const Parser_Context *ctx);
+static TyObj *eval_infix(TyEnv *env, const Infix_Expression *expr, const Parser_Context *ctx);
+static TyObj *eval_expression(TyEnv *env, const Expression *expr, const Parser_Context *ctx);
 
 
 ///
@@ -167,11 +167,11 @@ static TyObj *eval_string(const String_Expression *expr, const Parser_Context *c
   return res;
 }
 
-static TyObj *eval_ident(TyEnv__ *env, const Ident_Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_ident(TyEnv *env, const Ident_Expression *expr, const Parser_Context *ctx)
 {
   const char *ident = &(ctx->evaluated_identifiers.elems[expr->ident_handle]);
   assert(ident && "ident lookup from parser failed (returned NULL)");
-  TyObj *res = tyenv_get__(env, ident);
+  TyObj *res = tyenv_get(env, ident);
   assert(res && "Invalid ident used in env lookup");
   return res;
 }
@@ -185,7 +185,7 @@ static int compare_function_names_eq(const char *exp, const char *act)
 }
 
 // TODO(HS): handle more than "println" builtin
-static void eval_function_builtin(TyEnv__ *env, const Argument_List *args, const Parser_Context *ctx)
+static void eval_function_builtin(TyEnv *env, const Argument_List *args, const Parser_Context *ctx)
 {
   // NOTE(HS): all println handling
   {
@@ -214,7 +214,7 @@ static void eval_function_builtin(TyEnv__ *env, const Argument_List *args, const
   }
 }
 
-static TyObj *eval_call_expression(TyEnv__ *env, const Call_Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_call_expression(TyEnv *env, const Call_Expression *expr, const Parser_Context *ctx)
 {
   TyObj *res = tyobj_new(TYOBJ_NONE, NULL);
 
@@ -230,7 +230,7 @@ static TyObj *eval_call_expression(TyEnv__ *env, const Call_Expression *expr, co
   return res;
 }
 
-static TyObj *eval_infix(TyEnv__ *env, const Infix_Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_infix(TyEnv *env, const Infix_Expression *expr, const Parser_Context *ctx)
 {
   TyObj *res = NULL;
 
@@ -244,7 +244,7 @@ static TyObj *eval_infix(TyEnv__ *env, const Infix_Expression *expr, const Parse
   return res;
 }
 
-static TyObj *eval_expression(TyEnv__ *env, const Expression *expr, const Parser_Context *ctx)
+static TyObj *eval_expression(TyEnv *env, const Expression *expr, const Parser_Context *ctx)
 {
   TyObj *res = NULL;
 
@@ -289,7 +289,7 @@ static TyObj *eval_expression(TyEnv__ *env, const Expression *expr, const Parser
   return res;
 }
 
-static TyObj *eval_expression_statement(TyEnv__ *env, Expression_Handle handle, const Parser_Context *ctx)
+static TyObj *eval_expression_statement(TyEnv *env, Expression_Handle handle, const Parser_Context *ctx)
 {
   TyObj *res;
   const Expression *expr = &(ctx->expressions.elems[handle]);
@@ -297,7 +297,7 @@ static TyObj *eval_expression_statement(TyEnv__ *env, Expression_Handle handle, 
   return res;
 }
 
-static TyObj *eval_var_statement(TyEnv__ *env, const Var_Statement *stmt, const Parser_Context *ctx)
+static TyObj *eval_var_statement(TyEnv *env, const Var_Statement *stmt, const Parser_Context *ctx)
 {
   TyObj *res;
 
@@ -305,14 +305,14 @@ static TyObj *eval_var_statement(TyEnv__ *env, const Var_Statement *stmt, const 
   const char *ident = &(ctx->identifiers.elems[stmt->ident_handle]);
   const Expression *expr = &(ctx->expressions.elems[stmt->expression_handle]);
   TyObj *val = eval_expression(env, expr, ctx);
-  tyenv_insert__(env, ident, val);
+  tyenv_insert(env, ident, val);
 
   res = tyobj_new(TYOBJ_NONE, NULL);
 
   return res;
 }
 
-static TyObj *eval_statement(TyEnv__ *env, const Statement *stmt, const Parser_Context *ctx)
+static TyObj *eval_statement(TyEnv *env, const Statement *stmt, const Parser_Context *ctx)
 {
   TyObj *res = NULL;
   switch (stmt->kind)
@@ -337,7 +337,7 @@ static TyObj *eval_statement(TyEnv__ *env, const Statement *stmt, const Parser_C
   return res;
 }
 
-static TyObj *eval_program_statements(TyEnv__ *env, const Program *prog)
+static TyObj *eval_program_statements(TyEnv *env, const Program *prog)
 {
   TyObj *res = NULL;
   
@@ -352,7 +352,7 @@ static TyObj *eval_program_statements(TyEnv__ *env, const Program *prog)
 }
 
 // TODO(HS): do I want to break current interface and return pointer?
-TyObj eval(TyEnv__ *global_env, const Program *prog)
+TyObj eval(TyEnv *global_env, const Program *prog)
 {
   TyObj *obj;
   obj = eval_program_statements(global_env, prog);
