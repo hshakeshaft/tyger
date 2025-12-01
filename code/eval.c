@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include "eval.h"
 
 // TODO(HS): implement error handling/reporting here at evaluation
@@ -131,6 +132,7 @@ static int eval__do_op(TyObj **out, Operator op, const TyObj *lhs, const TyObj *
     case OP_MINUS:    { success = eval__do_sub((*out), lhs, rhs); } break;
     case OP_ASTERISK: { success = eval__do_mul((*out), lhs, rhs); } break;
     case OP_SLASH:    { success = eval__do_div((*out), lhs, rhs); } break;
+    default: { assert(0 && "unreachable"); }
     }
   }
   else
@@ -202,7 +204,7 @@ static void eval_function_builtin(TyEnv *env, const Argument_List *args, const P
       TyObj *obj = &(evaluated_args[i]);
       switch (obj->kind)
       {
-      case TYOBJ_INT: { printf("%I64i", obj->o.integer.value); } break;
+      case TYOBJ_INT: { printf("%" PRIi64 "", obj->o.integer.value); } break;
       case TYOBJ_STRING: { printf("%s", obj->o.string.value); } break;
       case TYOBJ_NONE: { printf("<NONE>"); } break;
       }

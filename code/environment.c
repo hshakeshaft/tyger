@@ -8,7 +8,7 @@
 
 #define TODO(MSG)                                                       \
   do {                                                                  \
-    printf("TODO: %s:%s:%li - %s\n", __FILE__, __func__, __LINE__, MSG);   \
+    printf("TODO: %s:%s:%i - %s\n", __FILE__, __func__, __LINE__, MSG); \
     assert(0 && "TODO");                                                \
   } while (0)
 

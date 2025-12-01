@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "object.h"
 
 const char *tyobj_kind_to_string(TyObject_Kind k)
@@ -29,7 +30,7 @@ void tyobj_inspect(const TyObj *obj)
 
   case TYOBJ_INT:
   {
-    printf("%I64i\n", obj->o.integer.value);
+    printf("%" PRIi64 "\n", obj->o.integer.value);
   } break;
 
   case TYOBJ_STRING:
