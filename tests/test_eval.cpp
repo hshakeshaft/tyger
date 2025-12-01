@@ -138,13 +138,11 @@ TEST_F(TestEval, Test_Eval_Infix_Expression)
 
   auto test_cases = std::vector<Infix_Eval_Int_Tc>{
     { "1 + 1;", 2 },
-#if 0
     { "1 - 1;", 0 },
     { "4 / 2;", 2 },
     { "2 * 2;", 4 },
     { "2 * 2 * 2;", 8 },
     { "5 * 4 + 3 - 2 / 1;", 21 },
-#endif 
   };
 
   for (auto& tc : test_cases)

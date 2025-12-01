@@ -114,18 +114,23 @@ static int eval__do_div(TyObj *out, const TyObj *lhs, const TyObj *rhs)
   return success;
 }
 
-static int eval__do_op(TyObj *out, Operator op, const TyObj *lhs, const TyObj *rhs)
+static int eval__do_op(TyObj **out, Operator op, const TyObj *lhs, const TyObj *rhs)
 {
   // NOTE(HS): `success` is set to 1 by succss of result of operator functions
   int success = 0;
+
+  // TODO(HS): better "zero" initialise function
+  (*out) = tyobj_new(TYOBJ_NONE, NULL);
+  assert((*out) && "failed to create new object");
+
   if (lhs->kind == rhs->kind)
   {
     switch (op)
     {
-    case OP_PLUS:     { success = eval__do_add(out, lhs, rhs); } break;
-    case OP_MINUS:    { success = eval__do_sub(out, lhs, rhs); } break;
-    case OP_ASTERISK: { success = eval__do_mul(out, lhs, rhs); } break;
-    case OP_SLASH:    { success = eval__do_div(out, lhs, rhs); } break;
+    case OP_PLUS:     { success = eval__do_add((*out), lhs, rhs); } break;
+    case OP_MINUS:    { success = eval__do_sub((*out), lhs, rhs); } break;
+    case OP_ASTERISK: { success = eval__do_mul((*out), lhs, rhs); } break;
+    case OP_SLASH:    { success = eval__do_div((*out), lhs, rhs); } break;
     }
   }
   else
@@ -234,7 +239,7 @@ static TyObj *eval_infix(TyEnv__ *env, const Infix_Expression *expr, const Parse
 
   TyObj *lhs_res = eval_expression(env, lhs, ctx);
   TyObj *rhs_res = eval_expression(env, rhs, ctx);
-  assert(eval__do_op(res, expr->op, lhs_res, rhs_res));
+  assert(eval__do_op(&res, expr->op, lhs_res, rhs_res));
 
   return res;
 }
