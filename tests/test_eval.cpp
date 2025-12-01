@@ -166,18 +166,18 @@ TEST_F(TestEval, Test_Eval_Ident_Expression)
   const char *sval = "Hello, World!";
   TyObj *o1 = tyobj_new(TYOBJ_INT, (void*) &ival);
   TyObj *o2 = tyobj_new(TYOBJ_STRING, (void*) sval);
-  // ival += 1;
-  // TyObj *o3 = tyobj_new(TYOBJ_INT, (void*) &ival);
+  ival += 1;
+  TyObj *o3 = tyobj_new(TYOBJ_INT, (void*) &ival);
   DEFER({
     tyobj_delete(o1);
     tyobj_delete(o2);
-    // tyobj_delete(o3);
+    tyobj_delete(o3);
   });
 
   auto test_cases = std::vector<Ident_Eval_Tc>{
     { "var x = 10; x;", o1 },
     { "var y =\"Hello, World!\"; y;", o2 },
-    // { "var z = 1 + 10; z;", o3 },
+    { "var z = 1 + 10; z;", o3 },
   };
 
   for (auto& tc : test_cases)
