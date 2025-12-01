@@ -23,6 +23,8 @@ TEST(ParserTestSuite, Test_Var_Statement)
     { "var y = 15000;", "y", "(var y 15000)" },
     { "var msg = \"Hello, Sunshine! The Earth says Hello!\";", "msg", "(var msg \"Hello, Sunshine! The Earth says Hello!\")" },
     { "var theQuickBrownFoxJumpsOverTheLazyDog123456789 = 1;", "theQuickBrownFoxJumpsOverTheLazyDog123456789", "(var theQuickBrownFoxJumpsOverTheLazyDog123456789 1)", },
+    { "var x = 1 + 1;", "x", "(var x (+ 1 1))" },
+    { "var x = 1 + 2 - 3 * 4 / 5;", "x", "(var x (- (+ 1 2) (/ (* 3 4) 5)))" },
   };
 
   for (auto& tc : test_cases)

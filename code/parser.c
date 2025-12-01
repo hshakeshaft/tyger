@@ -437,13 +437,13 @@ Tyger_Error parse_var_statement(Parser *p, Parser_Context *ctx, Statement *stmt)
 
   parser_next_token(p);
 
-  Expression_Handle expression_handle = va_array_next_handle(ctx->expressions);
   Expression expr;
   err = parse_expression(p, ctx, &expr, PRECIDENCE_LOWEST);
   if (err.kind != TYERR_NONE)
   {
     return err;
   }
+  Expression_Handle expression_handle = va_array_next_handle(ctx->expressions);
   va_array_append(ctx->expressions, expr);
 
   if (peek_token_is(p, TK_SEMICOLON))
