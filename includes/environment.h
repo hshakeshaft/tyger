@@ -24,4 +24,5 @@ int tyenv_free(TyEnv *env);
 int tyenv_insert(TyEnv *env, const char *ident, TyObj *obj);
 int tyenv_update(TyEnv *env, const char *ident, TyObj *obj);
 TyObj *tyenv_get(TyEnv *env, const char *ident);
+int tyenv_delete(TyEnv *env, const char *ident);
 #endif  // TYGER_ENVIRONMENT_H_

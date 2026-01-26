@@ -136,6 +136,27 @@ static int tyenv__handle_update(TyEnv_Var *cur, const char *ident, size_t ident_
   return res;
 }
 
+static int tyenv__handle_delete(TyEnv_Var *cur, const char *ident, size_t ident_len)
+{
+  int res = 0;
+  if (tyenv__compare_keys_eq(cur->ident, cur->ident_len, ident, ident_len))
+  {
+    tyobj_delete(cur->object);
+
+    if (cur->next)
+    {
+      *cur = *(cur->next);
+    }
+
+    res = 1;
+  }
+  else if (cur->next)
+  {
+    tyenv__handle_delete(cur->next, ident, ident_len);
+  }
+  return res;
+}
+
 
 int tyenv_init(TyEnv *env, size_t capacity)
 {
@@ -270,6 +291,22 @@ TyObj *tyenv_get(TyEnv *env, const char *ident)
       }
       // else => return NULL
     }
+  }
+
+  return res;
+}
+
+int tyenv_delete(TyEnv *env, const char *ident)
+{
+  int res = 0;
+  size_t ident_len = strlen(ident);
+  uint32_t hash = fnv1a_u32(ident, ident_len);
+  hash %= env->capacity;
+
+  TyEnv_Var *var = &(env->vars[hash]);
+  if (var->ident)
+  {
+    res = tyenv__handle_delete(var, ident, ident_len);
   }
 
   return res;

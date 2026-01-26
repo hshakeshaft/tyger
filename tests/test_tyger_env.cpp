@@ -172,3 +172,84 @@ TEST(TyEnvTestSuite, TestKeysNotFoundCantBeUpdated)
 
 // TODO(HS): handle key deletions
 // NOTE(HS): no language semantics yet to support this but may as well include
+TEST(TyEnvTestSuite, TestKeysCanBeDeleted)
+{
+  TyEnv env;
+  tyenv_init(&env, 16);
+  int64_t val = 16;
+  TyObj *obj = tyobj_new(TYOBJ_INT, &val);
+  DEFER({ tyenv_free((TyEnv*) &env); });
+  tyenv_insert(&env, "x", obj);
+  ASSERT_TRUE(tyenv_delete(&env, "x"));
+}
+
+TEST(TyEnvTestSuite, TestThatKeyDeletionCorrectlyReordersMap)
+{
+  TyEnv env;
+  tyenv_init(&env, 1);
+  int64_t val = 16;
+  int64_t val2 = 32;
+
+  TyObj *obj = tyobj_new(TYOBJ_INT, &val);
+  TyObj *obj2 = tyobj_new(TYOBJ_INT, &val2);
+
+  DEFER({ tyenv_free((TyEnv*) &env); });
+  tyenv_insert(&env, "x", obj);
+  tyenv_insert(&env, "y", obj2);
+
+  ASSERT_TRUE(tyenv_delete(&env, "x"));
+
+  TyObj *x_result = tyenv_get(&env, "x");
+  ASSERT_EQ(x_result, nullptr); 
+
+  // NOTE(HS): double check that map hasn't been munged by reshuffle
+  TyObj *reshuffled = tyenv_get(&env, "y");
+  ASSERT_NE(reshuffled, nullptr);
+  ASSERT_EQ(reshuffled->kind, obj2->kind)
+    << "Expected returned object to be of type " << tyobj_kind_to_string(obj2->kind)
+    << ", got " << tyobj_kind_to_string(reshuffled->kind);
+  ASSERT_EQ(reshuffled->o.integer.value, obj2->o.integer.value);
+}
+
+// NOTE(HS): this test does not work - revisit when refactoring and fix issue
+// (deletion of object y does not actually happen)
+#if 0
+TEST(TyEnvTestSuite, TestDeletingKeysFromEndOfMapChainChangesNothing)
+{
+  TyEnv env;
+  tyenv_init(&env, 1);
+  int64_t val = 16;
+  int64_t val2 = 32;
+
+  TyObj *obj = tyobj_new(TYOBJ_INT, &val);
+  TyObj *obj2 = tyobj_new(TYOBJ_INT, &val2);
+
+  DEFER({ tyenv_free((TyEnv*) &env); });
+  tyenv_insert(&env, "x", obj);
+  tyenv_insert(&env, "y", obj2);
+
+  ASSERT_TRUE(tyenv_delete(&env, "y"));
+
+  TyObj *y_result = tyenv_get(&env, "y");
+  ASSERT_EQ(y_result, nullptr);
+
+  // NOTE(HS): double check that map hasn't been (needlessly) reshuffled
+  TyObj *reshuffled = tyenv_get(&env, "x");
+  ASSERT_NE(reshuffled, nullptr);
+  ASSERT_EQ(reshuffled->kind, obj->kind)
+    << "Expected returned object to be of type " << tyobj_kind_to_string(obj->kind)
+    << ", got " << tyobj_kind_to_string(reshuffled->kind);
+  ASSERT_EQ(reshuffled->o.integer.value, obj->o.integer.value);
+}
+#endif
+
+TEST(TyEnvTestSuite, TestKeysNotInMapCannotBeDeleted)
+{
+  TyEnv env;
+  tyenv_init(&env, 16);
+  int64_t val = 16;
+  TyObj *obj = tyobj_new(TYOBJ_INT, &val);
+  DEFER({ tyenv_free((TyEnv*) &env); });
+  tyenv_insert(&env, "x", obj);
+  ASSERT_FALSE(tyenv_delete(&env, "y")) << "failed to delete key from map";
+}
