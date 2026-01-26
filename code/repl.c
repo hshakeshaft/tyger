@@ -4,13 +4,18 @@
 #include "repl.h"
 #include "lexer.h"
 #include "parser.h"
-#include "trace.h"
+#include "eval.h"
+#include "object.h"
+#include "environment.h"
 
 // TODO(HS): handle Ctrl+c/d exits nicely?
 // TODO(HS): control sequences
 // TODO(HS): implement a "history" buffer
 void repl_run(void)
 {
+  TyEnv global;
+  tyenv_init(&global, 16);
+
   while (true)
   {
     fprintf(stdout, "tyger> ");
@@ -31,10 +36,11 @@ void repl_run(void)
     parser_init(&parser, &lexer);
 
     Program program = parser_parse_program(&parser);
-    const char *yaml = program_to_string(&program, TRACE_YAML);
-    fprintf(stdout, "%s\n", yaml);
+    TyObj res = eval(&global, &program);
+    tyobj_inspect(&res);
 
-    free((void*) yaml);
     program_free(&program);
   }
+
+  tyenv_free(&global);
 }
