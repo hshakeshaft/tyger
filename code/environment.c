@@ -418,24 +418,21 @@ int env_insert(Env *env, const char *key, TyObj *obj)
   uint32_t slot = hash_key_and_clamp_to_slot_u32(key, key_len, env->capacity);
 
   Env_Var *var = &(env->vars[slot]);
-  if (var->ident)   // check if collision at slot
+
+  // First check if there is an ident, if so this implies the slot is filled, and
+  // therefore all insertion related logic is handled there.
+  // Else, it implies the slot is empty and can be filled "inline".
+  if (var->ident)
   {
-    return result;
+    result = env__do_insert(var, key, key_len, obj);
   }
-  else             // else handle insertion (recurse)
+  else
   {
-    if (var->next)
-    {
-      result = env__do_insert(var->next, key, key_len, obj);
-    }
-    else
-    {
-      var->ident = malloc(sizeof(*var->ident) * (key_len + 1));
-      env_var__fill(var, key, key_len, obj);
-      result = 1;
-    }
+    var->ident = malloc(sizeof(*var->ident) * (key_len + 1));
+    env_var__fill(var, key, key_len, obj);
+    result = 1;
   }
-  
+
   return result;
 }
 
