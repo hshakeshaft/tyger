@@ -16,7 +16,7 @@ set(C_STANDARD_REQUIRED ON)
 if (MSVC)
     add_compile_options(/W4 /w14640 /wd4996 /WX /permissive- /Zi /Od)
 else()
-    add_compile_options(-Wall -Wextra -Werror -Wshadow -pedantic -g -O0)
+    add_compile_options(-Wall -Wextra -Werror -Wshadow -Wno-unused-function -pedantic -g -O0)
 endif()
 
 
