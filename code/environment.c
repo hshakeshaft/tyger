@@ -311,3 +311,140 @@ int tyenv_delete(TyEnv *env, const char *ident)
 
   return res;
 }
+
+
+
+/* V2 impl */
+
+int env_init(Env *env, size_t capacity)
+{
+  int result = 0;
+  assert(env && "cannot initialise Env as it points to NULL memory");
+  assert(capacity > 0 && "cannit initialise an environment with no capacity for variables");
+
+  env->capacity = capacity;
+  env->vars = malloc(sizeof(*env->vars) * env->capacity);
+  assert(env->vars && "failed to allocate memory for Env");
+
+  result = 1;
+  return result;
+}
+
+void env_deinit(Env *env)
+{
+  assert(env && "cannot free NULL Env");
+  if (env->vars)
+  {
+    free(env->vars);
+    env->vars = NULL;
+  }
+  env->capacity = 0;
+}
+
+static uint32_t hash_key_and_clamp_to_slot_u32(const char *key, size_t key_len, size_t max_slot)
+{
+  uint32_t hash = fnv1a_u32(key, key_len);
+  uint32_t slot = hash % max_slot;
+  return slot;
+}
+
+static Env_Var *env_var_new(const char *key, size_t key_len, TyObj *obj, Env_Var *next)
+{
+  Env_Var *var;
+  var = malloc(sizeof(*var));
+  assert(var&& "failed to allocate space in Env for a new variable");
+
+  var->ident = malloc(sizeof(*var->ident) * (key_len + 1));
+  strncpy((char*) var->ident, key, key_len);
+  ((char*) var->ident)[key_len] = '\0';
+
+  if (next) { var->next = NULL; }
+
+  var->object = obj;
+
+  return var;
+}
+
+
+static int env__do_insert(Env_Var *cur, const char *key, size_t key_len, TyObj *obj)
+{
+  int result = 0;
+
+  if (strncmp(cur->ident, key, key_len) == 0)  // keys collide => error
+  {
+    return result;
+  }
+  else if (cur->next)
+  {
+    result = env__do_insert(cur->next, key, key_len, obj);
+  }
+  else if (!cur->next)
+  {
+    Env_Var *next = env_var_new(key, key_len, obj, NULL);
+    assert(next && "failed to allocate next");
+    result = 1;
+  }
+
+  return result;
+}
+
+int env_insert(Env *env, const char *key, TyObj *obj)
+{
+  int result = 0;
+  assert(env && "attempted to retrieve key from NULL env");
+  assert(key && "cannot insert key which is NULL");
+  assert(obj && "cannot insert Tyger Object which is NULL");
+
+  size_t key_len = strlen(key);
+  uint32_t slot = hash_key_and_clamp_to_slot_u32(key, key_len, env->capacity);
+
+  Env_Var *var = &(env->vars[slot]);
+  if (var->ident)   // check if collision at slot
+  {
+    return result;
+  }
+  else             // else handle insertion (recurse)
+  {
+    result = env__do_insert(&env->vars[slot], key, key_len, obj);
+  }
+  
+  return result;
+}
+
+static TyObj *env__do_get(Env_Var *cur, const char *key, size_t key_len)
+{
+  TyObj *obj = NULL;
+
+  if (strncmp(cur->ident, key, key_len) == 0)
+  {
+    obj = cur->object;
+  }
+  else if (cur->next)
+  {
+    obj = env__do_get(cur->next, key, key_len);
+  }
+
+  return obj;
+}
+
+TyObj *env_get(Env *env, const char *key)
+{
+  TyObj *obj = NULL;
+
+  size_t key_len = strlen(key);
+  uint32_t slot = hash_key_and_clamp_to_slot_u32(key, key_len, env->capacity);
+
+  Env_Var *var = &(env->vars[slot]);
+  if (!var->ident)
+  {
+    return obj;
+  }
+  else
+  {
+    obj = env__do_get(var, key, key_len);
+  }
+
+  return obj;
+}
+
+
