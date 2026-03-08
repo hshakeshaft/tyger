@@ -326,6 +326,14 @@ int env_init(Env *env, size_t capacity)
   env->vars = malloc(sizeof(*env->vars) * env->capacity);
   assert(env->vars && "failed to allocate memory for Env");
 
+  for (size_t i = 0; i < capacity; ++i)
+  {
+    env->vars->ident = NULL;
+    env->vars->ident_len = 0;
+    env->vars->next = NULL;
+    env->vars->object = NULL;
+  }
+
   result = 1;
   return result;
 }
