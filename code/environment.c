@@ -356,23 +356,32 @@ static uint32_t hash_key_and_clamp_to_slot_u32(const char *key, size_t key_len, 
   return slot;
 }
 
-static Env_Var *env_var_new(const char *key, size_t key_len, TyObj *obj, Env_Var *next)
+static Env_Var *env_var_new(const char *key, size_t key_len)
 {
-  Env_Var *var;
-  var = malloc(sizeof(*var));
-  assert(var&& "failed to allocate space in Env for a new variable");
+  assert(key && "key cannot be NULL");
+  assert(key_len > 0 && "cannot have key of length 0");
+
+  Env_Var *var = malloc(sizeof(*var));
+  assert(var && "failed to allocate space in Env for a new variable");
 
   var->ident = malloc(sizeof(*var->ident) * (key_len + 1));
-  strncpy((char*) var->ident, key, key_len);
-  ((char*) var->ident)[key_len] = '\0';
-
-  if (next) { var->next = NULL; }
-
-  var->object = obj;
+  assert(var->ident && "failed to allocae space in Env for key");
 
   return var;
 }
 
+static void env_var__fill(Env_Var *var, const char *key, size_t key_len, TyObj *obj)
+{
+  assert(var && "cannot fill NULL Env_Var");
+  assert(key && "key cannot be NULL");
+  assert(key_len > 0 && "cannot have key of length 0");
+  assert(obj && "cannot create Env_Var from NULL Tyger Object");
+
+  strncpy((char*) var->ident, key, key_len);
+  ((char*) var->ident)[key_len] = '\0';
+  var->ident_len = key_len;
+  var->object = obj;
+}
 
 static int env__do_insert(Env_Var *cur, const char *key, size_t key_len, TyObj *obj)
 {
@@ -388,8 +397,10 @@ static int env__do_insert(Env_Var *cur, const char *key, size_t key_len, TyObj *
   }
   else if (!cur->next)
   {
-    Env_Var *next = env_var_new(key, key_len, obj, NULL);
+    Env_Var *next = env_var_new(key, key_len);
     assert(next && "failed to allocate next");
+    env_var__fill(next, key, key_len, obj);
+    cur->next = next;
     result = 1;
   }
 
@@ -413,7 +424,16 @@ int env_insert(Env *env, const char *key, TyObj *obj)
   }
   else             // else handle insertion (recurse)
   {
-    result = env__do_insert(&env->vars[slot], key, key_len, obj);
+    if (var->next)
+    {
+      result = env__do_insert(var->next, key, key_len, obj);
+    }
+    else
+    {
+      var->ident = malloc(sizeof(*var->ident) * (key_len + 1));
+      env_var__fill(var, key, key_len, obj);
+      result = 1;
+    }
   }
   
   return result;
