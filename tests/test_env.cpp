@@ -72,6 +72,30 @@ TEST_F(EnvTestFixture, Test_Collisions_On_Insert_Are_handled)
     }
 }
 
+TEST_F(EnvTestFixture, Test_That_The_Same_Key_Cannot_Be_Reinserted)
+{
+  // NOTE(HS): hack required for this case
+  env_deinit(this->env);
+  env_init(this->env, 1);
+
+  int val1 = 10;
+  auto key1 = std::string{"foo"};
+  auto obj1 = tyobj_new(TYOBJ_INT, &val1);
+
+  int val2 = 15;
+  auto obj2 = tyobj_new(TYOBJ_INT, &val2);
+  auto key2 = std::string{"foo"};
+
+  ASSERT_TRUE(env_insert(this->env, key1.c_str(), obj1));
+  ASSERT_FALSE(env_insert(this->env, key2.c_str(), obj2));
+
+  // NOTE(HS): check 1st entry isn't munged by failed reinsertion
+  auto obj1_get = env_get(this->env, key1.c_str());
+  ASSERT_NE(obj1_get, nullptr);
+  ASSERT_EQ(obj1_get->kind, obj1->kind);
+  ASSERT_EQ(obj1_get->o.integer.value, obj1->o.integer.value);
+}
+
 TEST_F(EnvTestFixture, Test_Valid_Keys_Can_Be_Retrieved){}
 TEST_F(EnvTestFixture, Test_Colliding_Key_Can_Be_Retrieved){}
 TEST_F(EnvTestFixture, Test_Invalid_Keys_Return_Null_Pointer){}
