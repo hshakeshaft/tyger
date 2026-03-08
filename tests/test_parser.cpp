@@ -202,7 +202,7 @@ TEST(ParserTestSuite, Test_Infix_Expression)
     const char *ast;    // S-expression like formatted representation of AST
   };
 
-  // TODO(HS): figure out a better way to handle the nesting of `()¬
+  // TODO(HS): figure out a better way to handle the nesting of `()`
   std::vector<Infix_Test> test_cases{
     { "1 + 1;",  0, 1, "((+ 1 1))" },
     { "1 - 1;",  0, 1, "((- 1 1))" },
