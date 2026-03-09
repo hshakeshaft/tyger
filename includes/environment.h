@@ -47,6 +47,7 @@ int env_init(Env *env, size_t capacity);
 void env_deinit(Env *env);
 
 int env_insert(Env *env, const char *key, TyObj *obj);
+int env_delete(Env *env, const char *key);
 
 TyObj *env_get(Env *env, const char *key);
 

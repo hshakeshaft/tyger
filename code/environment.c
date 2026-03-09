@@ -436,6 +436,85 @@ int env_insert(Env *env, const char *key, TyObj *obj)
   return result;
 }
 
+// NOTE(HS): because the first slot in the HM can be evicted without
+// deleting the backing memory, this means the first slot is repoend
+// for inserting a new [colliding] key.
+// TODO(HS): stress test memory alloc/dealloc - I smell a bug somewhere
+// in here
+// TODO(HS): add test covering this facet of implementation and make
+// sure the insertion code handles this logic
+static void env_var__unfill(Env_Var *cur, Env_Var *prev)
+{
+  assert(cur && "cannot unfill an Env_Var which is NULL");
+  Env_Var *next = cur->next;
+
+  free((void*) cur->ident);
+  cur->ident = NULL;
+  cur->ident_len = 0;
+  tyobj_delete(cur->object);
+
+  // NOTE(HS): if cur == prev this means it's the first entry in the HM,
+  // therefore managed separateley and cannot be freed here.
+  if (cur != prev)
+  {
+    free(cur);
+  }
+  prev->next = next;
+}
+
+// Because Env_Var is functionally a linked list node, we need to track the "prev" pointer
+// to set the next link in the list after "deleting" the current contents
+static int env__do_delete(Env_Var *cur, Env_Var *prev, const char *key, size_t key_len)
+{
+  int result = 0;
+
+  if (strncmp(cur->ident, key, key_len) == 0)
+  {
+    env_var__unfill(cur, prev);
+    result = 1;
+  }
+  else if (cur->next)
+  {
+    result = env__do_delete(cur->next, cur, key, key_len);
+  }
+
+  return result;
+}
+
+int env_delete(Env *env, const char *key)
+{
+  int result = 0;
+  assert(env && "attempted to delete key from NULL env");
+  assert(key && "attempted to delete key from env where key was NULL");
+
+  size_t key_len = strlen(key);
+  uint32_t slot = hash_key_and_clamp_to_slot_u32(key, key_len, env->capacity);
+
+  Env_Var *var = &(env->vars[slot]);
+
+  // NOTE(HS): even in cases where the ident is NULL, this does not mean the key
+  // was invalid; if there is a pointer to `next` then we check from there
+  if (var->ident)
+  {
+    if (strncmp(var->ident, key, key_len) == 0)
+    {
+      env_var__unfill(var, var);
+      result = 1;
+    }
+    else if (var->next)
+    {
+      result = env__do_delete(var->next, var, key, key_len);
+    }
+    // NOTE(HS): implicitly the key was invalid here
+  }
+  else if (var->next)
+  {
+    result = env__do_delete(var->next, var, key, key_len);
+  }
+
+  return result;
+}
+
 static TyObj *env__do_get(Env_Var *cur, const char *key, size_t key_len)
 {
   TyObj *obj = NULL;
