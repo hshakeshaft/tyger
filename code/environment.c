@@ -462,8 +462,14 @@ TyObj *env_get(Env *env, const char *key)
   Env_Var *var = &(env->vars[slot]);
   if (!var->ident)
   {
-    return obj;
-  }
+    // NOTE(HS): this case is for when the first slot is evicted due to deletion,
+    // but since there's a "next" the key may be valid in lookup
+    if (var->next)
+    {
+      obj = env__do_get(var->next, key, key_len);
+    }
+    // implicitly invalid key here
+  } 
   else
   {
     obj = env__do_get(var, key, key_len);
@@ -471,5 +477,3 @@ TyObj *env_get(Env *env, const char *key)
 
   return obj;
 }
-
-
