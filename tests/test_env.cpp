@@ -167,7 +167,70 @@ TEST_F(EnvTestFixture, Test_Invalid_Keys_Return_Null_Pointer)
   }
 }
 
-TEST_F(EnvTestFixture, Test_Valid_Keys_Can_Be_Deleted){}
-TEST_F(EnvTestFixture, Test_Invalid_Keys_Are_Not_Deleted) {}
+TEST_F(EnvTestFixture, Test_Valid_Keys_Can_Be_Deleted)
+{
+  int val = 10;
+  auto obj = tyobj_new(TYOBJ_INT, &val);
+  env_insert(this->env, "foo", obj);
+  ASSERT_TRUE(env_delete(this->env, "foo"));
+}
+
+TEST_F(EnvTestFixture, Test_Invalid_Keys_Are_Not_Deleted)
+{
+  auto keys = std::vector<std::string>{
+    "foo", "bar", "baz"
+  };
+  for (const auto& key : keys)
+  {
+    ASSERT_FALSE(env_delete(this->env, key.c_str()));
+  }
+}
+
+TEST_F(EnvTestFixture, Test_Colliding_Keys_can_Be_deleted)
+{
+  env_deinit(this->env);
+  env_init(this->env, 1);
+
+  int val = 10;
+  { // case 1: remove initial link
+    auto obj = tyobj_new(TYOBJ_INT, &val);
+    auto obj2 = tyobj_new(TYOBJ_INT, &val);
+    auto obj3 = tyobj_new(TYOBJ_INT, &val);
+    env_insert(this->env, "foo", obj);
+    env_insert(this->env, "bar", obj2);
+    env_insert(this->env, "baz", obj3);
+
+    ASSERT_TRUE(env_delete(this->env, "foo"));
+    ASSERT_EQ(env_get(this->env, "foo"), nullptr);
+    ASSERT_NE(env_get(this->env, "bar"), nullptr);
+    ASSERT_EQ(env_get(this->env, "bar")->o.integer.value, obj2->o.integer.value);
+
+    ASSERT_TRUE(env_delete(this->env, "bar"));
+    ASSERT_EQ(env_get(this->env, "bar"), nullptr);
+    ASSERT_NE(env_get(this->env, "baz"), nullptr);
+    ASSERT_EQ(env_get(this->env, "baz")->o.integer.value, obj3->o.integer.value);
+
+    ASSERT_TRUE(env_delete(this->env, "baz"));
+    ASSERT_EQ(env_get(this->env, "baz"), nullptr);
+  }
+
+  { // case 2: remove link "in the middle" of link 
+    auto obj = tyobj_new(TYOBJ_INT, &val);
+    auto obj2 = tyobj_new(TYOBJ_INT, &val);
+    auto obj3 = tyobj_new(TYOBJ_INT, &val);
+    env_insert(this->env, "foo", obj);
+    env_insert(this->env, "bar", obj2);
+    env_insert(this->env, "baz", obj3);
+
+    ASSERT_TRUE(env_delete(this->env, "bar"));
+    ASSERT_NE(env_get(this->env, "foo"), nullptr);
+    ASSERT_EQ(env_get(this->env, "bar"), nullptr);
+    ASSERT_NE(env_get(this->env, "baz"), nullptr);
+
+    ASSERT_EQ(env_get(this->env, "baz")->o.integer.value, obj3->o.integer.value);
+  }
+}
+
 TEST_F(EnvTestFixture, Test_Valid_Key_Can_Be_Updated){}
+
 TEST_F(EnvTestFixture, Test_Invalid_Key_Cannot_Be_Updated){}
