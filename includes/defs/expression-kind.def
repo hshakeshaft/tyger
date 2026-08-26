@@ -1,6 +1,0 @@
-X(NONE)    \
-X(INT)     \
-X(STRING)  \
-X(IDENT)   \
-X(INFIX)   \
-X(CALL)

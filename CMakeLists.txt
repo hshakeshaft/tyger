@@ -1,11 +1,12 @@
-cmake_minimum_required(VERSION 3.16)
-set(PROJECT_NAME tyger)
+cmake_minimum_required(VERSION 3.25)
 
+set(PROJECT_NAME tyger_lang)
 PROJECT(${PROJECT_NAME})
 
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_C_STANDARD 90)
+set(CMAKE_CXX_STANDARD 17)
 set(C_STANDARD_REQUIRED ON)
+set(CXX_STANDARD_REQUIRED ON)
 
 
 #
@@ -21,66 +22,52 @@ endif()
 
 
 #
-# GTest setup - https://google.github.io/googletest/quickstart-cmake.html
+# GTest setup
+#   https://google.github.io/googletest/quickstart-cmake.html
 #
 include(FetchContent)
 FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+  googletest
+  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
-# NOTE(HS): for windows
+# For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
 #
-# Build "lib"
+# Build Tyger as static lib
 #
-set(LIB_NAME ${PROJECT_NAME}_lib)
+set(LIB_NAME tyger)
 set(
     LIB_SOURCES
-    code/lexer.c
-    code/tstrings.c
-    code/repl.c
-    code/parser.c
-    code/trace.c
-    code/object.c
-    code/eval.c
-    code/environment.c
+    code/foo.c
 )
-add_library(${LIB_NAME} STATIC ${LIB_SOURCES})
+add_library(${LIB_NAME} ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)
 
+#
+# Build Tyger Main
+#
+set(MAIN_NAME tygeri)
+set(
+    MAIN_SOURCES
+    code/main.c
+)
+add_executable(${MAIN_NAME} ${MAIN_SOURCES})
+target_link_libraries(${MAIN_NAME} ${LIB_NAME})
+target_include_directories(${MAIN_NAME} PUBLIC includes)
 
 #
-# Build exe
+# Test Code
 #
-set(EXE_SOURCES code/main.c)
-add_executable(${PROJECT_NAME} ${EXE_SOURCES})
-target_include_directories(${PROJECT_NAME} PUBLIC includes)
-target_link_libraries(${PROJECT_NAME} ${LIB_NAME})
-
-#
-# GTest
-#
-enable_testing()
-set(TEST_EXE ${PROJECT_NAME}_test)
+set(TEST_EXE test_tyger)
 set(
     TEST_SOURCES
-    tests/test_lexer.cpp
-    tests/test_parser.cpp
-    tests/test_eval.cpp
-    tests/test_tyger_env.cpp
+    tests/test_foo.cpp
 )
-
 add_executable(${TEST_EXE} ${TEST_SOURCES})
+target_link_libraries(${TEST_EXE} GTest::gtest_main ${LIB_NAME})
 target_include_directories(${TEST_EXE} PUBLIC includes)
-
-target_link_libraries(
-    ${TEST_EXE}
-    GTest::gtest_main
-    ${LIB_NAME}
-)
-
 include(GoogleTest)
 gtest_discover_tests(${TEST_EXE})
