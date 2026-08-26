@@ -2,9 +2,9 @@
 set -ex
 
 if [ ! -d build ]; then
-    cmake -S . -B build
+    mkdir build
 fi
 
-cmake --build build -j 4
-
+cmake -S . -B build
+cmake --build build -j 8
 ./build/test_tyger

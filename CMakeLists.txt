@@ -41,7 +41,8 @@ FetchContent_MakeAvailable(googletest)
 set(LIB_NAME tyger)
 set(
     LIB_SOURCES
-    code/foo.c
+    code/lexer.c
+    code/token.c
 )
 add_library(${LIB_NAME} ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)
@@ -64,7 +65,7 @@ target_include_directories(${MAIN_NAME} PUBLIC includes)
 set(TEST_EXE test_tyger)
 set(
     TEST_SOURCES
-    tests/test_foo.cpp
+    tests/test_lexer.cpp
 )
 add_executable(${TEST_EXE} ${TEST_SOURCES})
 target_link_libraries(${TEST_EXE} GTest::gtest_main ${LIB_NAME})
