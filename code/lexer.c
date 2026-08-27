@@ -16,6 +16,18 @@ static void lexer__next_char(Lexer *lx)
     lx->pos = lx->read_pos++;
 }
 
+static int lexer__peek_char_is(Lexer *lx, char ch)
+{
+    if (lx->read_pos >= lx->input_len)
+    {
+        return 0;
+    }
+    else
+    {
+        return lx->input[lx->read_pos] == ch;
+    }
+}
+
 
 int lexer_init_from_buffer(Lexer *lexer, const char *input_buffer)
 {
@@ -87,19 +99,51 @@ Token lexer_next_token(Lexer *lx)
         } break;
 
         case '<': {
-            token.type = TT_LT;
+            if (lexer__peek_char_is(lx, '='))
+            {
+                token.type = TT_LTE;
+                lexer__next_char(lx);
+            }
+            else
+            {
+                token.type = TT_LT;
+            }
         } break;
 
         case '>': {
-            token.type = TT_GT;
+            if (lexer__peek_char_is(lx, '='))
+            {
+                token.type = TT_GTE;
+                lexer__next_char(lx);
+            }
+            else
+            {
+                token.type = TT_GT;
+            }
         } break;
 
         case '!': {
-            token.type = TT_BANG;
+            if (lexer__peek_char_is(lx, '='))
+            {
+                token.type = TT_NEQ;
+                lexer__next_char(lx);
+            }
+            else
+            {
+                token.type = TT_BANG;
+            }
         } break;
 
         case '=': {
-            token.type = TT_ASSIGN;
+            if (lexer__peek_char_is(lx, '='))
+            {
+                token.type = TT_EQ;
+                lexer__next_char(lx);
+            }
+            else
+            {
+                token.type = TT_ASSIGN;
+            }
         } break;
 
         case '+': {

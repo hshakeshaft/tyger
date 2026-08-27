@@ -31,11 +31,11 @@ TEST(LexerTestSuite, test_lexer_lexes_tokens)
         { "-" ,                TT_SUB       },
         { "*" ,                TT_MUL       },
         { "/" ,                TT_DIV       },
-        #if 0
         { "==",                TT_EQ        },
         { "!=",                TT_NEQ       },
         { "<=",                TT_LTE       },
         { ">=",                TT_GTE       },
+        #if 0
         { "var",               TT_KW_VAR    },
         { "\"foo\"",           TT_STRING    },
         { "\"Hello, World!\"", TT_STRING    },

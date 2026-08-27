@@ -11,6 +11,10 @@ X(LT)               \
 X(GT)               \
 X(BANG)             \
 X(ASSIGN)           \
+X(LTE)              \
+X(GTE)              \
+X(EQ)               \
+X(NEQ)              \
 X(ADD)              \
 X(SUB)              \
 X(MUL)              \
