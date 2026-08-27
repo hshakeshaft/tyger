@@ -10,42 +10,43 @@ struct Lexical_Token_Test
 {
     std::string input;
     Token_Type expected_type;
+    const char *expected_literal;
 };
 
 TEST(LexerTestSuite, test_lexer_lexes_tokens)
 {
     auto test_cases = std::vector<Lexical_Token_Test>{
-        { "\0",                TT_EOF       },
-        { ";" ,                TT_SEMICOLON },
-        { "(" ,                TT_LPAREN    },
-        { ")" ,                TT_RPAREN    },
-        { "{" ,                TT_LBRACE    },
-        { "}" ,                TT_RBRACE    },
-        { "[" ,                TT_LBRACKET  },
-        { "]" ,                TT_RBRACKET  },
-        { "<" ,                TT_LT        },
-        { ">" ,                TT_GT        },
-        { "!" ,                TT_BANG      },
-        { "=" ,                TT_ASSIGN    },
-        { "+" ,                TT_ADD       },
-        { "-" ,                TT_SUB       },
-        { "*" ,                TT_MUL       },
-        { "/" ,                TT_DIV       },
-        { "==",                TT_EQ        },
-        { "!=",                TT_NEQ       },
-        { "<=",                TT_LTE       },
-        { ">=",                TT_GTE       },
+        { "\0",                TT_EOF,       "\0"  },
+        { ";" ,                TT_SEMICOLON, ";",  },
+        { "(" ,                TT_LPAREN,    "("   },
+        { ")" ,                TT_RPAREN,    ")"   },
+        { "{" ,                TT_LBRACE,    "{"   },
+        { "}" ,                TT_RBRACE,    "}"   },
+        { "[" ,                TT_LBRACKET,  "["   },
+        { "]" ,                TT_RBRACKET,  "]"   },
+        { "<" ,                TT_LT,        "<"   },
+        { ">" ,                TT_GT,        ">"   },
+        { "!" ,                TT_BANG,      "!"   },
+        { "=" ,                TT_ASSIGN,    "="   },
+        { "+" ,                TT_ADD,       "+"   },
+        { "-" ,                TT_SUB,       "-"   },
+        { "*" ,                TT_MUL,       "*"   },
+        { "/" ,                TT_DIV,       "/"   },
+        { "==",                TT_EQ,        "=="  },
+        { "!=",                TT_NEQ,       "!="  },
+        { "<=",                TT_LTE,       "<="  },
+        { ">=",                TT_GTE,       ">="  },
         #if 0
         { "var",               TT_KW_VAR    },
-        { "\"foo\"",           TT_STRING    },
-        { "\"Hello, World!\"", TT_STRING    },
-        { "10",                TT_INT       },
-        { "51013",             TT_INT       },
-        { "println",           TT_IDENT     },
         { "x",                 TT_IDENT     },
         { "y",                 TT_IDENT     },
         { "foo_bar",           TT_IDENT     },
         { "fooBar",            TT_IDENT     },
+        { "println",           TT_IDENT     },
+        { "\"foo\"",           TT_STRING    },
+        { "\"Hello, World!\"", TT_STRING    },
+        { "10",                TT_INT       },
+        { "51013",             TT_INT       },
         #endif
     };
 
@@ -55,10 +56,18 @@ TEST(LexerTestSuite, test_lexer_lexes_tokens)
         ASSERT_TRUE(lexer_init_from_buffer(&lexer, tc.input.c_str()));
 
         Token token = lexer_next_token(&lexer);
+
         ASSERT_EQ(token.type, tc.expected_type) 
             << "exepected token type " << token_type_to_string(tc.expected_type)
             << ", got " << token_type_to_string(token.type);
-        // TODO(HS): assert literal is expected
+
+        if (token.type != TT_EOF) [[likely]]
+        {
+            ASSERT_EQ(
+                std::string(token.literal.str, token.literal.len),
+                std::string(tc.expected_literal)
+            );
+        }
     }
 }
 

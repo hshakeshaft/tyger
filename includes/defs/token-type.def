@@ -18,4 +18,5 @@ X(NEQ)              \
 X(ADD)              \
 X(SUB)              \
 X(MUL)              \
-X(DIV)
+X(DIV)              \
+X(KW_VAR)

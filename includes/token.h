@@ -1,5 +1,6 @@
 #ifndef TOKEN_H_
 #define TOKEN_H_
+#include "stringlib.h"
 
 typedef enum token_type
 {
@@ -12,6 +13,7 @@ typedef enum token_type
 typedef struct token
 {
     Token_Type type;
+    String_View literal;
 } Token;
 
 

@@ -63,6 +63,7 @@ Token lexer_next_token(Lexer *lx)
     Token token;
 
     token.type = TT_ILLEGAL;
+    token.literal = sv_from_cstring(&lx->input[lx->pos], 1);
 
     switch (lx->ch)
     {
@@ -102,6 +103,7 @@ Token lexer_next_token(Lexer *lx)
             if (lexer__peek_char_is(lx, '='))
             {
                 token.type = TT_LTE;
+                token.literal.len += 1;
                 lexer__next_char(lx);
             }
             else
@@ -114,6 +116,7 @@ Token lexer_next_token(Lexer *lx)
             if (lexer__peek_char_is(lx, '='))
             {
                 token.type = TT_GTE;
+                token.literal.len += 1;
                 lexer__next_char(lx);
             }
             else
@@ -126,6 +129,7 @@ Token lexer_next_token(Lexer *lx)
             if (lexer__peek_char_is(lx, '='))
             {
                 token.type = TT_NEQ;
+                token.literal.len += 1;
                 lexer__next_char(lx);
             }
             else
@@ -138,6 +142,7 @@ Token lexer_next_token(Lexer *lx)
             if (lexer__peek_char_is(lx, '='))
             {
                 token.type = TT_EQ;
+                token.literal.len += 1;
                 lexer__next_char(lx);
             }
             else
