@@ -5,6 +5,7 @@
 
 #include <string>
 #include <vector>
+#include <ostream>
 
 struct Lexical_Token_Test
 {
@@ -12,6 +13,29 @@ struct Lexical_Token_Test
     Token_Type expected_type;
     const char *expected_literal;
 };
+
+std::ostream& operator<<(std::ostream& strm, const Lexer& l)
+{
+    strm
+        << "Lexer{\n"
+        << "  .input = \"" << l.input << "\", \n"
+        << "  .pos = " << l.pos << ",\n"
+        << "  .read_pos = " << l.read_pos << ",\n"
+        << "  .ch = '" << l.ch << "'\n"
+        << "}"
+    ;
+    return strm;
+}
+
+std::ostream& operator<<(std::ostream& strm, const Token& t)
+{
+    strm 
+        << "Token{ .type = " << token_type_to_string(t.type)
+        << ", .literal = \"" << std::string(t.literal.str, t.literal.len) << "\" }"
+    ;
+    return strm;
+}
+
 
 TEST(LexerTestSuite, test_lexer_lexes_tokens)
 {
@@ -36,13 +60,15 @@ TEST(LexerTestSuite, test_lexer_lexes_tokens)
         { "!=",                TT_NEQ,       "!="  },
         { "<=",                TT_LTE,       "<="  },
         { ">=",                TT_GTE,       ">="  },
+
+        { "var",               TT_KW_VAR, "var"     },
+        { "x",                 TT_IDENT,  "x"       },
+        { "y",                 TT_IDENT,  "y"       },
+        { "foo_bar",           TT_IDENT,  "foo_bar" },
+        { "fooBar",            TT_IDENT,  "fooBar"  },
+        { "println",           TT_IDENT,  "println" },
+
         #if 0
-        { "var",               TT_KW_VAR    },
-        { "x",                 TT_IDENT     },
-        { "y",                 TT_IDENT     },
-        { "foo_bar",           TT_IDENT     },
-        { "fooBar",            TT_IDENT     },
-        { "println",           TT_IDENT     },
         { "\"foo\"",           TT_STRING    },
         { "\"Hello, World!\"", TT_STRING    },
         { "10",                TT_INT       },
@@ -59,8 +85,11 @@ TEST(LexerTestSuite, test_lexer_lexes_tokens)
 
         ASSERT_EQ(token.type, tc.expected_type) 
             << "exepected token type " << token_type_to_string(tc.expected_type)
-            << ", got " << token_type_to_string(token.type);
+            << ", got " << token
+            << "\n\nLexer State\n" << lexer;
 
+        // NOTE(HS): had some issues asserting the literal was `\0` - in reality
+        // this will never be checked as processing will terminate on reading type
         if (token.type != TT_EOF) [[likely]]
         {
             ASSERT_EQ(

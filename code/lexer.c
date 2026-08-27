@@ -28,6 +28,73 @@ static int lexer__peek_char_is(Lexer *lx, char ch)
     }
 }
 
+static int lexer__ch_is_numeric(char ch)
+{
+    int istrue;
+    istrue = '0' <= ch && ch <= '9';
+    return istrue;
+}
+
+static int lexer__ch_is_space(char ch)
+{
+    int istrue;
+    istrue = ch == ' ' || ch == '\n' || ch == '\t' || ch == '\r';
+    return istrue;
+}
+
+static int lexer__ch_is_symbol(char ch)
+{
+    #define SYMBOL_COUNT 15
+    static char symbols[SYMBOL_COUNT] = {
+        '(', ')', '{', '}', '[', ']',
+        ';', '<', '>', '!', '=', '+', '-', '*', '/'
+    };
+    int istrue;
+    int i;
+    istrue = 0;
+    for (i = 0; i < SYMBOL_COUNT; ++i)
+    {
+        if (ch == symbols[i])
+        {
+            istrue = 1;
+            break;
+        }
+    }
+    return istrue;
+}
+
+static Token_Type lexer__sv_to_token_type(String_View sv)
+{
+    #define LEXER__SV_CMP_CSTR(SV, CSTR)            \
+        ( ( (sizeof(CSTR) - 1) == (SV).len )        \
+        && strncmp((SV).str, (CSTR), (SV).len) == 0 )
+
+    if (LEXER__SV_CMP_CSTR(sv, "var")) { return TT_KW_VAR; }
+    else { return TT_IDENT; }
+}
+
+static String_View lexer__read_ident_or_keyword(Lexer *lx, Token_Type *type)
+{
+    String_View literal;
+    int pos;
+    int lit_len;
+
+    pos = lx->pos;
+
+    while (!lexer__ch_is_space(lx->ch) && !lexer__ch_is_symbol(lx->ch) && lx->ch != '\0')
+    {
+        lexer__next_char(lx);
+    }
+
+    lit_len = lx->pos - pos;
+    literal = sv_from_cstring(&lx->input[pos], lit_len);
+
+    *type = lexer__sv_to_token_type(literal);
+
+    return literal;
+}
+
+
 
 int lexer_init_from_buffer(Lexer *lexer, const char *input_buffer)
 {
@@ -166,6 +233,17 @@ Token lexer_next_token(Lexer *lx)
         case '/': {
             token.type = TT_DIV;
         } break;
+
+        default: {
+            if (!lexer__ch_is_numeric(lx->ch))
+            {
+                String_View literal;
+                Token_Type type;
+                literal = lexer__read_ident_or_keyword(lx, &type);
+                token.literal = literal;
+                token.type = type;
+            }
+        }
     }
 
     lexer__next_char(lx);
