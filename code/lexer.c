@@ -94,6 +94,47 @@ static String_View lexer__read_ident_or_keyword(Lexer *lx, Token_Type *type)
     return literal;
 }
 
+static String_View lexer__read_number(Lexer *lx)
+{
+    String_View literal;
+    int pos;
+    int lit_len;
+
+    pos = lx->pos;
+
+    while (!lexer__ch_is_space(lx->ch) && lexer__ch_is_numeric(lx->ch) && lx->ch != '\0')
+    {
+        lexer__next_char(lx);
+    }
+
+    lit_len = lx->pos - pos;
+    literal = sv_from_cstring(&lx->input[pos], lit_len);
+
+    return literal;
+}
+
+static String_View lexer__read_string(Lexer *lx)
+{
+    String_View literal;
+    int pos;
+    int lit_len;
+
+    lexer__next_char(lx);
+
+    pos = lx->pos;
+    while (lx->ch != '\"' && lx->ch != '\0')
+    {
+        if (lx->ch == '\\' && lexer__peek_char_is(lx, '\"'))
+        {
+            lexer__next_char(lx);
+        }
+        lexer__next_char(lx);
+    }
+    lit_len = lx->pos - pos;
+    literal = sv_from_cstring(&lx->input[pos], lit_len);
+
+    return literal;
+}
 
 
 int lexer_init_from_buffer(Lexer *lexer, const char *input_buffer)
@@ -235,13 +276,30 @@ Token lexer_next_token(Lexer *lx)
         } break;
 
         default: {
-            if (!lexer__ch_is_numeric(lx->ch))
+            if (lexer__ch_is_numeric(lx->ch))
+            {
+                String_View literal;
+                literal = lexer__read_number(lx);
+                token.type = TT_INT;
+                token.literal = literal;
+                return token;
+            }
+            else if (lx->ch == '\"')
+            {
+                String_View literal;
+                literal = lexer__read_string(lx);
+                token.type = TT_STRING;
+                token.literal = literal;
+                return token;
+            }
+            else
             {
                 String_View literal;
                 Token_Type type;
                 literal = lexer__read_ident_or_keyword(lx, &type);
                 token.literal = literal;
                 token.type = type;
+                return token;
             }
         }
     }

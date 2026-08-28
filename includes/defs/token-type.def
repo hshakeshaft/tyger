@@ -20,4 +20,6 @@ X(SUB)              \
 X(MUL)              \
 X(DIV)              \
 X(KW_VAR)           \
-X(IDENT)
+X(IDENT)            \
+X(INT)              \
+X(STRING)

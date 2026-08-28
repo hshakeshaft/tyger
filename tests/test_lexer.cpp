@@ -68,12 +68,11 @@ TEST(LexerTestSuite, test_lexer_lexes_tokens)
         { "fooBar",            TT_IDENT,  "fooBar"  },
         { "println",           TT_IDENT,  "println" },
 
-        #if 0
-        { "\"foo\"",           TT_STRING    },
-        { "\"Hello, World!\"", TT_STRING    },
-        { "10",                TT_INT       },
-        { "51013",             TT_INT       },
-        #endif
+        { "10",                TT_INT, "10"    },
+        { "51013",             TT_INT, "51013" },
+
+        { "\"foo\"",           TT_STRING, "foo"           },
+        { "\"Hello, World!\"", TT_STRING, "Hello, World!" },
     };
 
     for (auto& tc : test_cases)
