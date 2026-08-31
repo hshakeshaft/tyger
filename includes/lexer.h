@@ -9,6 +9,10 @@ typedef struct lexer
     int pos;
     int read_pos;
     char ch;
+
+    const char *file;
+    int line;
+    int col;
 } Lexer;
 
 

@@ -21,7 +21,10 @@ std::ostream& operator<<(std::ostream& strm, const Lexer& l)
         << "  .input = \"" << l.input << "\", \n"
         << "  .pos = " << l.pos << ",\n"
         << "  .read_pos = " << l.read_pos << ",\n"
-        << "  .ch = '" << l.ch << "'\n"
+        << "  .ch = '" << l.ch << "',\n"
+        << "  .file = \"" << (l.file ? l.file : "<NULL>") << "\",\n"
+        << "  .line = " << l.line << ",\n"
+        << "  .col = " << l.col << "\n"
         << "}"
     ;
     return strm;
@@ -30,12 +33,17 @@ std::ostream& operator<<(std::ostream& strm, const Lexer& l)
 std::ostream& operator<<(std::ostream& strm, const Token& t)
 {
     strm 
-        << "Token{ .type = " << token_type_to_string(t.type)
-        << ", .literal = \"" << std::string(t.literal.str, t.literal.len) << "\" }"
+        << "Token{\n"
+        << "  .type = " << token_type_to_string(t.type) << ",\n"
+        << "  .literal = \"" << std::string(t.literal.str, t.literal.len) << "\",\n"
+        << "  .file = \"" << (t.file ? t.file : "<NULL>") << "\",\n"
+        << "  .line = " << t.line << ",\n"
+        << "  .col = " << t.col << ",\n"
+        << "  .offset = " << t.offset << "\n"
+        << "}"
     ;
     return strm;
 }
-
 
 TEST(LexerTestSuite, test_lexer_lexes_tokens)
 {
@@ -99,17 +107,16 @@ TEST(LexerTestSuite, test_lexer_lexes_tokens)
     }
 }
 
-#if 0
 TEST(LexerTestSuite, test_lexer_reports_position)
 {
     // NOTE(HS): test that all line encoding styles are handled as line increments
     // NOTE(HS): `\r` is legacy MacOS, unlikely anything will ever hit this, included
     // for completeness
     auto input = std::string{
-        "10;\\n"
-        "5;\\r"
-        "1;\\r\\n"
-        "0;"
+        "var x;\n"
+        "x = 10;\r"
+        "x = 5;\r\n"
+        "x = 1;"
     };
 
     Lexer lexer;
@@ -117,32 +124,35 @@ TEST(LexerTestSuite, test_lexer_reports_position)
 
     Token token;
 
-    auto test_token_location = [&token] (std::string file, int line, int col, int offset) {
-        ASSERT_EQ(std::string{token.file}, file);
-        ASSERT_EQ(token.line, line);
-        ASSERT_EQ(token.col, col);
-        ASSERT_EQ(token.offset, offset);
+    auto test_token_location = [&token, lexer] (std::string file, int line, int col, int offset) {
+        ASSERT_EQ(std::string{token.file ? token.file : "<NULL>"}, file) << token << "\n" << lexer << "\n";
+
+        ASSERT_EQ(token.line, line)     << "Token:\n" << token << "\n" << lexer << "\n";
+        ASSERT_EQ(token.col, col)       << "Token:\n" << token << "\n" << lexer << "\n";
+        ASSERT_EQ(token.offset, offset) << "Token:\n" << token << "\n" << lexer << "\n";
     };
 
-    token = lexer_next_token(&lexer);  // `10`
+    // NOTE(HS): this is effectively obbsessive checking for all tokens on the first
+    // line
+    token = lexer_next_token(&lexer);        // `var`
     test_token_location("<NULL>", 1, 1, 0);
-    token = lexer_next_token(&lexer);  // `;`
-    test_token_location("<NULL>", 1, 3, 2);
-    lexer_next_token(&lexer);  // `\n`
+    token = lexer_next_token(&lexer);        // `x`
+    test_token_location("<NULL>", 1, 5, 4);
+    token = lexer_next_token(&lexer);        // `;`
+    test_token_location("<NULL>", 1, 6, 5);
 
-    token = lexer_next_token(&lexer);  // `5`
-    test_token_location("<NULL>", 2, 1, 4);
-    lexer_next_token(&lexer);  // `;`
-    lexer_next_token(&lexer);  // `\r`
+    token = lexer_next_token(&lexer);       // `x`
+    test_token_location("<NULL>", 2, 1, 7);
+    token = lexer_next_token(&lexer);       // `=`
+    token = lexer_next_token(&lexer);       // `10`
+    token = lexer_next_token(&lexer);       // `;`
 
-    token = lexer_next_token(&lexer);  // `1`
-    test_token_location("<NULL>", 3, 1, 7);
-    test_lexer_next_token(&lexer);  // `;`
-    test_lexer_next_token(&lexer);  // `\r\n`
+    token = lexer_next_token(&lexer);        // `x`
+    test_token_location("<NULL>", 3, 1, 15);
+    token = lexer_next_token(&lexer);        // `=`
+    token = lexer_next_token(&lexer);        // `5`
+    token = lexer_next_token(&lexer);        // `;`
 
-    token = lexer_next_token(&lexer);  // `0`
-    test_token_location("<NULL>", 4, 1, 11);
-    token = lexer_next_token(&lexer);  // `0`
-    test_token_location("<NULL>", 4, 2, 12);
+    token = lexer_next_token(&lexer);        // `x`
+    test_token_location("<NULL>", 4, 1, 23);
 }
-#endif

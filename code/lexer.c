@@ -3,19 +3,6 @@
 
 #include "lexer.h"
 
-static void lexer__next_char(Lexer *lx)
-{
-    if (lx->read_pos >= lx->input_len)
-    {
-        lx->ch = '\0';
-    }
-    else
-    {
-        lx->ch = lx->input[lx->read_pos];
-    }
-    lx->pos = lx->read_pos++;
-}
-
 static int lexer__peek_char_is(Lexer *lx, char ch)
 {
     if (lx->read_pos >= lx->input_len)
@@ -26,6 +13,40 @@ static int lexer__peek_char_is(Lexer *lx, char ch)
     {
         return lx->input[lx->read_pos] == ch;
     }
+}
+
+static void lexer__next_char(Lexer *lx)
+{
+    if (lx->read_pos >= lx->input_len)
+    {
+        lx->ch = '\0';
+        lx->pos = lx->read_pos++;
+        return;
+    }
+    else
+    {
+        if (lx->ch == '\n')
+        {
+            lx->col = 1;
+            lx->line++;
+        }
+        else if (lx->ch == '\r')
+        {
+            if (lexer__peek_char_is(lx, '\n'))
+            {
+                lx->read_pos++;
+            }
+            lx->col = 1;
+            lx->line++;
+        }
+        else
+        {
+            lx->col++;
+        }
+
+        lx->ch = lx->input[lx->read_pos];
+    }
+    lx->pos = lx->read_pos++;
 }
 
 static int lexer__ch_is_numeric(char ch)
@@ -61,6 +82,14 @@ static int lexer__ch_is_symbol(char ch)
         }
     }
     return istrue;
+}
+
+static void lexer__skip_whitespace(Lexer *lx)
+{
+    while (lexer__ch_is_space(lx->ch))
+    {
+        lexer__next_char(lx);
+    }
 }
 
 static Token_Type lexer__sv_to_token_type(String_View sv)
@@ -159,6 +188,10 @@ int lexer_init_from_buffer(Lexer *lexer, const char *input_buffer)
     lexer->read_pos = 0;
     lexer->ch = 0;
 
+    lexer->file = NULL;
+    lexer->line = 1;
+    lexer->col = 0;
+
     lexer__next_char(lexer);
 
     success = 1;
@@ -170,8 +203,14 @@ Token lexer_next_token(Lexer *lx)
 {
     Token token;
 
-    token.type = TT_ILLEGAL;
+    lexer__skip_whitespace(lx);
+
+    token.type    = TT_ILLEGAL;
     token.literal = sv_from_cstring(&lx->input[lx->pos], 1);
+    token.file    = NULL;
+    token.line    = lx->line;
+    token.col     = lx->col;
+    token.offset  = lx->pos;
 
     switch (lx->ch)
     {

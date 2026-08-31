@@ -14,6 +14,10 @@ typedef struct token
 {
     Token_Type type;
     String_View literal;
+    const char *file;
+    int line;
+    int col;
+    int offset;
 } Token;
 
 
