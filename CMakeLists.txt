@@ -43,6 +43,8 @@ set(
     LIB_SOURCES
     code/lexer.c
     code/token.c
+    code/ast.c
+    code/parser.c
     code/stringlib.c
 )
 add_library(${LIB_NAME} ${LIB_SOURCES})
@@ -67,6 +69,7 @@ set(TEST_EXE test_tyger)
 set(
     TEST_SOURCES
     tests/test_lexer.cpp
+    tests/test_parser.cpp
 )
 add_executable(${TEST_EXE} ${TEST_SOURCES})
 target_link_libraries(${TEST_EXE} GTest::gtest_main ${LIB_NAME})

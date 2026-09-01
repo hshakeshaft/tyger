@@ -2,6 +2,7 @@
 #define LEXER_H_
 #include "token.h"
 
+/* TODO(HS): I want to replace current lexical scan with string_view based window */
 typedef struct lexer
 {
     const char *input;

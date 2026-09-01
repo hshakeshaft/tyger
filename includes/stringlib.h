@@ -7,6 +7,9 @@ typedef struct string_view
     int len;
 } String_View;
 
+#define SV_FMT "%.*s"
+#define SV_ARGS(SV) (SV).len, (SV).str
+
 
 #ifdef __cplusplus
 extern "C" {
