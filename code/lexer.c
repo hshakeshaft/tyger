@@ -327,7 +327,19 @@ Token lexer_next_token(Lexer *lx)
             {
                 String_View literal;
                 literal = lexer__read_string(lx);
-                token.type = TT_STRING;
+
+                /* NOTE(HS): if after reading a string, the string is unterminated
+                then this should result in an illegal token being generated */
+                if (lx->ch == '\"')
+                {
+                    lexer__next_char(lx);
+                    token.type = TT_STRING;
+                }
+                else
+                {
+                    token.type = TT_ILLEGAL;
+                }
+
                 token.literal = literal;
                 return token;
             }

@@ -18,7 +18,7 @@ std::ostream& operator<<(std::ostream& strm, const Lexer& l)
 {
     strm
         << "Lexer{\n"
-        << "  .input = \"" << l.input << "\", \n"
+        << "  .input = \n```\n" << l.input << "\n```, \n"
         << "  .pos = " << l.pos << ",\n"
         << "  .read_pos = " << l.read_pos << ",\n"
         << "  .ch = '" << l.ch << "',\n"
@@ -155,4 +155,26 @@ TEST(LexerTestSuite, test_lexer_reports_position)
 
     token = lexer_next_token(&lexer);        // `x`
     test_token_location("<NULL>", 4, 1, 23);
+}
+
+// NOTE(HS): to test that `10;` is lexed as [`10`, `;`]
+TEST(LexerTestSuite, test_lexer_lexes_semicolons_separately)
+{
+    std::vector<std::string> test_inputs = { "1;", "10;", "\"foo\";", "x;" };
+
+    for (auto& tc : test_inputs)
+    {
+        Lexer lexer;
+        Token token;
+
+        lexer_init_from_buffer(&lexer, tc.c_str());
+        token = lexer_next_token(&lexer);  // NOTE(HS): should consume the expression
+        token = lexer_next_token(&lexer);  // NOTE(HS): should always be the semicolon
+
+        ASSERT_EQ(token.type, TT_SEMICOLON)
+            << "expected token to be semicolon, got "
+            << token_type_to_string(token.type)
+            << "\n" << lexer
+            << "\nActual token: \n" << token;
+    }
 }
