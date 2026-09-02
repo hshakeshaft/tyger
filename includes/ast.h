@@ -118,6 +118,9 @@ void program_init(Program *p);
 Statement_Handle  program_register_statement(Program *p, Statement *stmt);
 Expression_Handle program_register_expression(Program *p, Expression *expr);
 
+Statement  *program_statement_handle_to_statement(Program *p, Statement_Handle handle);
+Expression *program_expression_handle_to_expression(Program *p, Expression_Handle handle);
+
 const char *ast_statement_type_to_string(Statement_Type type);
 const char *ast_expression_type_to_string(Expression_Type type);
 

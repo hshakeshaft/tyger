@@ -81,6 +81,28 @@ Expression_Handle program_register_expression(Program *p, Expression *expr)
     return handle;
 }
 
+Statement *program_statement_handle_to_statement(Program *p, Statement_Handle handle)
+{
+    Statement *stmt;
+    stmt = NULL;
+    if (handle.id < p->___statements.count)
+    {
+        stmt = &p->___statements.elems[handle.id];
+    }
+    return stmt;
+}
+
+Expression *program_expression_handle_to_expression(Program *p, Expression_Handle handle)
+{
+    Expression *expr;
+    expr = NULL;
+    if (handle.id < p->___expressions.count)
+    {
+        expr = &p->___expressions.elems[handle.id];
+    }
+    return expr;
+}
+
 void ast__error_create_from_token(Error *error, Error_Type type, Token token)
 {
     size_t error_message_buffer_size;

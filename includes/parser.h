@@ -19,9 +19,6 @@ void parser_init(Parser *ps, Lexer *lx);
 
 Program parser_parse_program(Parser *ps);
 
-Statement  *program_statement_handle_to_statement(Program *p, Statement_Handle handle);
-Expression *program_expression_handle_to_expression(Program *p, Expression_Handle handle);
-
 #ifdef __cplusplus
 }
 #endif
