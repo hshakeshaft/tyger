@@ -7,14 +7,88 @@ static void parser__next_token(Parser *ps)
     ps->peek_token = lexer_next_token(ps->lx);
 }
 
-static Error parser__parse_statement(Parser *ps, Statement *stmt)
+#include <stdio.h>
+
+/* NOTE(HS): only base-10 integers are supported */
+static Error parser__parse_integer_expression(Program *p, Parser *ps, Statement *stmt)
 {
     Error error;
+    Expression expr;
+    Expression_Handle expr_handle;
+    long int parsed_integer;
+    char *literal_end;
 
-    (void) stmt;
+    memset(&error, 0x00, sizeof(error));
+
+    literal_end  = ps->cur_token.literal.str;
+    literal_end += ps->cur_token.literal.len;
+
+    parsed_integer = strtol(ps->cur_token.literal.str, &literal_end, 10);
+
+    /* NOTE(HS): if the literal is `0` and the parsed integer value is `0` I think
+    it is safe to assume there was no error in converting the string value.
+
+    If however the integer is any other value, and the parsed value is `0` then this
+    is an error.
+    */
+    if (ps->cur_token.literal.str[0] != '0' && parsed_integer == 0)
+    {
+        ast__error_create_from_token(&error, ERT_INVALID_INTEGER, ps->cur_token);
+    }
+    else
+    {
+        expr.type                  = ET_INTEGER;
+        expr.as.integer.value      = parsed_integer;
+        expr_handle                = program_register_expression(p, &expr);
+        stmt->type                 = ST_EXPRESSION;
+        stmt->as.expression.handle = expr_handle;
+
+        parser__next_token(ps);
+    }
+
+    return error;
+}
+
+static Error parser__parse_expression_statement(Program *p, Parser *ps, Statement *stmt)
+{
+    Error error;
+    memset(&error, 0x00, sizeof(error));
 
     switch (ps->cur_token.type)
     {
+        case TT_INT: {
+            error = parser__parse_integer_expression(p, ps, stmt);
+        } break;
+
+        default:;
+    }
+
+    if (error.type != ERT_NONE)
+    {
+        DA_APPEND(&p->errors, &error);
+        memset(&error, 0x00, sizeof(error));
+    }
+
+    if (ps->cur_token.type != TT_SEMICOLON)
+    {
+        ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
+    }
+
+    return error;
+}
+
+
+static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
+{
+    Error error;
+    memset(&error, 0x00, sizeof(error));
+
+    switch (ps->cur_token.type)
+    {
+        case TT_INT: {
+            error = parser__parse_expression_statement(p, ps, stmt);
+        } break;
+
         default: {
             ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
         }
@@ -43,7 +117,7 @@ Program parser_parse_program(Parser *ps)
         Statement stmt;
         Statement_Handle handle;
         Error err;
-        err = parser__parse_statement(ps, &stmt);
+        err = parser__parse_statement(&program, ps, &stmt);
         if (err.type != ERT_NONE)
         {
             DA_APPEND(&program.errors, &err);
@@ -58,6 +132,9 @@ Program parser_parse_program(Parser *ps)
 
     return program;
 }
+
+
+/* TODO(HS): move to AST */
 
 Statement *program_statement_handle_to_statement(Program *p, Statement_Handle handle)
 {

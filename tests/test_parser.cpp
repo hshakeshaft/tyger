@@ -43,7 +43,7 @@ TEST(ParserTestSuite, Integer_Expression)
         Statement_Handle stmt_handle = {1};
         Statement *stmt = program_statement_handle_to_statement(&program, stmt_handle);
         ASSERT_EQ(stmt->type, ST_EXPRESSION)
-            << "Expected statement of type" << ast_statement_type_to_string(ST_EXPRESSION)
+            << "Expected statement of type " << ast_statement_type_to_string(ST_EXPRESSION)
             << ", got " << ast_statement_type_to_string(stmt->type);
 
         Expression_Handle expr_handle = stmt->as.expression.handle;

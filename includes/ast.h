@@ -115,7 +115,8 @@ extern "C" {
 
 void program_init(Program *p);
 
-Statement_Handle program_register_statement(Program *p, Statement *stmt);
+Statement_Handle  program_register_statement(Program *p, Statement *stmt);
+Expression_Handle program_register_expression(Program *p, Expression *expr);
 
 const char *ast_statement_type_to_string(Statement_Type type);
 const char *ast_expression_type_to_string(Expression_Type type);

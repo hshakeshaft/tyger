@@ -69,7 +69,15 @@ Statement_Handle program_register_statement(Program *p, Statement *stmt)
 {
     Statement_Handle handle;
     handle.id = p->___statements.count;
-    DA_APPEND(&p->___statements, &stmt);
+    DA_APPEND(&p->___statements, stmt);
+    return handle;
+}
+
+Expression_Handle program_register_expression(Program *p, Expression *expr)
+{
+    Expression_Handle handle;
+    handle.id = p->___expressions.count;
+    DA_APPEND(&p->___expressions, expr);
     return handle;
 }
 
@@ -93,6 +101,15 @@ void ast__error_create_from_token(Error *error, Error_Type type, Token token)
             bytes_written = sprintf(
                 message,
                 "Invalid statement encountered at [%s:%i:%i] token `" SV_FMT "` is not allowed in statement",
+                token.file, token.line, token.col,
+                SV_ARGS(token.literal)
+            );
+        } break;
+
+        case ERT_INVALID_INTEGER: {
+            bytes_written = sprintf(
+                message,
+                "Invalid integer encountered at [%s:%i:%i], `" SV_FMT "`: only base-10 integers are supported",
                 token.file, token.line, token.col,
                 SV_ARGS(token.literal)
             );
