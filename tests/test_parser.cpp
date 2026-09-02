@@ -17,6 +17,8 @@ TEST(ParserTestSuite, Integer_Expression)
 {
     std::vector<IntegerExpressionTestCase> test_cases = {
         { "10;", 10 },
+        { "100000;", 100000 },
+        { "5;", 5 }
     };
 
     for (auto& tc : test_cases)
