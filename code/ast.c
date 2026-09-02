@@ -116,6 +116,7 @@ void ast__error_create_from_token(Error *error, Error_Type type, Token token)
     error->where.line   = token.line;
     error->where.col    = token.col;
     error->where.offset = token.offset;
+    error->type         = type;
 
     switch (type)
     {

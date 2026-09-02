@@ -7,7 +7,28 @@ static void parser__next_token(Parser *ps)
     ps->peek_token = lexer_next_token(ps->lx);
 }
 
-#include <stdio.h>
+static int parser__cur_token_is(Parser *ps, Token_Type type)
+{
+    return ps->cur_token.type == type;
+}
+
+static int parser__peek_token_is(Parser *ps, Token_Type type)
+{
+    return ps->peek_token.type == type;
+}
+
+static int parser__expect_peek(Parser *ps, Token_Type type)
+{
+    int result;
+    result = 0;
+    if (parser__peek_token_is(ps, type))
+    {
+        parser__next_token(ps);
+        result = 1;
+    }
+    return result;
+}
+
 
 /* NOTE(HS): only base-10 integers are supported */
 static Error parser__parse_integer_expression(Program *p, Parser *ps, Statement *stmt)
@@ -42,9 +63,9 @@ static Error parser__parse_integer_expression(Program *p, Parser *ps, Statement 
         expr_handle                = program_register_expression(p, &expr);
         stmt->type                 = ST_EXPRESSION;
         stmt->as.expression.handle = expr_handle;
-
-        parser__next_token(ps);
     }
+
+    parser__next_token(ps);
 
     return error;
 }
@@ -65,13 +86,7 @@ static Error parser__parse_expression_statement(Program *p, Parser *ps, Statemen
 
     if (error.type != ERT_NONE)
     {
-        DA_APPEND(&p->errors, &error);
-        memset(&error, 0x00, sizeof(error));
-    }
-
-    if (ps->cur_token.type != TT_SEMICOLON)
-    {
-        ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
+        return error;
     }
 
     return error;
@@ -92,6 +107,16 @@ static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
         default: {
             ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
         }
+    }
+
+    if (error.type != ERT_NONE)
+    {
+        return error;
+    }
+
+    if (!parser__cur_token_is(ps, TT_SEMICOLON))
+    {
+        ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
     }
 
     return error;
