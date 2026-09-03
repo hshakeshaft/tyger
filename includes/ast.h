@@ -74,11 +74,18 @@ typedef struct integer_expression
     int value;
 } Integer_Expression;
 
+typedef struct string_expression
+{
+    const char *ptr;
+    int len;
+} String_Expression;
+
 typedef struct expression
 {
     Expression_Type type;
     union {
         Integer_Expression integer;
+        String_Expression  string;
     } as;
 } Expression;
 

@@ -70,6 +70,32 @@ static Error parser__parse_integer_expression(Program *p, Parser *ps, Statement 
     return error;
 }
 
+static Error parser__parse_string_expression(Program *p, Parser *ps, Statement *stmt)
+{
+    Error error;
+    Expression expr;
+    Expression_Handle handle;
+    char *strbuf;
+
+    memset(&error, 0x00, sizeof(error));
+
+    /* TODO(HS): handle allocation failure */
+    strbuf = malloc(sizeof(*strbuf) * (ps->cur_token.literal.len + 1));
+    strncpy(strbuf, ps->cur_token.literal.str, ps->cur_token.literal.len);
+
+    expr.type                  = ET_STRING;
+    expr.as.string.ptr         = strbuf;
+    expr.as.string.len         = ps->cur_token.literal.len;
+    handle                     = program_register_expression(p, &expr);
+    stmt->type                 = ST_EXPRESSION;
+    stmt->as.expression.handle = handle;
+
+    parser__next_token(ps);
+
+    return error;
+}
+
+
 static Error parser__parse_expression_statement(Program *p, Parser *ps, Statement *stmt)
 {
     Error error;
@@ -79,6 +105,10 @@ static Error parser__parse_expression_statement(Program *p, Parser *ps, Statemen
     {
         case TT_INT: {
             error = parser__parse_integer_expression(p, ps, stmt);
+        } break;
+
+        case TT_STRING: {
+            error = parser__parse_string_expression(p, ps, stmt);
         } break;
 
         default:;
@@ -100,9 +130,12 @@ static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
 
     switch (ps->cur_token.type)
     {
-        case TT_INT: {
+        case TT_INT:
+        case TT_STRING:
+        {
             error = parser__parse_expression_statement(p, ps, stmt);
         } break;
+
 
         default: {
             ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
