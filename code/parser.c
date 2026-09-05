@@ -31,11 +31,10 @@ static int parser__expect_peek(Parser *ps, Token_Type type)
 
 
 /* NOTE(HS): only base-10 integers are supported */
-static Error parser__parse_integer_expression(Program *p, Parser *ps, Statement *stmt)
+static Error parser__parse_integer_expression(Program *p, Parser *ps, Expression_Handle *handle)
 {
     Error error;
     Expression expr;
-    Expression_Handle expr_handle;
     long int parsed_integer;
     char *literal_end;
 
@@ -58,11 +57,9 @@ static Error parser__parse_integer_expression(Program *p, Parser *ps, Statement 
     }
     else
     {
-        expr.type                  = ET_INTEGER;
-        expr.as.integer.value      = parsed_integer;
-        expr_handle                = program_register_expression(p, &expr);
-        stmt->type                 = ST_EXPRESSION;
-        stmt->as.expression.handle = expr_handle;
+        expr.type             = ET_INTEGER;
+        expr.as.integer.value = parsed_integer;
+        *handle               = program_register_expression(p, &expr);
     }
 
     parser__next_token(ps);
@@ -70,11 +67,10 @@ static Error parser__parse_integer_expression(Program *p, Parser *ps, Statement 
     return error;
 }
 
-static Error parser__parse_string_expression(Program *p, Parser *ps, Statement *stmt)
+static Error parser__parse_string_expression(Program *p, Parser *ps, Expression_Handle *handle)
 {
     Error error;
     Expression expr;
-    Expression_Handle handle;
     char *strbuf;
 
     memset(&error, 0x00, sizeof(error));
@@ -83,23 +79,20 @@ static Error parser__parse_string_expression(Program *p, Parser *ps, Statement *
     strbuf = malloc(sizeof(*strbuf) * (ps->cur_token.literal.len + 1));
     strncpy(strbuf, ps->cur_token.literal.str, ps->cur_token.literal.len);
 
-    expr.type                  = ET_STRING;
-    expr.as.string.ptr         = strbuf;
-    expr.as.string.len         = ps->cur_token.literal.len;
-    handle                     = program_register_expression(p, &expr);
-    stmt->type                 = ST_EXPRESSION;
-    stmt->as.expression.handle = handle;
+    expr.type          = ET_STRING;
+    expr.as.string.ptr = strbuf;
+    expr.as.string.len = ps->cur_token.literal.len;
+    *handle            = program_register_expression(p, &expr);
 
     parser__next_token(ps);
 
     return error;
 }
 
-static Error parser__parse_ident_expression(Program *p, Parser *ps, Statement *stmt)
+static Error parser__parse_ident_expression(Program *p, Parser *ps, Expression_Handle *handle)
 {
     Error error;
     Expression expr;
-    Expression_Handle handle;
     char *strbuf;
 
     memset(&error, 0x00, sizeof(error));
@@ -108,14 +101,34 @@ static Error parser__parse_ident_expression(Program *p, Parser *ps, Statement *s
     strncpy(strbuf, ps->cur_token.literal.str, ps->cur_token.literal.len);
     strbuf[ps->cur_token.literal.len] = '\0';
 
-    expr.type                   = ET_IDENT;
-    expr.as.ident.name          = strbuf;
-    handle                      = program_register_expression(p, &expr);
-    stmt->type                  = ST_EXPRESSION;
-    stmt->as.expression.handle  = handle;
+    expr.type          = ET_IDENT;
+    expr.as.ident.name = strbuf;
+    *handle            = program_register_expression(p, &expr);
 
     parser__next_token(ps);
 
+    return error;
+}
+
+static Error parser__parse_expression(Program *p, Parser *ps, Expression_Handle *handle)
+{
+    Error error;
+    switch (ps->cur_token.type)
+    {
+        case TT_INT: {
+            error = parser__parse_integer_expression(p, ps, handle);
+        } break;
+
+        case TT_STRING: {
+            error = parser__parse_string_expression(p, ps, handle);
+        } break;
+
+        case TT_IDENT: {
+            error = parser__parse_ident_expression(p, ps, handle);
+        } break;
+
+        default:;
+    }
     return error;
 }
 
@@ -123,29 +136,17 @@ static Error parser__parse_ident_expression(Program *p, Parser *ps, Statement *s
 static Error parser__parse_expression_statement(Program *p, Parser *ps, Statement *stmt)
 {
     Error error;
+    Expression_Handle handle;
     memset(&error, 0x00, sizeof(error));
 
-    switch (ps->cur_token.type)
-    {
-        case TT_INT: {
-            error = parser__parse_integer_expression(p, ps, stmt);
-        } break;
-
-        case TT_STRING: {
-            error = parser__parse_string_expression(p, ps, stmt);
-        } break;
-
-        case TT_IDENT: {
-            error = parser__parse_ident_expression(p, ps, stmt);
-        } break;
-
-        default:;
-    }
-
+    error = parser__parse_expression(p, ps, &handle);
     if (error.type != ERT_NONE)
     {
         return error;
     }
+
+    stmt->type                 = ST_EXPRESSION;
+    stmt->as.expression.handle = handle;
 
     return error;
 }
@@ -164,7 +165,6 @@ static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
         {
             error = parser__parse_expression_statement(p, ps, stmt);
         } break;
-
 
         default: {
             ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
