@@ -18,6 +18,12 @@ struct StringExpressionTestCase
     std::string expected;
 };
 
+struct IdentExpressionTestCase
+{
+    std::string input;
+    std::string expected;
+};
+
 static void parser__check_errors_and_log(Program program)
 {
     if (program.errors.count != 0)
@@ -69,7 +75,7 @@ TEST(ParserTestSuite, Integer_Expression)
     }
 }
 
-TEST(ParserTestSuite, String_Test)
+TEST(ParserTestSuite, String_Expression)
 {
     std::vector<StringExpressionTestCase> test_cases = {
         { "\"Henlo!\";", "Henlo!" },
@@ -97,5 +103,38 @@ TEST(ParserTestSuite, String_Test)
         ASSERT_NE(expr, nullptr);
         ASSERT_EQ(expr->type, ET_STRING);
         ASSERT_EQ(std::string(expr->as.string.ptr, expr->as.string.len), tc.expected);
+    }
+}
+
+TEST(ParserTestSuite, Ident_Expression)
+{
+    auto test_cases = std::vector<IdentExpressionTestCase>{
+        { "x;", "x" },
+        { "fooBar;", "fooBar" },
+    };
+
+    for (auto& tc : test_cases)
+    {
+        Lexer lexer;
+        Parser parser;
+        lexer_init_from_buffer(&lexer, tc.input.c_str());
+        parser_init(&parser, &lexer);
+
+        Program program = parser_parse_program(&parser);
+        parser__check_errors_and_log(program);
+
+        Statement *stmt = program_statement_handle_to_statement(&program, {1});
+        ASSERT_NE(stmt, nullptr);
+        ASSERT_EQ(stmt->type, ST_EXPRESSION)
+            << "expected statement of type " << ast_statement_type_to_string(ST_EXPRESSION)
+            << ", got " << ast_statement_type_to_string(stmt->type);
+
+        Expression *expr = program_expression_handle_to_expression(&program, stmt->as.expression.handle);
+        ASSERT_NE(expr, nullptr);
+        ASSERT_EQ(expr->type, ET_IDENT)
+            << "expected expression of type " << ast_expression_type_to_string(ET_IDENT)
+            << ", got " << ast_expression_type_to_string(expr->type);
+
+        ASSERT_EQ(expr->as.ident.name, tc.expected);
     }
 }

@@ -80,12 +80,18 @@ typedef struct string_expression
     int len;
 } String_Expression;
 
+typedef struct ident_expression
+{
+    const char *name;
+} Ident_Expression;
+
 typedef struct expression
 {
     Expression_Type type;
     union {
         Integer_Expression integer;
         String_Expression  string;
+        Ident_Expression   ident;
     } as;
 } Expression;
 
