@@ -224,12 +224,12 @@ TEST(ParserTestSuite, Infix_Expression)
 
     for (auto& tc : test_cases)
     {
-        Lexer lexer;
-        Parser parser;
+        lexer lexer;
+        parser parser;
         lexer_init_from_buffer(&lexer, tc.input.c_str());
         parser_init(&parser, &lexer);
 
-        Program program = parser_parse_program(&parser);
+        program program = parser_parse_program(&parser);
         parser__check_errors_and_log(program);
 
         std::string parse_tree = program__to_parse_tree(program);
@@ -237,4 +237,30 @@ TEST(ParserTestSuite, Infix_Expression)
     }
 }
 
-// TODO(HS): test operator precidence
+TEST(ParserTestSuite, Operator_Precidence)
+{
+    auto test_cases = std::vector<InfixExpressionTestCase>{
+        { "1 + 2 + 3;", "(+ (+ 1 2) 3)" },
+        { "1 - 2 - 3;", "(- (- 1 2) 3)" },
+        { "3 * 4 / 2;", "(/ (* 3 4) 2)" },
+        { "1 + 2 * 3;", "(+ 1 (* 2 3))" },
+        { "1 + 2 / 3;", "(+ 1 (/ 2 3))" },
+        { "1 + 2 - 3 * 4 / 5;", "(- (+ 1 2) (/ (* 3 4) 5))" },
+        { "a + b - c * d / e;", "(- (+ a b) (/ (* c d) e))" },
+        { "1 * 2 / 3 - 4 + 5;", "(+ (- (/ (* 1 2) 3) 4) 5)" },
+    };
+
+    for (auto& tc : test_cases)
+    {
+        lexer lexer;
+        parser parser;
+        lexer_init_from_buffer(&lexer, tc.input.c_str());
+        parser_init(&parser, &lexer);
+
+        program program = parser_parse_program(&parser);
+        parser__check_errors_and_log(program);
+
+        std::string parse_tree = program__to_parse_tree(program);
+        ASSERT_EQ(tc.expected_parse_tree, parse_tree);
+    }
+}
