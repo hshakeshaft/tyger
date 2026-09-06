@@ -24,6 +24,12 @@ struct IdentExpressionTestCase
     std::string expected;
 };
 
+struct InfixExpressionTestCase
+{
+    std::string input;
+    std::string expected_parse_tree;
+};
+
 static void parser__check_errors_and_log(Program program)
 {
     if (program.errors.count != 0)
@@ -36,6 +42,74 @@ static void parser__check_errors_and_log(Program program)
         }
         ASSERT_EQ(program.errors.count, 0);
     }
+}
+
+static std::string program__expression_to_parse_tree(Program program, Expression *expr)
+{
+    std::string result{};
+
+    switch (expr->type)
+    {
+        case ET_INTEGER: {
+            result += std::to_string(expr->as.integer.value);
+        } break;
+
+        case ET_STRING: {
+            result += std::string(expr->as.string.ptr);
+        } break;
+
+        case ET_IDENT: {
+            result += std::string(expr->as.ident.name);
+        } break;
+
+        case ET_INFIX: {
+            result += "(";
+
+            Infix_Expression *infix = &expr->as.infix;
+            switch (infix->op)
+            {
+                case OP_ADD: result += "+ "; break;
+                case OP_SUB: result += "- "; break;
+                case OP_MUL: result += "* "; break;
+                case OP_DIV: result += "/ "; break;
+                default:;
+            }
+
+            Expression *lhs = program_expression_handle_to_expression(&program, infix->lhs);
+            Expression *rhs = program_expression_handle_to_expression(&program, infix->rhs);
+
+            result += program__expression_to_parse_tree(program, lhs);
+            result += " ";
+            result += program__expression_to_parse_tree(program, rhs);
+
+            result += ")";
+        } break;
+
+        default:;
+    }
+
+    return result;
+}
+
+static std::string program__to_parse_tree(Program program)
+{
+    std::string result{};
+
+    for (size_t i = 1; i < program.___statements.count; ++i)
+    {
+        auto stmt = &program.___statements.elems[i];
+        switch (stmt->type)
+        {
+            case ST_EXPRESSION: {
+                Expression *expr = program_expression_handle_to_expression(&program, stmt->as.expression.handle);
+                result = program__expression_to_parse_tree(program, expr);
+            } break;
+
+            default:;
+        }
+    }
+
+    return result;
 }
 
 
@@ -138,3 +212,29 @@ TEST(ParserTestSuite, Ident_Expression)
         ASSERT_EQ(expr->as.ident.name, tc.expected);
     }
 }
+
+TEST(ParserTestSuite, Infix_Expression)
+{
+    auto test_cases = std::vector<InfixExpressionTestCase>{
+        { "1 + 1;", "(+ 1 1)" },
+        { "1 - 1;", "(- 1 1)" },
+        { "1 * 1;", "(* 1 1)" },
+        { "1 / 1;", "(/ 1 1)" },
+    };
+
+    for (auto& tc : test_cases)
+    {
+        Lexer lexer;
+        Parser parser;
+        lexer_init_from_buffer(&lexer, tc.input.c_str());
+        parser_init(&parser, &lexer);
+
+        Program program = parser_parse_program(&parser);
+        parser__check_errors_and_log(program);
+
+        std::string parse_tree = program__to_parse_tree(program);
+        ASSERT_EQ(tc.expected_parse_tree, parse_tree);
+    }
+}
+
+// TODO(HS): test operator precidence

@@ -103,6 +103,20 @@ Expression *program_expression_handle_to_expression(Program *p, Expression_Handl
     return expr;
 }
 
+Operator ast_operator_from_token_type(Token_Type type)
+{
+    Operator operator;
+    switch (type)
+    {
+        case TT_ADD: operator = OP_ADD; break;
+        case TT_SUB: operator = OP_SUB; break;
+        case TT_MUL: operator = OP_MUL; break;
+        case TT_DIV: operator = OP_DIV; break;
+        default:     operator = -1;
+    }
+    return operator;
+}
+
 void ast__error_create_from_token(Error *error, Error_Type type, Token token)
 {
     size_t error_message_buffer_size;

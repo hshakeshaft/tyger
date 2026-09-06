@@ -69,6 +69,17 @@ typedef struct statement
 
 /* Expressions */
 
+
+typedef enum operator_
+{
+    OP_ADD,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV,
+    OPERATOR_COUNT
+} Operator;
+
+
 typedef struct integer_expression
 {
     int value;
@@ -85,6 +96,13 @@ typedef struct ident_expression
     const char *name;
 } Ident_Expression;
 
+typedef struct infix_expression
+{
+    Operator op;
+    Expression_Handle lhs;
+    Expression_Handle rhs;
+} Infix_Expression;
+
 typedef struct expression
 {
     Expression_Type type;
@@ -92,6 +110,7 @@ typedef struct expression
         Integer_Expression integer;
         String_Expression  string;
         Ident_Expression   ident;
+        Infix_Expression   infix;
     } as;
 } Expression;
 
@@ -130,6 +149,7 @@ void program_init(Program *p);
 
 Statement_Handle  program_register_statement(Program *p, Statement *stmt);
 Expression_Handle program_register_expression(Program *p, Expression *expr);
+Operator ast_operator_from_token_type(Token_Type type);
 
 Statement  *program_statement_handle_to_statement(Program *p, Statement_Handle handle);
 Expression *program_expression_handle_to_expression(Program *p, Expression_Handle handle);

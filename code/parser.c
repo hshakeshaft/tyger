@@ -1,6 +1,24 @@
 #include "da.h"
 #include "parser.h"
 
+static Error parser__parse_expression(
+    Program *p,
+    Parser *ps,
+    Expression_Handle *handle,
+    int precidence
+);
+
+
+enum {
+    PRECIDENCE_LOWEST      = 0,
+    PRECIDENCE_EQUALS      = 10, /* ==            */
+    PRECIDENCE_LESSGREATER = 20, /* > or <        */
+    PRECIDENCE_SUM         = 30, /* +             */
+    PRECIDENCE_PRODUCT     = 40, /* *             */
+    PRECIDENCE_PREFIX      = 50, /* -X or !X      */
+    PRECIDENCE_CALL        = 60  /* myFunction(X) */
+};
+
 static void parser__next_token(Parser *ps)
 {
     ps->cur_token = ps->peek_token;
@@ -27,6 +45,44 @@ static int parser__expect_peek(Parser *ps, Token_Type type)
         result = 1;
     }
     return result;
+}
+
+static int parser__precidence_of(Token_Type type)
+{
+    int precidence;
+    precidence = PRECIDENCE_LOWEST;
+    switch (type)
+    {
+        case TT_EQ: {
+            precidence = PRECIDENCE_EQUALS;
+        } break;
+
+        case TT_LT:
+        case TT_GT:
+        {
+            precidence = PRECIDENCE_LESSGREATER;
+        } break;
+
+        case TT_ADD:
+        case TT_SUB:
+        {
+            precidence = PRECIDENCE_SUM;
+        } break;
+
+        case TT_MUL:
+        case TT_DIV:
+        {
+            precidence = PRECIDENCE_PRODUCT;
+        } break;
+
+        default:;
+    }
+    return precidence;
+}
+
+static int parser__peek_precidence(Parser *ps)
+{
+    return parser__precidence_of(ps->peek_token.type);
 }
 
 
@@ -62,8 +118,6 @@ static Error parser__parse_integer_expression(Program *p, Parser *ps, Expression
         *handle               = program_register_expression(p, &expr);
     }
 
-    parser__next_token(ps);
-
     return error;
 }
 
@@ -84,8 +138,6 @@ static Error parser__parse_string_expression(Program *p, Parser *ps, Expression_
     expr.as.string.len = ps->cur_token.literal.len;
     *handle            = program_register_expression(p, &expr);
 
-    parser__next_token(ps);
-
     return error;
 }
 
@@ -105,14 +157,53 @@ static Error parser__parse_ident_expression(Program *p, Parser *ps, Expression_H
     expr.as.ident.name = strbuf;
     *handle            = program_register_expression(p, &expr);
 
+    return error;
+}
+
+static Error parser__parse_infix_expression(Program *p, Parser *ps, Expression_Handle *handle)
+{
+    Error error;
+    Expression_Handle lhs_handle;
+    Expression_Handle rhs_handle;
+    Expression infix_expression;
+    Expression_Handle infix_handle;
+    int precidence;
+    Operator operator;
+
+    memset(&error, 0x00, sizeof(error));
+
+    precidence = parser__precidence_of(ps->cur_token.type);
+    operator   = ast_operator_from_token_type(ps->cur_token.type);
+    lhs_handle = *handle;
+
     parser__next_token(ps);
+
+    error = parser__parse_expression(p, ps, &rhs_handle, precidence);
+    if (error.type != ERT_NONE)
+    {
+        return error;
+    }
+
+    infix_expression.type         = ET_INFIX;
+    infix_expression.as.infix.op  = operator;
+    infix_expression.as.infix.lhs = lhs_handle;
+    infix_expression.as.infix.rhs = rhs_handle;
+
+    infix_handle = program_register_expression(p, &infix_expression);
+    *handle      = infix_handle;
 
     return error;
 }
 
-static Error parser__parse_expression(Program *p, Parser *ps, Expression_Handle *handle)
+static Error parser__parse_expression(
+    Program *p,
+    Parser *ps,
+    Expression_Handle *handle,
+    int precidence
+)
 {
     Error error;
+
     switch (ps->cur_token.type)
     {
         case TT_INT: {
@@ -129,6 +220,25 @@ static Error parser__parse_expression(Program *p, Parser *ps, Expression_Handle 
 
         default:;
     }
+
+    if (error.type != ERT_NONE)
+    {
+        return error;
+    }
+
+    while (
+        !parser__peek_token_is(ps, TT_SEMICOLON) 
+        && (precidence < parser__peek_precidence(ps))
+    )
+    {
+        parser__next_token(ps);
+        error = parser__parse_infix_expression(p, ps, handle);
+        if (error.type != ERT_NONE)
+        {
+            return error;
+        }
+    }
+
     return error;
 }
 
@@ -139,7 +249,7 @@ static Error parser__parse_expression_statement(Program *p, Parser *ps, Statemen
     Expression_Handle handle;
     memset(&error, 0x00, sizeof(error));
 
-    error = parser__parse_expression(p, ps, &handle);
+    error = parser__parse_expression(p, ps, &handle, PRECIDENCE_LOWEST);
     if (error.type != ERT_NONE)
     {
         return error;
@@ -150,7 +260,6 @@ static Error parser__parse_expression_statement(Program *p, Parser *ps, Statemen
 
     return error;
 }
-
 
 static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
 {
@@ -176,7 +285,7 @@ static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
         return error;
     }
 
-    if (!parser__cur_token_is(ps, TT_SEMICOLON))
+    if (!parser__expect_peek(ps, TT_SEMICOLON))
     {
         ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
     }
