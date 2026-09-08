@@ -21,7 +21,6 @@ void tyvm_deinit(TyVM *vm)
 TyObject *vm_create_object(TyVM *vm, TyObject_Type type, void *data)
 {
     TyObject *object;
-    object = NULL;
 
     if (vm->object_count + 1 >= VM_MAX_OBJECTS)
     {
@@ -33,18 +32,13 @@ TyObject *vm_create_object(TyVM *vm, TyObject_Type type, void *data)
         exit(1);
     }
 
-    object = &vm->objects[vm->object_count++];
-
-    object->type = type;
-
-    switch (object->type)
+    object = tyobject_create(type, data);
+    if (!object)
     {
-        case OBJ_INTEGER: {
-            object->as.integer = * (int*) data;
-        } break;
-
-        default:;
+        fprintf(stderr, "[ERROR] failed to create object\n");
     }
+
+    vm->objects[vm->object_count++] = object;
 
     return object;
 }

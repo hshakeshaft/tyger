@@ -8,7 +8,7 @@
 
 typedef struct
 {
-    TyObject *objects;
+    TyObject **objects;
     size_t object_count;
 } TyVM;
 

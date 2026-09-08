@@ -1,5 +1,6 @@
 #include <stddef.h>
 
+#include "memory.h"
 #include "object.h"
 
 const char *tyobject_type_to_string(TyObject_Type type)
@@ -13,4 +14,24 @@ const char *tyobject_type_to_string(TyObject_Type type)
         default: result = NULL;
     }
     return result;
+}
+
+TyObject *tyobject_create(TyObject_Type type, void *data)
+{
+    TyObject *object;
+
+    object = TYGER_MALLOC(sizeof(*object));
+    if (!object) { return NULL; }
+
+    object->type = type;
+    switch (type)
+    {
+        case OBJ_INTEGER: {
+            object->as.integer = * (int*) data;
+        } break;
+
+        default:;
+    }
+
+    return object;
 }

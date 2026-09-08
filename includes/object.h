@@ -19,4 +19,6 @@ typedef struct
 
 const char *tyobject_type_to_string(TyObject_Type type);
 
+TyObject *tyobject_create(TyObject_Type type, void *data);
+
 #endif  /* TYOBJECT_H_ */
