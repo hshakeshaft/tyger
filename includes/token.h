@@ -20,15 +20,6 @@ typedef struct token
     int offset;
 } Token;
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 const char *token_type_to_string(Token_Type type);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* TOKEN_H_ */

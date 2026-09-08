@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "token.h"
-#include "lexer.h"
-
 #include <string>
 #include <vector>
 #include <ostream>
+
+#include "tyger.hpp"
 
 struct Lexical_Token_Test
 {

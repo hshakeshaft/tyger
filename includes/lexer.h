@@ -17,16 +17,8 @@ typedef struct lexer
 } Lexer;
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int lexer_init_from_buffer(Lexer *lexer, const char *input_buffer);
 
 Token lexer_next_token(Lexer *lx);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* LEXER_H_ */

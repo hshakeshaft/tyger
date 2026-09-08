@@ -141,10 +141,6 @@ typedef struct program
 } Program;
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void program_init(Program *p);
 
 Statement_Handle  program_register_statement(Program *p, Statement *stmt);
@@ -158,9 +154,5 @@ const char *ast_statement_type_to_string(Statement_Type type);
 const char *ast_expression_type_to_string(Expression_Type type);
 
 void ast__error_create_from_token(Error *error, Error_Type type, Token token);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* AST_H_ */

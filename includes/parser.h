@@ -11,16 +11,8 @@ typedef struct parser
 } Parser;
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void parser_init(Parser *ps, Lexer *lx);
 
 Program parser_parse_program(Parser *ps);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* PARSER_H_ */

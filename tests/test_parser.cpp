@@ -4,7 +4,7 @@
 #include <vector>
 #include <vector>
 
-#include "parser.h"
+#include "tyger.hpp"
 
 struct IntegerExpressionTestCase
 {
