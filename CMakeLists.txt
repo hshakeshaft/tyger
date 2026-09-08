@@ -46,6 +46,9 @@ set(
     code/ast.c
     code/parser.c
     code/stringlib.c
+    code/eval.c
+    code/object.c
+    code/vm.c
 )
 add_library(${LIB_NAME} ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)
@@ -70,6 +73,7 @@ set(
     TEST_SOURCES
     tests/test_lexer.cpp
     tests/test_parser.cpp
+    tests/test_eval.cpp
 )
 add_executable(${TEST_EXE} ${TEST_SOURCES})
 target_link_libraries(${TEST_EXE} GTest::gtest_main ${LIB_NAME})
