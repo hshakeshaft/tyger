@@ -53,6 +53,12 @@ typedef struct expression_handle
 
 /* Statements */
 
+typedef struct var_statement
+{
+    const char *ident;
+    Expression_Handle expression;
+} Var_Statement;
+
 typedef struct expression_statement
 {
     Expression_Handle handle;
@@ -62,6 +68,7 @@ typedef struct statement
 {
     Statement_Type type;
     union {
+        Var_Statement        var;
         Expression_Statement expression;
     } as;
 } Statement;

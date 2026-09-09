@@ -35,7 +35,7 @@ do {                                                                            
         new_ptr = DA_REALLOC((DA)->elems, new_memory_capacity);                 \
         DA_ASSERT(new_ptr, "failed to reallocate space for dynamic array");     \
         (DA)->elems = new_ptr;                                                  \
-        (DA)->capacity = new_memory_capacity;                                   \
+        (DA)->capacity = new_capacity;                                          \
     }                                                                           \
     memcpy(&(DA)->elems[(DA)->count], (ELEM), sizeof(*ELEM));                   \
     (DA)->count += 1;                                                           \

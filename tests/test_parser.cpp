@@ -26,6 +26,42 @@ struct InfixExpressionTestCase
     std::string expected_parse_tree;
 };
 
+struct VarStatementTestCase
+{
+    std::string input;
+    std::string expected_ident;
+    std::string expected_parse_tree;
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+/// Test Cases Start
+
+TEST(ParserTestSuite, Var_Statement)
+{
+    auto test_cases = std::vector<VarStatementTestCase>{
+        { "var x = 10;", "x", "(var x 10)" },
+        { "var fooBar = 10;", "fooBar", "(var fooBar 10)" },
+        { "var foo_bar = 10;", "foo_bar", "(var foo_bar 10)" },
+    };
+
+    for (auto& tc : test_cases)
+    {
+        Program program = test__parse_program_from_input(tc.input.c_str());
+        parser__check_errors_and_log(program);
+
+        Statement *stmt = &program.___statements.elems[1];
+        ASSERT_STATEMENT_TYPE_IS(stmt, ST_VAR);
+
+        ASSERT_EQ(stmt->as.var.ident, tc.expected_ident);
+
+        Expression *expr = program_expression_handle_to_expression(&program, stmt->as.var.expression);
+        ASSERT_EXPRESSION_TYPE_IS(expr, ET_INTEGER);
+
+        auto parse_tree = program__statement_to_parse_tree(program, stmt);
+        ASSERT_EQ(parse_tree, tc.expected_parse_tree);
+    }
+}
 
 TEST(ParserTestSuite, Integer_Expression)
 {

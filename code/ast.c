@@ -152,6 +152,25 @@ void ast__error_create_from_token(Error *error, Error_Type type, Token token)
             );
         } break;
 
+        case ERT_INVALID_VAR_DECLARATION: {
+            bytes_written = sprintf(
+                message,
+                "Invalid variable declaration encountered at [%s:%i%i], `" SV_FMT "`\n"
+                "  Variable delarations must follow must follow format `var <ident> = <expression>;`",
+                token.file, token.line, token.col,
+                SV_ARGS(token.literal)
+            );
+        } break;
+
+        case ERT_UNTERMINATED_STATEMENT: {
+            bytes_written = sprintf(
+                message,
+                "Invalid token encountered at [%s:%i:%i] in statement, `" SV_FMT "`: statements must be terminated with semicolon (`;`)",
+                token.file, token.line, token.col,
+                SV_ARGS(token.literal)
+            );
+        } break;
+
         default:;
     }
 

@@ -261,6 +261,44 @@ static Error parser__parse_expression_statement(Program *p, Parser *ps, Statemen
     return error;
 }
 
+static Error parser__parse_var_statement(Program *p, Parser *ps, Statement *stmt)
+{
+    Error error;
+    Expression_Handle handle;
+    char *ident;
+    memset(&error, 0x00, sizeof(error));
+
+    if (!parser__expect_peek(ps, TT_IDENT))
+    {
+        ast__error_create_from_token(&error, ERT_INVALID_VAR_DECLARATION, ps->peek_token);
+        return error;
+    }
+
+    ident = malloc(sizeof(*ident) * (ps->cur_token.literal.len + 1));
+    strncpy(ident, ps->cur_token.literal.str, ps->cur_token.literal.len);
+    ident[ps->cur_token.literal.len] = '\0';
+
+    if (!parser__expect_peek(ps, TT_ASSIGN))
+    {
+        ast__error_create_from_token(&error, ERT_INVALID_VAR_DECLARATION, ps->peek_token);
+        return error;
+    }
+    /* should consume the `=` */
+    parser__next_token(ps);
+
+    error = parser__parse_expression(p, ps, &handle, PRECIDENCE_LOWEST);
+    if (error.type != ERT_NONE)
+    {
+        return error;
+    }
+
+    stmt->type              = ST_VAR;
+    stmt->as.var.ident      = ident;
+    stmt->as.var.expression = handle;
+
+    return error;
+}
+
 static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
 {
     Error error;
@@ -268,6 +306,10 @@ static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
 
     switch (ps->cur_token.type)
     {
+        case TT_KW_VAR: {
+            error = parser__parse_var_statement(p, ps, stmt);
+        } break;
+
         case TT_INT:
         case TT_STRING:
         case TT_IDENT:
@@ -287,7 +329,7 @@ static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
 
     if (!parser__expect_peek(ps, TT_SEMICOLON))
     {
-        ast__error_create_from_token(&error, ERT_INVALID_STATEMENT, ps->cur_token);
+        ast__error_create_from_token(&error, ERT_UNTERMINATED_STATEMENT, ps->cur_token);
     }
 
     return error;

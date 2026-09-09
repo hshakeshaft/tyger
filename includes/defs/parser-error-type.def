@@ -1,3 +1,5 @@
-X(NONE)              \
-X(INVALID_STATEMENT) \
-X(INVALID_INTEGER)
+X(NONE)                         \
+X(INVALID_STATEMENT)            \
+X(INVALID_INTEGER)              \
+X(INVALID_VAR_DECLARATION)      \
+X(UNTERMINATED_STATEMENT)

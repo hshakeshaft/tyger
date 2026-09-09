@@ -99,6 +99,35 @@ std::string program__expression_to_parse_tree(Program program, Expression *expr)
     return result;
 }
 
+std::string program__statement_to_parse_tree(Program program, Statement *stmt)
+{
+    std::string result{};
+
+    switch (stmt->type)
+    {
+        case ST_VAR: {
+            Expression *expr = program_expression_handle_to_expression(&program, stmt->as.var.expression);
+            auto expr_str = program__expression_to_parse_tree(program, expr);
+
+            result += "(var ";
+            result += std::string{stmt->as.var.ident};
+            result += " ";
+            result += expr_str;
+            result += ")";
+        } break;
+
+        case ST_EXPRESSION: {
+            Expression *expr = program_expression_handle_to_expression(&program, stmt->as.expression.handle);
+            auto expr_str = program__expression_to_parse_tree(program, expr);
+            result += expr_str;
+        } break;
+
+        default:;
+    }
+
+    return result;
+}
+
 std::string program__to_parse_tree(Program program)
 {
     std::string result{};

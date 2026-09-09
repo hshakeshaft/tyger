@@ -1,2 +1,3 @@
 X(NONE)       \
-X(EXPRESSION)
+X(EXPRESSION) \
+X(VAR)
