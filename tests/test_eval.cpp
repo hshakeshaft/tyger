@@ -1,34 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <string>
-#include <vector>
-
-#include "tyger.hpp"
-
-#define ASSERT_OBJECT_TYPE_IS(OBJ, EXPECTED)                             \
-    ASSERT_EQ((OBJ)->type, EXPECTED)                                    \
-    << "expected object of type " << tyobject_type_to_string(EXPECTED)  \
-    << ", got " << tyobject_type_to_string((OBJ)->type)
-
-#define ASSERT_OBJECT_EQ_AS_INT(OBJ, EXPECTED) ASSERT_EQ((OBJ)->as.integer, EXPECTED)
-
-#define ASSERT_OBJECT_EQ_AS_STRINGS(OBJ, EXPECTED)                                  \
-do {                                                                                \
-    ASSERT_EQ( (OBJ)->as.string.len, EXPECTED.length() );                           \
-    auto actual_string = std::string((OBJ)->as.string.str, (OBJ)->as.string.len);   \
-    ASSERT_EQ(actual_string, EXPECTED);                                             \
-} while (0)
-
-static Program test__parse_program_from_input(const char *input)
-{
-    Lexer lexer;
-    Parser parser;
-    Program program;
-    lexer_init_from_buffer(&lexer, input);
-    parser_init(&parser, &lexer);
-    program = parser_parse_program(&parser);
-    return program;
-}
+#include "helpers/helpers.hpp"
 
 
 struct EvalIntTest

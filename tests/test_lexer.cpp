@@ -1,10 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <string>
-#include <vector>
-#include <ostream>
-
-#include "tyger.hpp"
+#include "helpers/helpers.hpp"
 
 struct Lexical_Token_Test
 {
@@ -13,36 +9,6 @@ struct Lexical_Token_Test
     const char *expected_literal;
 };
 
-std::ostream& operator<<(std::ostream& strm, const Lexer& l)
-{
-    strm
-        << "Lexer{\n"
-        << "  .input = \n```\n" << l.input << "\n```, \n"
-        << "  .pos = " << l.pos << ",\n"
-        << "  .read_pos = " << l.read_pos << ",\n"
-        << "  .ch = '" << l.ch << "',\n"
-        << "  .file = \"" << (l.file ? l.file : "<NULL>") << "\",\n"
-        << "  .line = " << l.line << ",\n"
-        << "  .col = " << l.col << "\n"
-        << "}"
-    ;
-    return strm;
-}
-
-std::ostream& operator<<(std::ostream& strm, const Token& t)
-{
-    strm 
-        << "Token{\n"
-        << "  .type = " << token_type_to_string(t.type) << ",\n"
-        << "  .literal = \"" << std::string(t.literal.str, t.literal.len) << "\",\n"
-        << "  .file = \"" << (t.file ? t.file : "<NULL>") << "\",\n"
-        << "  .line = " << t.line << ",\n"
-        << "  .col = " << t.col << ",\n"
-        << "  .offset = " << t.offset << "\n"
-        << "}"
-    ;
-    return strm;
-}
 
 TEST(LexerTestSuite, test_lexer_lexes_tokens)
 {

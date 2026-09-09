@@ -74,6 +74,7 @@ set(
     tests/test_lexer.cpp
     tests/test_parser.cpp
     tests/test_eval.cpp
+    tests/helpers/helpers.cpp
 )
 add_executable(${TEST_EXE} ${TEST_SOURCES})
 target_link_libraries(${TEST_EXE} GTest::gtest_main ${LIB_NAME})
