@@ -1,12 +1,22 @@
 #include <stdio.h>
 
 #include "eval.h"
+#include "memory.h"
 
 static TyObject *eval__integer(TyVM *vm, Integer_Expression *expression)
 {
     TyObject *object;
     object = NULL;
     object = vm_create_object(vm, OBJ_INTEGER, (void*) &expression->value);
+    return object;
+}
+
+static TyObject *eval__string(TyVM *vm, String_Expression *expression)
+{
+    TyObject *object;
+    object = NULL;
+    object = vm_create_object(vm, OBJ_STRING, (void*) &expression->len);
+    TY_MOVE_PTR(expression->ptr, object->as.string.str);
     return object;
 }
 
@@ -22,6 +32,10 @@ static TyObject *eval__expression_statement(TyVM *vm, Program *program, Expressi
     {
         case ET_INTEGER: {
             object = eval__integer(vm, &expression->as.integer);
+        } break;
+
+        case ET_STRING: {
+            object = eval__string(vm, &expression->as.string);
         } break;
 
         default:;

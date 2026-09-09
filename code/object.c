@@ -30,6 +30,10 @@ TyObject *tyobject_create(TyObject_Type type, void *data)
             object->as.integer = * (int*) data;
         } break;
 
+        case OBJ_STRING: {
+            object->as.string.len = * (int*) data;
+        } break;
+
         default:;
     }
 

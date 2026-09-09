@@ -14,6 +14,10 @@ typedef struct
     TyObject_Type type;
     union {
         int integer;
+        struct {
+            const char *str;
+            int len;
+        } string;
     } as;
 } TyObject;
 
