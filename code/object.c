@@ -47,3 +47,28 @@ TyObject *tyobject_create(TyObject_Type type, void *data)
 
     return object;
 }
+
+void tyobject_destroy(TyObject *object)
+{
+    switch (object->type)
+    {
+        /* NOTE(HS): these are the "simple" objects - i.e. those with no additional
+        data which requires destruction
+        */
+        case OBJ_NONE:
+        case OBJ_INTEGER:
+        {
+            free(object);
+        } break;
+
+        /* NOTE(HS): the underlying string pointed to by the ident is not owned
+        by the ident, hence it is not freed
+        */
+        case OBJ_IDENT: {
+            tyobject_destroy(object->as.ident.value);
+            free(object);
+        } break;
+
+        default:;
+    }
+}

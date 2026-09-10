@@ -28,5 +28,6 @@ typedef struct tyobject
 const char *tyobject_type_to_string(TyObject_Type type);
 
 TyObject *tyobject_create(TyObject_Type type, void *data);
+void      tyobject_destroy(TyObject *object);
 
 #endif  /* TYOBJECT_H_ */
