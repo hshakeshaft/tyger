@@ -16,11 +16,21 @@ void tyvm_init(TyVM *vm)
 
 void tyvm_deinit(TyVM *vm)
 {
-    /* TODO(HS): free objects pointed to by pointers */
     if (vm->objects)
     {
+        size_t i;
+        TyObject *cur_object;
+        for (i = 0; i < vm->object_count; ++i)
+        {
+            cur_object = vm->objects[i];
+            if (cur_object != NULL)
+            {
+                tyobject_destroy(cur_object);
+            }
+        }
         free(vm->objects);
     }
+
     vm->object_count = 0;
 
     ht_deinit(&vm->identifiers);
