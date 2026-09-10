@@ -7,18 +7,6 @@
     NOTE(HS): original implementation uses `long` rather than `int` - the platforms
     I aim to support define `int` consistently as 32-bits in width, whereas `long`
     is 32-bit on Windows, and 64-bit on *nix.
-
-    unsigned long
-    hash(unsigned char *str)
-    {
-        unsigned long hash = 5381;
-        int c;
-
-        while (c = *str++)
-            hash = ((hash << 5) + hash) + c;
-
-        return hash;
-    }
 */
 static unsigned int ht__djb2_hash_key(const char *key, size_t key_len)
 {
