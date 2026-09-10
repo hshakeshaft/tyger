@@ -3,19 +3,27 @@
 
 #include "vm.h"
 
+#define VM_IDENTIDIER_BUCKETS 64
+
+
 void tyvm_init(TyVM *vm)
 {
     vm->objects = malloc(sizeof(*vm->objects) * VM_MAX_OBJECTS);
     vm->object_count = 0;
+
+    ht_init(&vm->identifiers, VM_IDENTIDIER_BUCKETS);
 }
 
 void tyvm_deinit(TyVM *vm)
 {
+    /* TODO(HS): free objects pointed to by pointers */
     if (vm->objects)
     {
         free(vm->objects);
     }
     vm->object_count = 0;
+
+    ht_deinit(&vm->identifiers);
 }
 
 TyObject *vm_create_object(TyVM *vm, TyObject_Type type, void *data)
@@ -40,5 +48,30 @@ TyObject *vm_create_object(TyVM *vm, TyObject_Type type, void *data)
 
     vm->objects[vm->object_count++] = object;
 
+    return object;
+}
+
+TyObject *vm_create_ident_object(TyVM *vm, const char *ident, TyObject *value)
+{
+    TyObject *object;
+
+    object = vm_create_object(vm, OBJ_IDENT, (void*) ident);
+    object->as.ident.value = value;
+
+    ht_insert(&vm->identifiers, ident, object);
+
+    return object;
+}
+
+TyObject *vm_get_ident(TyVM *vm, const char *ident)
+{
+    TyObject *object;
+    HT_Slot *slot;
+    object = NULL;
+    slot = ht_get(&vm->identifiers, ident);
+    if (slot->key != NULL)
+    {
+        object = slot->value;
+    }
     return object;
 }

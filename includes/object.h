@@ -9,7 +9,7 @@ typedef enum
     TYOBJECT_TYPE_COUNT
 } TyObject_Type;
 
-typedef struct
+typedef struct tyobject
 {
     TyObject_Type type;
     union {
@@ -18,6 +18,10 @@ typedef struct
             const char *str;
             int len;
         } string;
+        struct {
+            const char *ident;
+            struct tyobject *value;
+        } ident;
     } as;
 } TyObject;
 

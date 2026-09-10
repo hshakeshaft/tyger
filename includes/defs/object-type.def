@@ -1,3 +1,4 @@
 X(NONE)    \
 X(INTEGER) \
-X(STRING)
+X(STRING)  \
+X(IDENT)

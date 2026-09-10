@@ -26,12 +26,20 @@ TyObject *tyobject_create(TyObject_Type type, void *data)
     object->type = type;
     switch (type)
     {
+        case OBJ_NONE: {
+            /* NOTE(HS): this is left blank intentionally */
+        } break;
+
         case OBJ_INTEGER: {
             object->as.integer = * (int*) data;
         } break;
 
         case OBJ_STRING: {
             object->as.string.len = * (int*) data;
+        } break;
+
+        case OBJ_IDENT: {
+            object->as.ident.ident = (const char *) data;
         } break;
 
         default:;

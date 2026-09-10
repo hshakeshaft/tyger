@@ -20,14 +20,10 @@ static TyObject *eval__string(TyVM *vm, String_Expression *expression)
     return object;
 }
 
-
-static TyObject *eval__expression_statement(TyVM *vm, Program *program, Expression *expression)
+static TyObject *eval__expression(TyVM *vm, Program *program, Expression *expression)
 {
     TyObject *object;
-    object = NULL;
-
     (void) program;
-
     switch (expression->type)
     {
         case ET_INTEGER: {
@@ -40,9 +36,36 @@ static TyObject *eval__expression_statement(TyVM *vm, Program *program, Expressi
 
         default:;
     }
+    return object;
+}
+
+static TyObject *eval__expression_statement(TyVM *vm, Program *program, Expression *expression)
+{
+    TyObject *object;
+    object = eval__expression(vm, program, expression);
+    return object;
+}
+
+/* TODO(HS): `None` type object needs to be registered as single global thing that
+can be referenced by everything else (why create multiple "none"s?)
+*/
+static TyObject *eval__var_statement(TyVM *vm, Program *program, Statement *statement)
+{
+    TyObject *object;
+    TyObject *ident_object;
+    TyObject *expression_object;
+    Expression *expression;
+
+    expression        = program_expression_handle_to_expression(program, statement->as.var.expression) ;
+    expression_object = eval__expression(vm, program, expression);
+    ident_object      = vm_create_ident_object(vm, statement->as.var.ident, expression_object);
+    object            = vm_create_object(vm, OBJ_NONE, NULL);
+
+    (void) ident_object;
 
     return object;
 }
+
 
 static TyObject *eval__statement(TyVM *vm, Program *program, Statement *stmt)
 {
@@ -51,6 +74,11 @@ static TyObject *eval__statement(TyVM *vm, Program *program, Statement *stmt)
 
     switch (stmt->type)
     {
+        case ST_VAR: {
+            object = eval__var_statement(vm, program, stmt);
+        } break;
+
+        /* TODO(HS): move expression extraction into eval expression function */
         case ST_EXPRESSION: {
             Expression_Handle expression_handle;
             Expression *expression;
