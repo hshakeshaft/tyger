@@ -49,6 +49,7 @@ set(
     code/eval.c
     code/object.c
     code/vm.c
+    code/ht.c
 )
 add_library(${LIB_NAME} ${LIB_SOURCES})
 target_include_directories(${LIB_NAME} PUBLIC includes)
