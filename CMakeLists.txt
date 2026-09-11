@@ -75,6 +75,7 @@ set(
     tests/test_lexer.cpp
     tests/test_parser.cpp
     tests/test_eval.cpp
+    tests/test_hash_table.cpp
     tests/helpers/helpers.cpp
 )
 add_executable(${TEST_EXE} ${TEST_SOURCES})
