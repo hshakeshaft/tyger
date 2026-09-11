@@ -2,13 +2,18 @@
 
 #include "helpers/helpers.hpp"
 
+union ExpectedObjectValue
+{
+    int         as_integer;
+    const char *as_string;
+};
+
 struct EvalVarStatementTest
 {
     std::string input;
     TyObject_Type expected_object_type;
     std::string expected_ident;
-    int expected_integer;
-    std::string expected_string;
+    ExpectedObjectValue expected;
 };
 
 struct EvalIntTest
@@ -28,62 +33,40 @@ struct EvalIdentTest
     std::string input;
     std::string ident;
     TyObject_Type expected_object_type;
-    int expected_value_as_int;
-    std::string expected_values_as_string;
+    ExpectedObjectValue expected;
 };
 
 
 // TODO(HS): move the internal mangling where I check for correct object registration
 // from insertion of ident into another test (keep in eval for now then maybe move
 // to vm only tests?)
-TEST(EvalTestSuite, Eval_Var_Statement)
+TEST_F(EvalTestFixture, Eval_Var_Statement)
 {
     auto test_cases = std::vector<EvalVarStatementTest>{
-        { "var x = 100;",          OBJ_INTEGER, "x",   100, {} },
-        { "var foo = \"Henlo!\";", OBJ_STRING,  "foo", {},  "Henlo!" }
+        { "var x = 100;",          OBJ_INTEGER, "x",   { .as_integer = 100 } },
+        { "var foo = \"Henlo!\";", OBJ_STRING,  "foo", { .as_string = "Henlo!" } },
     };
 
     for (auto& tc : test_cases)
     {
-        Program program = test__parse_program_from_input(tc.input.c_str());
-
-        TyVM vm;
-        tyvm_init(&vm);
-
-        TyObject *object = eval(&vm, &program);
-
+        this->init(tc.input.c_str());
+        auto *object = eval(&this->vm, &this->m_program);
         ASSERT_OBJECT_TYPE_IS(object, OBJ_NONE);
 
-        object = vm_get_ident(&vm, tc.expected_ident.c_str());
+        object = vm_get_ident(&this->vm, tc.expected_ident.c_str());
         ASSERT_NE(object, nullptr);
         ASSERT_OBJECT_TYPE_IS(object, OBJ_IDENT);
 
         object = object->as.ident.value;
+        ASSERT_NE(object, nullptr);
         ASSERT_OBJECT_TYPE_IS(object, tc.expected_object_type);
+        ASSERT_OBJECT_IS_EQUAL_TO(object, tc.expected);
 
-        switch (object->type)
-        {
-            case OBJ_INTEGER: {
-                ASSERT_EQ(object->as.integer, tc.expected_integer);
-            } break;
-
-            case OBJ_STRING: {
-                ASSERT_EQ(
-                    std::string(object->as.string.str, object->as.string.len),
-                    tc.expected_string
-                );
-            } break;
-
-            default: {
-                FAIL();
-            }
-        }
-
-        tyvm_deinit(&vm);
+        this->reset();
     }
 }
 
-TEST(EvalTestSuite, Eval_Integer)
+TEST_F(EvalTestFixture, Eval_Integer)
 {
     auto test_cases = std::vector<EvalIntTest>{
         { "1;", 1 },
@@ -93,20 +76,16 @@ TEST(EvalTestSuite, Eval_Integer)
 
     for (auto& tc : test_cases)
     {
-        Program program = test__parse_program_from_input(tc.input.c_str());
-
-        TyVM vm;
-        tyvm_init(&vm);
-        TyObject *object = eval(&vm, &program);
-
+        this->init(tc.input.c_str());
+        auto *object = eval(&this->vm, &this->m_program);
+        ASSERT_NE(object, nullptr);
         ASSERT_OBJECT_TYPE_IS(object, OBJ_INTEGER);
         ASSERT_OBJECT_EQ_AS_INT(object, tc.expected);
-
-        tyvm_deinit(&vm);
+        this->reset();
     }
 }
 
-TEST(EvalTestSuite, Eval_Strings)
+TEST_F(EvalTestFixture, Eval_String)
 {
     auto test_cases = std::vector<EvalStringTest>{
         { "\"Henlo!\";", "Henlo!" },
@@ -116,34 +95,26 @@ TEST(EvalTestSuite, Eval_Strings)
 
     for (auto& tc : test_cases)
     {
-        Program program = test__parse_program_from_input(tc.input.c_str());
-
-        TyVM vm;
-        tyvm_init(&vm);
-        TyObject *object = eval(&vm, &program);
-
+        this->init(tc.input.c_str());
+        auto *object = eval(&this->vm, &this->m_program);
+        ASSERT_NE(object, nullptr);
         ASSERT_OBJECT_TYPE_IS(object, OBJ_STRING);
         ASSERT_OBJECT_EQ_AS_STRINGS(object, tc.expected);
-
-        tyvm_deinit(&vm);
+        this->reset();
     }
 }
 
-TEST(EvalTestSuite, Eval_Ident)
+TEST_F(EvalTestFixture, Eval_Ident)
 {
     auto test_cases = std::vector<EvalIdentTest>{
-        { "var x = 10; x;",           "x", OBJ_INTEGER, 10, {} },
-        { "var y = \"Hellope!\"; y;", "y", OBJ_STRING,  {}, "Hellope!" },
+        { "var x = 10; x;",           "x", OBJ_INTEGER, { .as_integer = 10 } },
+        { "var y = \"Hellope!\"; y;", "y", OBJ_STRING,  { .as_string = "Hellope!" } }
     };
 
-    for (auto& tc :test_cases)
+    for (auto& tc : test_cases)
     {
-        Program program = test__parse_program_from_input(tc.input.c_str());
-
-        TyVM vm;
-        tyvm_init(&vm);
-
-        TyObject *object = eval(&vm, &program);
+        this->init(tc.input.c_str());
+        auto *object = eval(&this->vm, &this->m_program);
         ASSERT_NE(object, nullptr);
         ASSERT_OBJECT_TYPE_IS(object, OBJ_IDENT);
         ASSERT_EQ(object->as.ident.ident, tc.ident);
@@ -151,26 +122,8 @@ TEST(EvalTestSuite, Eval_Ident)
         object = object->as.ident.value;
         ASSERT_NE(object, nullptr);
         ASSERT_OBJECT_TYPE_IS(object, tc.expected_object_type);
+        ASSERT_OBJECT_IS_EQUAL_TO(object, tc.expected);
 
-        // TODO(HS): this needs to be a helper method
-        switch (object->type)
-        {
-            case OBJ_INTEGER: {
-                ASSERT_EQ(object->as.integer, tc.expected_value_as_int);
-            } break;
-
-            case OBJ_STRING: {
-                ASSERT_EQ(
-                    std::string(object->as.string.str, object->as.string.len),
-                    tc.expected_values_as_string
-                );
-            } break;
-
-            default: {
-                FAIL();
-            }
-        }
-
-        tyvm_deinit(&vm);
+        this->reset();
     }
 }
