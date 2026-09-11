@@ -7,6 +7,10 @@
 
 #define VM_MAX_OBJECTS 4096
 
+/* TODO(HS): consider moving to handles for objects in `HT` slots & identifiers */
+/* TODO(HS): functions require a local "environment" which contains new name bindings
+(read hash table)
+*/
 typedef struct
 {
     TyObject **objects;

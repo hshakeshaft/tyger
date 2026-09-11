@@ -12,6 +12,9 @@ typedef struct
 
 typedef struct ht_slot
 {
+    /* NOTE(HS): key is a non-owning reference - this is intentional as an ident
+    theoretically can enter & exit program scope many times.
+    */
     const char *key;
     TyObject *value;
     struct ht_slot *next;
