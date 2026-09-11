@@ -7,7 +7,6 @@
 /// integrally linked with the concept of a `TyObject` and thus cannot be divoreced.
 ///
 #include <gtest/gtest.h>
-#include <string>
 #include "helpers/helpers.hpp"
 #include "helpers/tyger.hpp"
 
@@ -32,10 +31,7 @@ struct HTTestValue
 };
 
 
-// TODO: test insertion
-//  - [x] insert lone values
-//  - [x] insert multiple values which don't collide
-//  - [ ] insert when hash collision occurs ("separate chaining")
+
 TEST(HashTableTestSuite, user_can_insert_into_hash_table)
 {
     HT ht;
@@ -51,20 +47,19 @@ TEST(HashTableTestSuite, user_can_insert_into_hash_table)
     ht_deinit(&ht);
 }
 
-
-/* NOTE(HS): precomputed slot indexes using the following python program
-```
-def djb2(key: str) -> int:
-  hash = 5381
-  for c in list(key):
-    hash = ((hash << 5) + hash) + ord(c)
-  return hash
-print(djb2("foo") % 8)  # 1
-print(djb2("bar") % 8)  # 2
-```
-*/
 TEST(HashTableTestSuite, use_can_insert_multiple_non_colliding_values)
 {
+    /* NOTE(HS): precomputed slot indexes using the following python program
+    ```
+    def djb2(key: str) -> int:
+      hash = 5381
+      for c in list(key):
+        hash = ((hash << 5) + hash) + ord(c)
+      return hash
+    print(djb2("foo") % 8)  # 1
+    print(djb2("bar") % 8)  # 2
+    ```
+    */
     HT ht;
     ht_init(&ht, 8);
 
@@ -85,6 +80,39 @@ TEST(HashTableTestSuite, use_can_insert_multiple_non_colliding_values)
 
     ht_deinit(&ht);
 }
+
+TEST(HashTableTestSuite, collision_resolution_on_insert)
+{
+    HT ht;
+    ht_init(&ht, 1);
+
+    // NOTE(HS) this is a stress test, unlikely there will 4 levels of slot indirection
+    // but good to check the logic is recursive
+    auto val1 = HTTestValue("foo",  100);
+    auto val2 = HTTestValue("bar",  50);
+    auto val3 = HTTestValue("baz",  25);
+    auto val4 = HTTestValue("spam", 12);
+    auto val5 = HTTestValue("eggs", 6);
+
+    constexpr int test_case_count = 5;
+    HTTestValue *test_cases[test_case_count] = { &val1, &val2, &val3, &val4, &val5 };
+
+    for (auto i = 0; i < test_case_count; ++i)
+    {
+        HTTestValue * tc = test_cases[i];
+        ht_insert(&ht, tc->ident.c_str(), tc->object);
+        HT_Slot *slot = &ht[0];
+        for (auto idx = 0; idx < i; ++idx) { slot = slot->next; }
+        ASSERT_EQ(std::string(slot->key),  tc->ident);
+        ASSERT_EQ(slot->value->as.integer, tc->value);
+    }
+
+    ht_deinit(&ht);
+}
+
+// TODO: test that insertion of existing key updates value
+//   - [ ] no collisions
+//   - [ ] when collisions occur
 
 
 // TODO: test retrieval

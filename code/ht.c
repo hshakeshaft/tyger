@@ -24,6 +24,12 @@ static unsigned int ht__djb2_hash_key(const char *key, size_t key_len)
 }
 
 
+/* TODO(HS): implement some kind of "find_matching_slot" function which finds either
+a slot matching the provided key, or NULL if no match found.
+Should also write to an "out-param" the pointer to the last found value such that
+I can perform insertions of new slots at the end of a collision resolution chain
+*/
+
 void ht_init(HT *ht, size_t buckets)
 {
     HT_Header *header;
@@ -37,6 +43,8 @@ void ht_init(HT *ht, size_t buckets)
     header->buckets = buckets;
     (*ht)           = (HT) (header + 1);
 }
+
+/* TODO(HS): "chase" slot chains */
 
 void ht_deinit(HT *ht)
 {
@@ -54,15 +62,52 @@ void ht_insert(HT *ht, const char *key, TyObject *value)
     size_t bucket;
     HT_Slot *slot_info;
 
-    header  = ((HT_Header*) *ht) - 1;
-    key_len = strlen(key);
-    hash    = ht__djb2_hash_key(key, key_len);
-    bucket  = hash % header->buckets;
-
+    header    = ((HT_Header*) *ht) - 1;
+    key_len   = strlen(key);
+    hash      = ht__djb2_hash_key(key, key_len);
+    bucket    = hash % header->buckets;
     slot_info = &(*ht)[bucket];
-    slot_info->key = key;
-    slot_info->value = value;
-    slot_info->next = NULL;
+
+    if (slot_info->key != NULL)
+    {
+        if (strcmp(slot_info->key, key) == 0)
+        {
+            assert(0 && "attempted to re-insert value for key :: undecided behavior");
+        }
+        else
+        {
+            HT_Slot *cur_slot;
+            HT_Slot *prev_slot;
+
+            prev_slot = slot_info;
+            cur_slot  = prev_slot->next;
+
+            while (cur_slot != NULL)
+            {
+                if (strcmp(cur_slot->key, key) == 0)
+                {
+                    assert(0 && "attempted to re-insert value for key :: undecided behavior");
+                }
+                else
+                {
+                    prev_slot = cur_slot;
+                    cur_slot  = cur_slot->next;
+                }
+            }
+
+            prev_slot->next = malloc(sizeof(*prev_slot));
+            cur_slot        = prev_slot->next;
+            cur_slot->key   = key;
+            cur_slot->value = value;
+            cur_slot->next  = NULL;
+        }
+    }
+    else
+    {
+        slot_info->key = key;
+        slot_info->value = value;
+        slot_info->next = NULL;
+    }
 }
 
 HT_Slot *ht_get(HT *ht, const char *key)
