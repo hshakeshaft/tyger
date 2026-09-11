@@ -1,4 +1,12 @@
-/* A hash-table implementation */
+/* A hash-table implementation 
+
+Implementation details:
+    - the hash function is hard coded, and is the djb2
+    - the hash itself wraps "slots" which have a hard coded dependency on the Tyger
+    Object type (i.e. the only value that can be containined is an Object)
+    - collision resolution is performed with the "separate chaining" technique
+        - https://craftinginterpreters.com/hash-tables.html#separate-chaining
+*/
 #ifndef HT_LIB_H_
 #define HT_LIB_H_
 #include <stddef.h>
