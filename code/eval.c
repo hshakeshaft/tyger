@@ -20,6 +20,13 @@ static TyObject *eval__string(TyVM *vm, String_Expression *expression)
     return object;
 }
 
+static TyObject *eval__ident(TyVM *vm, Ident_Expression *expression)
+{
+    TyObject *object;
+    object = vm_get_ident(vm, expression->name);
+    return object;
+}
+
 static TyObject *eval__expression(TyVM *vm, Program *program, Expression *expression)
 {
     TyObject *object;
@@ -32,6 +39,10 @@ static TyObject *eval__expression(TyVM *vm, Program *program, Expression *expres
 
         case ET_STRING: {
             object = eval__string(vm, &expression->as.string);
+        } break;
+
+        case ET_IDENT: {
+            object = eval__ident(vm, &expression->as.ident);
         } break;
 
         default:;

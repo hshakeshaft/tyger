@@ -2,6 +2,14 @@
 
 #include "helpers/helpers.hpp"
 
+struct EvalVarStatementTest
+{
+    std::string input;
+    TyObject_Type expected_object_type;
+    std::string expected_ident;
+    int expected_integer;
+    std::string expected_string;
+};
 
 struct EvalIntTest
 {
@@ -15,14 +23,15 @@ struct EvalStringTest
     std::string expected;
 };
 
-struct EvalVarStatementTest
+struct EvalIdentTest
 {
     std::string input;
+    std::string ident;
     TyObject_Type expected_object_type;
-    std::string expected_ident;
-    int expected_integer;
-    std::string expected_string;
+    int expected_value_as_int;
+    std::string expected_values_as_string;
 };
+
 
 // TODO(HS): move the internal mangling where I check for correct object registration
 // from insertion of ident into another test (keep in eval for now then maybe move
@@ -115,6 +124,52 @@ TEST(EvalTestSuite, Eval_Strings)
 
         ASSERT_OBJECT_TYPE_IS(object, OBJ_STRING);
         ASSERT_OBJECT_EQ_AS_STRINGS(object, tc.expected);
+
+        tyvm_deinit(&vm);
+    }
+}
+
+TEST(EvalTestSuite, Eval_Ident)
+{
+    auto test_cases = std::vector<EvalIdentTest>{
+        { "var x = 10; x;",           "x", OBJ_INTEGER, 10, {} },
+        { "var y = \"Hellope!\"; y;", "y", OBJ_STRING,  {}, "Hellope!" },
+    };
+
+    for (auto& tc :test_cases)
+    {
+        Program program = test__parse_program_from_input(tc.input.c_str());
+
+        TyVM vm;
+        tyvm_init(&vm);
+
+        TyObject *object = eval(&vm, &program);
+        ASSERT_NE(object, nullptr);
+        ASSERT_OBJECT_TYPE_IS(object, OBJ_IDENT);
+        ASSERT_EQ(object->as.ident.ident, tc.ident);
+
+        object = object->as.ident.value;
+        ASSERT_NE(object, nullptr);
+        ASSERT_OBJECT_TYPE_IS(object, tc.expected_object_type);
+
+        // TODO(HS): this needs to be a helper method
+        switch (object->type)
+        {
+            case OBJ_INTEGER: {
+                ASSERT_EQ(object->as.integer, tc.expected_value_as_int);
+            } break;
+
+            case OBJ_STRING: {
+                ASSERT_EQ(
+                    std::string(object->as.string.str, object->as.string.len),
+                    tc.expected_values_as_string
+                );
+            } break;
+
+            default: {
+                FAIL();
+            }
+        }
 
         tyvm_deinit(&vm);
     }
