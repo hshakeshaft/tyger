@@ -13,6 +13,7 @@ static unsigned int ht__djb2_hash_key(const char *key, size_t key_len)
     unsigned int hash;
     size_t i;
     char c;
+    hash = 5381;
     for (i = 0; i < key_len; ++i)
     {
         c = key[i];
