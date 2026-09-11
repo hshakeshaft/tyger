@@ -28,9 +28,9 @@ void ht_init(HT *ht, size_t buckets)
     HT_Header *header;
     size_t alloc_size;
 
-    alloc_size = sizeof(*header);
-    alloc_size = sizeof(**ht) * buckets;
-    header     = malloc(alloc_size);
+    alloc_size  = sizeof(*header);
+    alloc_size += sizeof(**ht) * buckets;
+    header      = malloc(alloc_size);
     memset(header, 0x00, alloc_size);
 
     header->buckets = buckets;
