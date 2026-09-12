@@ -7,6 +7,7 @@
     #include <stdlib.h>
     #define DA_MALLOC(SIZE) malloc((SIZE))
     #define DA_REALLOC(PTR, SIZE) realloc((PTR), (SIZE))
+    #define DA_FREE(PTR) free(PTR)
 #endif
 
 #ifndef DA_ASSERT
@@ -22,6 +23,13 @@
         (DA)->elems = DA_MALLOC(da_memory_capacity);                            \
         (DA)->count = 0;                                                        \
         (DA)->capacity = (CAPACITY);                                            \
+    } while (0)
+
+#define DA_DEINIT(DA)           \
+    do {                        \
+        DA_FREE((DA)->elems);   \
+        (DA)->count    = 0;     \
+        (DA)->capacity = 0;     \
     } while (0)
 
 #define DA_APPEND(DA, ELEM)                                                     \

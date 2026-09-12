@@ -60,6 +60,41 @@ void program_init(Program *p)
     memset((void*) nil_expression, 0x00, sizeof(*p->___expressions.elems));
 }
 
+void program_deinit(Program *p)
+{
+    size_t i;
+
+    for (i = 0; i < p->errors.count; ++i)
+    {
+        Error *error;
+        error = &p->errors.elems[i];
+        free((void*) error->what);
+    }
+    DA_DEINIT(&p->errors);
+
+    for (i = 0; i < p->___expressions.count; ++i)
+    {
+        Expression *expression;
+        expression = &p->___expressions.elems[i];
+
+        switch (expression->type)
+        {
+            case ET_STRING: {
+                free((void*) expression->as.string.ptr);
+            } break;
+
+            case ET_IDENT: {
+                free((void*) expression->as.ident.name);
+            } break;
+
+            default:;
+        }
+    }
+    DA_DEINIT(&p->___expressions);
+
+    DA_DEINIT(&p->statements);
+}
+
 void program_register_statement(Program *p, Statement *stmt)
 {
     DA_APPEND(&p->statements, stmt);

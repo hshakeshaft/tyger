@@ -33,8 +33,9 @@ static void repl__print_object(TyObject *object)
     }
 }
 
-
-/* TODO(HS): "delete" program */
+/* TODO(HS): deleting a program may be a little more complex here as really in a
+REPL you want the previous state to persist.
+*/
 
 int main(void)
 {

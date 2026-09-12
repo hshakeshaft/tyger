@@ -60,6 +60,8 @@ TEST(ParserTestSuite, Var_Statement)
 
         auto parse_tree = program__statement_to_parse_tree(program, stmt);
         ASSERT_EQ(parse_tree, tc.expected_parse_tree);
+
+        program_deinit(&program);
     }
 }
 
@@ -95,6 +97,8 @@ TEST(ParserTestSuite, Integer_Expression)
             << ", got " << ast_expression_type_to_string(expr->type);
 
         ASSERT_EQ(expr->as.integer.value, tc.expected);
+
+        program_deinit(&program);
     }
 }
 
@@ -126,6 +130,8 @@ TEST(ParserTestSuite, String_Expression)
         ASSERT_NE(expr, nullptr);
         ASSERT_EQ(expr->type, ET_STRING);
         ASSERT_EQ(std::string(expr->as.string.ptr, expr->as.string.len), tc.expected);
+
+        program_deinit(&program);
     }
 }
 
@@ -159,6 +165,8 @@ TEST(ParserTestSuite, Ident_Expression)
             << ", got " << ast_expression_type_to_string(expr->type);
 
         ASSERT_EQ(expr->as.ident.name, tc.expected);
+
+        program_deinit(&program);
     }
 }
 
@@ -183,6 +191,8 @@ TEST(ParserTestSuite, Infix_Expression)
 
         std::string parse_tree = program__to_parse_tree(program);
         ASSERT_EQ(tc.expected_parse_tree, parse_tree);
+
+        program_deinit(&program);
     }
 }
 
@@ -211,5 +221,7 @@ TEST(ParserTestSuite, Operator_Precidence)
 
         std::string parse_tree = program__to_parse_tree(program);
         ASSERT_EQ(tc.expected_parse_tree, parse_tree);
+
+        program_deinit(&program);
     }
 }

@@ -144,6 +144,7 @@ typedef struct program
 
 
 void program_init(Program *p);
+void program_deinit(Program *p);
 
 void program_register_statement(Program *p, Statement *stmt);
 Expression_Handle program_register_expression(Program *p, Expression *expr);
