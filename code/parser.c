@@ -283,7 +283,7 @@ static Error parser__parse_var_statement(Program *p, Parser *ps, Statement *stmt
         ast__error_create_from_token(&error, ERT_INVALID_VAR_DECLARATION, ps->peek_token);
         return error;
     }
-    /* should consume the `=` */
+    /* NOTE(HS): should consume the `=` */
     parser__next_token(ps);
 
     error = parser__parse_expression(p, ps, &handle, PRECIDENCE_LOWEST);
@@ -334,7 +334,6 @@ static Error parser__parse_statement(Program *p, Parser *ps, Statement *stmt)
 
     return error;
 }
-
 
 
 void parser_init(Parser *ps, Lexer *lx)

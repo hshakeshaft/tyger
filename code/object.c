@@ -38,7 +38,7 @@ TyObject *tyobject_create(TyObject_Type type, void *data)
             object->as.string.len = * (int*) data;
         } break;
 
-        /* NOTE(HS): we do not take ownership of the identifier string here -this
+        /* NOTE(HS): we do not take ownership of the identifier string here - this
         is intentional as the program theoretically could be evaluated multiple
         times, so we don't want to delete a reference to an ident used for function
         calls, or constants, so instead we make a copy.

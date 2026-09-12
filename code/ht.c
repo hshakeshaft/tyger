@@ -27,7 +27,7 @@ static unsigned int ht__djb2_hash_key(const char *key, size_t key_len)
 @param ht - the hash table
 @param key - the key to match agains
 @param prev_slot - an out pointer which is overriden with the previous slot, used
-in collision resolution (insertion at end)
+in collision resolution (insertion at end, and also in deletions)
 @return the first matching slot, or NULL
 */
 static HT_Slot *ht__find_matching_slot_by_key(HT *ht, const char *key, HT_Slot **prev_slot)
@@ -38,18 +38,18 @@ static HT_Slot *ht__find_matching_slot_by_key(HT *ht, const char *key, HT_Slot *
     size_t bucket;
     unsigned int hash;
 
-    header  = ((HT_Header*) *ht) - 1;
-    key_len = strlen(key);
-    hash    = ht__djb2_hash_key(key, key_len);
-    bucket  = hash % header->buckets;
-    slot    = &(*ht)[bucket];
+    header     = ((HT_Header*) *ht) - 1;
+    key_len    = strlen(key);
+    hash       = ht__djb2_hash_key(key, key_len);
+    bucket     = hash % header->buckets;
+    slot       = &(*ht)[bucket];
     *prev_slot = slot;
 
     while (slot != NULL)
     {
         if (slot->key == NULL || strcmp(slot->key, key) == 0) { break; }
         *prev_slot = slot;
-        slot = slot->next;
+        slot       = slot->next;
     }
 
     if (slot == NULL) { slot = &header->nil_slot; }
@@ -74,8 +74,6 @@ void ht_init(HT *ht, size_t buckets)
     (*ht)                  = (HT) (header + 1);
 }
 
-/* TODO(HS): "chase" slot chains */
-
 void ht_deinit(HT *ht)
 {
     size_t i;
@@ -95,7 +93,6 @@ void ht_deinit(HT *ht)
             prev_slot = cur_slot;
             cur_slot  = cur_slot->next;
             free(prev_slot);
-            prev_slot = NULL;
         }
     }
 
@@ -107,8 +104,9 @@ void ht_insert(HT *ht, const char *key, TyObject *value)
     HT_Header *header;
     HT_Slot *slot;
     HT_Slot *prev_slot;
+
     header = ((HT_Header*) *ht) - 1;
-    slot = ht__find_matching_slot_by_key(ht, key, &prev_slot);
+    slot   = ht__find_matching_slot_by_key(ht, key, &prev_slot);
     if (slot == &header->nil_slot)
     {
         prev_slot->next = malloc(sizeof(*prev_slot));
@@ -145,8 +143,6 @@ int ht_delete(HT *ht, const char *key)
     slot      = ht__find_matching_slot_by_key(ht, key, &prev_slot);
     next_slot = NULL;
 
-    #if 0
-    #else
     if (slot != NULL && slot->key != NULL)
     {
         if (slot->next != NULL) { next_slot = slot->next; }
@@ -166,7 +162,7 @@ int ht_delete(HT *ht, const char *key)
                 slot->value = next_slot->value;
                 slot->next  = next_slot->next;
             }
-            success     = 1;
+            success = 1;
         }
         else
         {
@@ -175,7 +171,6 @@ int ht_delete(HT *ht, const char *key)
             success         = 1;
         }
     }
-    #endif
 
     return success;
 }

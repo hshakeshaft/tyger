@@ -128,13 +128,13 @@ typedef struct program
         size_t capacity;
     } errors;
 
-    /* NOTE(HS): private data */
     struct {
         Statement *elems;
         size_t count;
         size_t capacity;
     } statements;
 
+    /* NOTE(HS): private data */
     struct {
         Expression *elems;
         size_t count;

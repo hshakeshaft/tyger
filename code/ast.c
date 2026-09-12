@@ -38,9 +38,8 @@ void program_init(Program *p)
     int expression_init_capacity;
     volatile void *nil_expression;
 
-    statement_init_capacity  = 16;
-    expression_init_capacity = 16;
-
+    statement_init_capacity    = 16;
+    expression_init_capacity   = 16;
     p->errors.count            = 0;
     p->errors.capacity         = 0;
     p->errors.elems            = NULL;
@@ -106,13 +105,12 @@ void ast__error_create_from_token(Error *error, Error_Type type, Token token)
     char *message;
 
     error_message_buffer_size = 2048;
-    message = malloc(sizeof(*message) * error_message_buffer_size);
-
-    error->where.file   = token.file;
-    error->where.line   = token.line;
-    error->where.col    = token.col;
-    error->where.offset = token.offset;
-    error->type         = type;
+    message                   = malloc(sizeof(*message) * error_message_buffer_size);
+    error->where.file         = token.file;
+    error->where.line         = token.line;
+    error->where.col          = token.col;
+    error->where.offset       = token.offset;
+    error->type               = type;
 
     switch (type)
     {
@@ -156,7 +154,6 @@ void ast__error_create_from_token(Error *error, Error_Type type, Token token)
         default:;
     }
 
-    message = realloc(message, sizeof(*message) * bytes_written);
-
+    message     = realloc(message, sizeof(*message) * bytes_written);
     error->what = message;
 }

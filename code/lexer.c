@@ -117,8 +117,7 @@ static String_View lexer__read_ident_or_keyword(Lexer *lx, Token_Type *type)
 
     lit_len = lx->pos - pos;
     literal = sv_from_cstring(&lx->input[pos], lit_len);
-
-    *type = lexer__sv_to_token_type(literal);
+    *type   = lexer__sv_to_token_type(literal);
 
     return literal;
 }
@@ -182,15 +181,14 @@ int lexer_init_from_buffer(Lexer *lexer, const char *input_buffer)
     input_len = strlen(input_buffer);
     if (input_len < 0) { return success; }
 
-    lexer->input = input_buffer;
+    lexer->input     = input_buffer;
     lexer->input_len = input_len;
-    lexer->pos = 0;
-    lexer->read_pos = 0;
-    lexer->ch = 0;
-
-    lexer->file = NULL;
-    lexer->line = 1;
-    lexer->col = 0;
+    lexer->pos       = 0;
+    lexer->read_pos  = 0;
+    lexer->ch        = 0;
+    lexer->file      = NULL;
+    lexer->line      = 1;
+    lexer->col       = 0;
 
     lexer__next_char(lexer);
 
@@ -249,7 +247,7 @@ Token lexer_next_token(Lexer *lx)
         case '<': {
             if (lexer__peek_char_is(lx, '='))
             {
-                token.type = TT_LTE;
+                token.type         = TT_LTE;
                 token.literal.len += 1;
                 lexer__next_char(lx);
             }
@@ -262,7 +260,7 @@ Token lexer_next_token(Lexer *lx)
         case '>': {
             if (lexer__peek_char_is(lx, '='))
             {
-                token.type = TT_GTE;
+                token.type         = TT_GTE;
                 token.literal.len += 1;
                 lexer__next_char(lx);
             }
@@ -275,7 +273,7 @@ Token lexer_next_token(Lexer *lx)
         case '!': {
             if (lexer__peek_char_is(lx, '='))
             {
-                token.type = TT_NEQ;
+                token.type         = TT_NEQ;
                 token.literal.len += 1;
                 lexer__next_char(lx);
             }
@@ -288,7 +286,7 @@ Token lexer_next_token(Lexer *lx)
         case '=': {
             if (lexer__peek_char_is(lx, '='))
             {
-                token.type = TT_EQ;
+                token.type         = TT_EQ;
                 token.literal.len += 1;
                 lexer__next_char(lx);
             }
@@ -318,8 +316,8 @@ Token lexer_next_token(Lexer *lx)
             if (lexer__ch_is_numeric(lx->ch))
             {
                 String_View literal;
-                literal = lexer__read_number(lx);
-                token.type = TT_INT;
+                literal       = lexer__read_number(lx);
+                token.type    = TT_INT;
                 token.literal = literal;
                 return token;
             }
@@ -347,9 +345,9 @@ Token lexer_next_token(Lexer *lx)
             {
                 String_View literal;
                 Token_Type type;
-                literal = lexer__read_ident_or_keyword(lx, &type);
+                literal       = lexer__read_ident_or_keyword(lx, &type);
                 token.literal = literal;
-                token.type = type;
+                token.type    = type;
                 return token;
             }
         }

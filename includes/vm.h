@@ -15,7 +15,6 @@ typedef struct
 {
     TyObject **objects;
     size_t object_count;
-
     HT identifiers;
 } TyVM;
 

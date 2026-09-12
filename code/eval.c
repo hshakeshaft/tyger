@@ -27,10 +27,9 @@ static TyObject *eval__ident(TyVM *vm, Ident_Expression *expression)
     return object;
 }
 
-static TyObject *eval__expression(TyVM *vm, Program *program, Expression *expression)
+static TyObject *eval__expression(TyVM *vm, Expression *expression)
 {
     TyObject *object;
-    (void) program;
     switch (expression->type)
     {
         case ET_INTEGER: {
@@ -50,10 +49,10 @@ static TyObject *eval__expression(TyVM *vm, Program *program, Expression *expres
     return object;
 }
 
-static TyObject *eval__expression_statement(TyVM *vm, Program *program, Expression *expression)
+static TyObject *eval__expression_statement(TyVM *vm, Expression *expression)
 {
     TyObject *object;
-    object = eval__expression(vm, program, expression);
+    object = eval__expression(vm, expression);
     return object;
 }
 
@@ -63,16 +62,13 @@ can be referenced by everything else (why create multiple "none"s?)
 static TyObject *eval__var_statement(TyVM *vm, Program *program, Statement *statement)
 {
     TyObject *object;
-    TyObject *ident_object;
     TyObject *expression_object;
     Expression *expression;
 
     expression        = program_expression_handle_to_expression(program, statement->as.var.expression) ;
-    expression_object = eval__expression(vm, program, expression);
-    ident_object      = vm_create_ident_object(vm, statement->as.var.ident, expression_object);
-    object            = vm_create_object(vm, OBJ_NONE, NULL);
-
-    (void) ident_object;
+    expression_object = eval__expression(vm, expression);
+    vm_create_ident_object(vm, statement->as.var.ident, expression_object);
+    object = vm_create_object(vm, OBJ_NONE, NULL);
 
     return object;
 }
@@ -95,7 +91,7 @@ static TyObject *eval__statement(TyVM *vm, Program *program, Statement *stmt)
             Expression *expression;
             expression_handle = stmt->as.expression.handle;
             expression        = program_expression_handle_to_expression(program, expression_handle);
-            object            = eval__expression_statement(vm, program, expression);
+            object            = eval__expression_statement(vm, expression);
         } break;
 
         default:;
