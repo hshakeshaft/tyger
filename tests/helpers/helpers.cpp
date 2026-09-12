@@ -132,7 +132,7 @@ std::string program__to_parse_tree(Program program)
 {
     std::string result{};
 
-    for (size_t i = 1; i < program.___statements.count; ++i)
+    for (size_t i = 0; i < program.___statements.count; ++i)
     {
         auto stmt = &program.___statements.elems[i];
         switch (stmt->type)

@@ -353,7 +353,6 @@ Program parser_parse_program(Parser *ps)
     while (ps->cur_token.type != TT_EOF)
     {
         Statement stmt;
-        Statement_Handle handle;
         Error err;
         err = parser__parse_statement(&program, ps, &stmt);
         if (err.type != ERT_NONE)
@@ -362,8 +361,7 @@ Program parser_parse_program(Parser *ps)
         }
         else
         {
-            handle = program_register_statement(&program, &stmt);
-            (void) handle;
+            program_register_statement(&program, &stmt);
         }
         parser__next_token(ps);
     }

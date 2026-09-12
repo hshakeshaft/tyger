@@ -40,11 +40,6 @@ typedef struct error
     Error_Type type;
 } Error;
 
-typedef struct statement_handle
-{
-    unsigned int id;
-} Statement_Handle;
-
 typedef struct expression_handle
 {
     unsigned int id;
@@ -150,11 +145,10 @@ typedef struct program
 
 void program_init(Program *p);
 
-Statement_Handle  program_register_statement(Program *p, Statement *stmt);
+void program_register_statement(Program *p, Statement *stmt);
 Expression_Handle program_register_expression(Program *p, Expression *expr);
 Operator ast_operator_from_token_type(Token_Type type);
 
-Statement  *program_statement_handle_to_statement(Program *p, Statement_Handle handle);
 Expression *program_expression_handle_to_expression(Program *p, Expression_Handle handle);
 
 const char *ast_statement_type_to_string(Statement_Type type);

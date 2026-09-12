@@ -36,9 +36,8 @@ void program_init(Program *p)
 {
     int statement_init_capacity;
     int expression_init_capacity;
-    volatile void *nil_statement;
     volatile void *nil_expression;
-    
+
     statement_init_capacity  = 16;
     expression_init_capacity = 16;
 
@@ -57,20 +56,14 @@ void program_init(Program *p)
     DA_INIT(&p->___expressions, expression_init_capacity);
 
     /* NOTE(HS): reserving first elem as "nil" value */
-    p->___statements.count++;
     p->___expressions.count++;
-    nil_statement  = (volatile void*) &p->___statements.elems[0];
     nil_expression = (volatile void*) &p->___expressions.elems[0];
-    memset((void*) nil_statement,  0x00, sizeof(*p->___statements.elems));
     memset((void*) nil_expression, 0x00, sizeof(*p->___expressions.elems));
 }
 
-Statement_Handle program_register_statement(Program *p, Statement *stmt)
+void program_register_statement(Program *p, Statement *stmt)
 {
-    Statement_Handle handle;
-    handle.id = p->___statements.count;
     DA_APPEND(&p->___statements, stmt);
-    return handle;
 }
 
 Expression_Handle program_register_expression(Program *p, Expression *expr)
@@ -79,17 +72,6 @@ Expression_Handle program_register_expression(Program *p, Expression *expr)
     handle.id = p->___expressions.count;
     DA_APPEND(&p->___expressions, expr);
     return handle;
-}
-
-Statement *program_statement_handle_to_statement(Program *p, Statement_Handle handle)
-{
-    Statement *stmt;
-    stmt = NULL;
-    if (handle.id < p->___statements.count)
-    {
-        stmt = &p->___statements.elems[handle.id];
-    }
-    return stmt;
 }
 
 Expression *program_expression_handle_to_expression(Program *p, Expression_Handle handle)
