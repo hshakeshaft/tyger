@@ -115,11 +115,94 @@ TEST(HashTableTestSuite, collision_resolution_on_insert)
 //   - [ ] when collisions occur
 
 
-// TODO: test retrieval
-//  - [ ] test retrieval when no values in table (===> return NULL)
-//  - [ ] test retrieval of lone key which exists
-//  - [ ] test retrieval of value when multiple in table (no collisions)
-//  - [ ] test retrieval when collision resolution
+TEST(HashTableTestSuite, test_retrieval_of_invalid_key_returns_empty_slot)
+{
+    HT ht;
+    ht_init(&ht, 8);
+    HT_Slot *slot = ht_get(&ht, "foo");
+    ASSERT_EQ(slot->key, nullptr);
+    ASSERT_EQ(slot->value, nullptr);
+    ASSERT_EQ(slot->next, nullptr);
+    ht_deinit(&ht);
+}
+
+TEST(HashTableTestSuite, test_retrieval_of_valid_key_returns_slot_to_value)
+{
+    HT ht;
+    ht_init(&ht, 8);
+
+    auto val = HTTestValue("foo", 10);
+    ht_insert(&ht, val.ident.c_str(), val.object);
+
+    HT_Slot *slot = ht_get(&ht, val.ident.c_str());
+    ASSERT_NE(slot->key, nullptr);
+    ASSERT_NE(slot->value, nullptr);
+    ASSERT_EQ(std::string(slot->key), val.ident);
+    ASSERT_EQ(slot->value->as.integer, val.value);
+
+    ht_deinit(&ht);
+}
+
+TEST(HashTableTestSuite, test_retrieval_of_non_colliding_keys_inserts_at_different_slots)
+{
+    HT ht;
+    ht_init(&ht, 8);
+
+    auto val1 = HTTestValue("foo", 10);
+    auto val2 = HTTestValue("bar", 50);
+
+    ht_insert(&ht, val1.ident.c_str(), val1.object);
+    ht_insert(&ht, val2.ident.c_str(), val2.object);
+
+    HT_Slot *slot1 = ht_get(&ht, val1.ident.c_str());
+    HT_Slot *slot2 = ht_get(&ht, val2.ident.c_str());
+
+    ASSERT_NE(slot1, slot2);
+    ASSERT_NE(std::string(slot1->key), std::string(slot2->key));
+    ASSERT_NE(slot1->value, slot2->value);
+
+    ASSERT_EQ(slot1->key, val1.ident);
+    ASSERT_EQ(slot2->key, val2.ident);
+
+    ASSERT_EQ(slot1->value->as.integer, val1.object->as.integer);
+    ASSERT_EQ(slot2->value->as.integer, val2.object->as.integer);
+
+    ht_deinit(&ht);
+}
+
+TEST(HashTableTestSuite, test_insertion_of_non_colliding_keys_inserts_at_different_slots)
+{
+    HT ht;
+    ht_init(&ht, 1);
+
+    // NOTE(HS) this is a stress test, unlikely there will 4 levels of slot indirection
+    // but good to check the logic is recursive
+    auto val1 = HTTestValue("foo",  100);
+    auto val2 = HTTestValue("bar",  50);
+    auto val3 = HTTestValue("baz",  25);
+    auto val4 = HTTestValue("spam", 12);
+    auto val5 = HTTestValue("eggs", 6);
+
+    constexpr int test_case_count = 5;
+    HTTestValue *test_cases[test_case_count] = { &val1, &val2, &val3, &val4, &val5 };
+
+    for (auto i = 0; i < test_case_count; ++i)
+    {
+        HTTestValue *tc = test_cases[i];
+        ht_insert(&ht, tc->ident.c_str(), tc->object);
+    }
+
+    for (auto i = 0; i < test_case_count; ++i)
+    {
+        HTTestValue *tc = test_cases[i];
+        HT_Slot *slot = ht_get(&ht, tc->ident.c_str());
+        ASSERT_EQ(slot->key, tc->ident);
+        ASSERT_EQ(slot->value->as.integer, tc->object->as.integer);
+    }
+
+    ht_deinit(&ht);
+}
+
 
 // TODO: test deletion of key
 //  - [ ] deletion of key which doesn't exist (nothing happens - return false)

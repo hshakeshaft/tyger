@@ -30,6 +30,10 @@ Should also write to an "out-param" the pointer to the last found value such tha
 I can perform insertions of new slots at the end of a collision resolution chain
 */
 
+/* TODO(HS): I want failing look ups to return some invalid slot, need to have a
+"nil" like instance - stick a slot in the header which acts as the "nil"?
+*/
+
 void ht_init(HT *ht, size_t buckets)
 {
     HT_Header *header;
@@ -124,6 +128,14 @@ HT_Slot *ht_get(HT *ht, const char *key)
     bucket  = hash % header->buckets;
 
     slot = &(*ht)[bucket];
+
+    while (slot->next)
+    {
+        if (strcmp(slot->key, key) == 0) { break; }
+        slot = slot->next;
+    }
+
+    if (slot == NULL) { slot = &(*ht)[bucket]; }
 
     return slot;
 }
