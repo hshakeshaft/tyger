@@ -23,12 +23,43 @@ static unsigned int ht__djb2_hash_key(const char *key, size_t key_len)
     return hash;
 }
 
-
 /* TODO(HS): implement some kind of "find_matching_slot" function which finds either
 a slot matching the provided key, or NULL if no match found.
 Should also write to an "out-param" the pointer to the last found value such that
 I can perform insertions of new slots at the end of a collision resolution chain
 */
+
+/* find the slot in the hash table which matches a supplied key
+@param ht - the hash table
+@param key - the key to match agains
+@param prev_slot - an out pointer which is overriden with the previous slot, used
+in collision resolution (insertion at end)
+@return the first matching slot, or NULL
+*/
+static HT_Slot *ht__find_matching_slot_by_key(HT *ht, const char *key, HT_Slot **prev_slot)
+{
+    HT_Slot *slot;
+    HT_Header *header;
+    size_t key_len;
+    size_t bucket;
+    unsigned int hash;
+
+    header  = ((HT_Header*) *ht) - 1;
+    key_len = strlen(key);
+    hash    = ht__djb2_hash_key(key, key_len);
+    bucket  = hash % header->buckets;
+    slot    = &(*ht)[bucket];
+
+    while (slot != NULL)
+    {
+        *prev_slot = slot;
+        if (slot->key == NULL || strcmp(slot->key, key) == 0) { break; }
+        slot = slot->next;
+    }
+
+    return slot;
+}
+
 
 /* TODO(HS): I want failing look ups to return some invalid slot, need to have a
 "nil" like instance - stick a slot in the header which acts as the "nil"?
@@ -123,26 +154,9 @@ void ht_insert(HT *ht, const char *key, TyObject *value)
 
 HT_Slot *ht_get(HT *ht, const char *key)
 {
-    HT_Header *header;
     HT_Slot *slot;
-    unsigned int hash;
-    size_t key_len;
-    size_t bucket;
-
-    header  = ((HT_Header*) *ht) - 1;
-    key_len = strlen(key);
-    hash    = ht__djb2_hash_key(key, key_len);
-    bucket  = hash % header->buckets;
-
-    slot = &(*ht)[bucket];
-
-    while (slot->next)
-    {
-        if (strcmp(slot->key, key) == 0) { break; }
-        slot = slot->next;
-    }
-
-    if (slot == NULL) { slot = &(*ht)[bucket]; }
-
+    HT_Slot *prev_slot;
+    slot = ht__find_matching_slot_by_key(ht, key, &prev_slot);
+    if (slot == NULL) { slot = prev_slot; }
     return slot;
 }
