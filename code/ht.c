@@ -76,7 +76,7 @@ void ht_insert(HT *ht, const char *key, TyObject *value)
     {
         if (strcmp(slot_info->key, key) == 0)
         {
-            assert(0 && "attempted to re-insert value for key :: undecided behavior");
+            slot_info->value = value;
         }
         else
         {
@@ -90,7 +90,8 @@ void ht_insert(HT *ht, const char *key, TyObject *value)
             {
                 if (strcmp(cur_slot->key, key) == 0)
                 {
-                    assert(0 && "attempted to re-insert value for key :: undecided behavior");
+                    cur_slot->value = value;
+                    break;
                 }
                 else
                 {
@@ -99,11 +100,17 @@ void ht_insert(HT *ht, const char *key, TyObject *value)
                 }
             }
 
-            prev_slot->next = malloc(sizeof(*prev_slot));
-            cur_slot        = prev_slot->next;
-            cur_slot->key   = key;
-            cur_slot->value = value;
-            cur_slot->next  = NULL;
+            /*  NOTE(HS): in cases where no matching key found, then we insert a new
+            one in the resolution chain
+            */
+            if (cur_slot == NULL)
+            {
+                prev_slot->next = malloc(sizeof(*prev_slot));
+                cur_slot        = prev_slot->next;
+                cur_slot->key   = key;
+                cur_slot->value = value;
+                cur_slot->next  = NULL;
+            }
         }
     }
     else

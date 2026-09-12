@@ -34,9 +34,6 @@ typedef HT_Slot *HT;
 void ht_init(HT *ht, size_t buckets);
 void ht_deinit(HT *ht);
 
-/* NOTE(HS): currently attempts at re-inserting the same key fail with assertion
-TODO(HS): on insert of existing key, swap `value` pointers
-*/
 void ht_insert(HT *ht, const char *key, TyObject *value);
 
 HT_Slot *ht_get(HT *ht, const char *key);

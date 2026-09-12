@@ -110,9 +110,25 @@ TEST(HashTableTestSuite, collision_resolution_on_insert)
     ht_deinit(&ht);
 }
 
-// TODO: test that insertion of existing key updates value
-//   - [ ] no collisions
-//   - [ ] when collisions occur
+TEST(HashTableTestSuite, reinsertion_of_existing_key_should_update_value)
+{
+    HT ht;
+    ht_init(&ht, 1);
+
+    auto val1 = HTTestValue("foo", 10);
+    auto val2 = HTTestValue("foo", 20);
+
+    ht_insert(&ht, val1.ident.c_str(), val1.object);
+    ht_insert(&ht, val2.ident.c_str(), val2.object);
+
+    HT_Slot *slot = &ht[0];
+    ASSERT_EQ(slot->key, val1.ident);
+
+    ASSERT_NE(slot->value, val1.object);
+    ASSERT_EQ(slot->value, val2.object);
+    ASSERT_NE(slot->value->as.integer, val1.object->as.integer);
+    ASSERT_EQ(slot->value->as.integer, val2.object->as.integer);
+}
 
 
 TEST(HashTableTestSuite, test_retrieval_of_invalid_key_returns_empty_slot)
@@ -143,7 +159,7 @@ TEST(HashTableTestSuite, test_retrieval_of_valid_key_returns_slot_to_value)
     ht_deinit(&ht);
 }
 
-TEST(HashTableTestSuite, test_retrieval_of_non_colliding_keys_inserts_at_different_slots)
+TEST(HashTableTestSuite, test_retrieval_of_non_colliding_keys_returns_different_slots)
 {
     HT ht;
     ht_init(&ht, 8);
@@ -170,7 +186,7 @@ TEST(HashTableTestSuite, test_retrieval_of_non_colliding_keys_inserts_at_differe
     ht_deinit(&ht);
 }
 
-TEST(HashTableTestSuite, test_insertion_of_non_colliding_keys_inserts_at_different_slots)
+TEST(HashTableTestSuite, test_retrieval_of_colliding_keys_resolves_collision)
 {
     HT ht;
     ht_init(&ht, 1);
