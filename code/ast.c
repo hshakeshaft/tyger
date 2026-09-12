@@ -44,15 +44,15 @@ void program_init(Program *p)
     p->errors.count            = 0;
     p->errors.capacity         = 0;
     p->errors.elems            = NULL;
-    p->___statements.count     = 0;
-    p->___statements.capacity  = 0;
-    p->___statements.elems     = NULL;
+    p->statements.count        = 0;
+    p->statements.capacity     = 0;
+    p->statements.elems        = NULL;
     p->___expressions.count    = 0;
     p->___expressions.capacity = 0;
     p->___expressions.elems    = NULL;
 
     DA_INIT(&p->errors, 8);
-    DA_INIT(&p->___statements, statement_init_capacity);
+    DA_INIT(&p->statements, statement_init_capacity);
     DA_INIT(&p->___expressions, expression_init_capacity);
 
     /* NOTE(HS): reserving first elem as "nil" value */
@@ -63,7 +63,7 @@ void program_init(Program *p)
 
 void program_register_statement(Program *p, Statement *stmt)
 {
-    DA_APPEND(&p->___statements, stmt);
+    DA_APPEND(&p->statements, stmt);
 }
 
 Expression_Handle program_register_expression(Program *p, Expression *expr)

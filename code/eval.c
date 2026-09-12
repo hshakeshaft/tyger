@@ -112,9 +112,9 @@ TyObject *eval(TyVM *vm, Program *program)
 
     object = NULL;
 
-    for (i = 0; i < program->___statements.count; ++i)
+    for (i = 0; i < program->statements.count; ++i)
     {
-        stmt = &program->___statements.elems[i];
+        stmt = &program->statements.elems[i];
         object = eval__statement(vm, program, stmt);
     }
 

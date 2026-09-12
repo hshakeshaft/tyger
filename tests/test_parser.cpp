@@ -50,7 +50,7 @@ TEST(ParserTestSuite, Var_Statement)
         Program program = test__parse_program_from_input(tc.input.c_str());
         parser__check_errors_and_log(program);
 
-        Statement *stmt = &program.___statements.elems[0];
+        Statement *stmt = &program.statements.elems[0];
         ASSERT_STATEMENT_TYPE_IS(stmt, ST_VAR);
 
         ASSERT_EQ(stmt->as.var.ident, tc.expected_ident);
@@ -83,7 +83,7 @@ TEST(ParserTestSuite, Integer_Expression)
 
         parser__check_errors_and_log(program);
 
-        Statement *stmt = &program.___statements.elems[0];
+        Statement *stmt = &program.statements.elems[0];
         ASSERT_EQ(stmt->type, ST_EXPRESSION)
             << "Expected statement of type " << ast_statement_type_to_string(ST_EXPRESSION)
             << ", got " << ast_statement_type_to_string(stmt->type);
@@ -116,7 +116,7 @@ TEST(ParserTestSuite, String_Expression)
 
         parser__check_errors_and_log(program);
 
-        Statement *stmt = &program.___statements.elems[0];
+        Statement *stmt = &program.statements.elems[0];
         ASSERT_NE(stmt, nullptr);
         ASSERT_EQ(stmt->type, ST_EXPRESSION)
             << "Expected expression of type " << ast_statement_type_to_string(ST_EXPRESSION)
@@ -146,7 +146,7 @@ TEST(ParserTestSuite, Ident_Expression)
         Program program = parser_parse_program(&parser);
         parser__check_errors_and_log(program);
 
-        Statement *stmt = &program.___statements.elems[0];
+        Statement *stmt = &program.statements.elems[0];
         ASSERT_NE(stmt, nullptr);
         ASSERT_EQ(stmt->type, ST_EXPRESSION)
             << "expected statement of type " << ast_statement_type_to_string(ST_EXPRESSION)

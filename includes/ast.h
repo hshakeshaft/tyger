@@ -133,7 +133,7 @@ typedef struct program
         Statement *elems;
         size_t count;
         size_t capacity;
-    } ___statements;
+    } statements;
 
     struct {
         Expression *elems;
