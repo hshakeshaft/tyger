@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -84,4 +85,57 @@ TyObject *vm_get_ident(TyVM *vm, const char *ident)
         object = slot->value;
     }
     return object;
+}
+
+
+/*==============================================================================
+                            VM Intrinsic functions
+==============================================================================*/
+
+/* TODO(HS): implement support for marithmetic operations on identifiers (should evaluate
+to their values)
+*/
+
+TyObject *vm_intrinsic__object_add(TyObject *lhs, TyObject *rhs)
+{
+    TyObject *result;
+    int value;
+    assert((lhs->type == OBJ_INTEGER && rhs->type == OBJ_INTEGER) && "operator `+` only valid between 2 integers");
+    result  = NULL;
+    value   = lhs->as.integer + rhs->as.integer;
+    result  = tyobject_create(OBJ_INTEGER, (void*) &value);
+    return result;
+}
+
+TyObject *vm_intrinsic__object_sub(TyObject *lhs, TyObject *rhs)
+{
+    TyObject *result;
+    int value;
+    assert((lhs->type == OBJ_INTEGER && rhs->type == OBJ_INTEGER) && "operator `-` only valid between 2 integers");
+    result  = NULL;
+    value   = lhs->as.integer - rhs->as.integer;
+    result  = tyobject_create(OBJ_INTEGER, (void*) &value);
+    return result;
+}
+
+TyObject *vm_intrinsic__object_mul(TyObject *lhs, TyObject *rhs)
+{
+    TyObject *result;
+    int value;
+    assert((lhs->type == OBJ_INTEGER && rhs->type == OBJ_INTEGER) && "operator `*` only valid between 2 integers");
+    result  = NULL;
+    value   = lhs->as.integer * rhs->as.integer;
+    result  = tyobject_create(OBJ_INTEGER, (void*) &value);
+    return result;
+}
+
+TyObject *vm_intrinsic__object_div(TyObject *lhs, TyObject *rhs)
+{
+    TyObject *result;
+    int value;
+    assert((lhs->type == OBJ_INTEGER && rhs->type == OBJ_INTEGER) && "operator `/` only valid between 2 integers");
+    result  = NULL;
+    value   = lhs->as.integer / rhs->as.integer;
+    result  = tyobject_create(OBJ_INTEGER, (void*) &value);
+    return result;
 }

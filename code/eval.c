@@ -1,7 +1,11 @@
+#include <assert.h>
 #include <stdio.h>
 
 #include "eval.h"
 #include "memory.h"
+
+static TyObject *eval__expression(TyVM *vm, Program *program, Expression *expression);
+
 
 static TyObject *eval__integer(TyVM *vm, Integer_Expression *expression)
 {
@@ -27,7 +31,36 @@ static TyObject *eval__ident(TyVM *vm, Ident_Expression *expression)
     return object;
 }
 
-static TyObject *eval__expression(TyVM *vm, Expression *expression)
+static TyObject *eval__infix(TyVM *vm, Program *program, Infix_Expression *expression)
+{
+    TyObject *object;
+    TyObject *lhs_object;
+    TyObject *rhs_object;
+    Expression *lhs_expression;
+    Expression *rhs_expression;
+
+    object         = NULL;
+    lhs_expression = program_expression_handle_to_expression(program, expression->lhs);
+    rhs_expression = program_expression_handle_to_expression(program, expression->rhs);
+    lhs_object     = eval__expression(vm, program, lhs_expression);
+    rhs_object     = eval__expression(vm, program, rhs_expression);
+
+    switch (expression->op)
+    {
+        case OP_ADD: { object = vm_intrinsic__object_add(lhs_object, rhs_object); } break;
+        case OP_SUB: { object = vm_intrinsic__object_sub(lhs_object, rhs_object); } break;
+        case OP_MUL: { object = vm_intrinsic__object_mul(lhs_object, rhs_object); } break;
+        case OP_DIV: { object = vm_intrinsic__object_div(lhs_object, rhs_object); } break;
+        default: {
+            assert(0 && "[ERROR] :: invalid operator used in expression");
+        }
+    }
+
+    return object;
+}
+
+
+static TyObject *eval__expression(TyVM *vm, Program *program, Expression *expression)
 {
     TyObject *object;
     switch (expression->type)
@@ -44,15 +77,19 @@ static TyObject *eval__expression(TyVM *vm, Expression *expression)
             object = eval__ident(vm, &expression->as.ident);
         } break;
 
+        case ET_INFIX: {
+            object = eval__infix(vm, program, &expression->as.infix);
+        } break;
+
         default:;
     }
     return object;
 }
 
-static TyObject *eval__expression_statement(TyVM *vm, Expression *expression)
+static TyObject *eval__expression_statement(TyVM *vm, Program *program, Expression *expression)
 {
     TyObject *object;
-    object = eval__expression(vm, expression);
+    object = eval__expression(vm, program, expression);
     return object;
 }
 
@@ -66,7 +103,7 @@ static TyObject *eval__var_statement(TyVM *vm, Program *program, Statement *stat
     Expression *expression;
 
     expression        = program_expression_handle_to_expression(program, statement->as.var.expression) ;
-    expression_object = eval__expression(vm, expression);
+    expression_object = eval__expression(vm, program, expression);
     vm_create_ident_object(vm, statement->as.var.ident, expression_object);
     object = vm_create_object(vm, OBJ_NONE, NULL);
 
@@ -91,7 +128,7 @@ static TyObject *eval__statement(TyVM *vm, Program *program, Statement *stmt)
             Expression *expression;
             expression_handle = stmt->as.expression.handle;
             expression        = program_expression_handle_to_expression(program, expression_handle);
-            object            = eval__expression_statement(vm, expression);
+            object            = eval__expression_statement(vm, program, expression);
         } break;
 
         default:;

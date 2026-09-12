@@ -36,6 +36,12 @@ struct EvalIdentTest
     ExpectedObjectValue expected;
 };
 
+struct EvalInfixTest
+{
+    std::string input;
+    int expected;
+};
+
 
 // TODO(HS): move the internal mangling where I check for correct object registration
 // from insertion of ident into another test (keep in eval for now then maybe move
@@ -123,6 +129,31 @@ TEST_F(EvalTestFixture, Eval_Ident)
         ASSERT_NE(object, nullptr);
         ASSERT_OBJECT_TYPE_IS(object, tc.expected_object_type);
         ASSERT_OBJECT_IS_EQUAL_TO(object, tc.expected);
+
+        this->reset();
+    }
+}
+
+TEST_F(EvalTestFixture, Eval_Infix_Expression)
+{
+    auto test_cases = std::vector<EvalInfixTest>{
+        { "2 + 2;", 4 },
+        { "2 - 2;", 0 },
+        { "0 - 2;", -2 },
+        { "2 * 3;", 6 },
+        { "10 / 2;", 5 },
+        { "1 + 2 + 3 + 4 + 5;", 15 },
+        { "1 * 2 * 3 * 4 * 5;", 120 },
+    };
+
+    for (auto& tc : test_cases)
+    {
+        this->init(tc.input.c_str());
+
+        auto *object = eval(&this->vm, &this->m_program);
+        ASSERT_NE(object, nullptr);
+        ASSERT_OBJECT_TYPE_IS(object, OBJ_INTEGER);
+        ASSERT_OBJECT_EQ_AS_INT(object, tc.expected);
 
         this->reset();
     }

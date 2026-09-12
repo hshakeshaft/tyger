@@ -28,4 +28,13 @@ TyObject *vm_create_ident_object(TyVM *vm, const char *ident, TyObject *value);
 
 TyObject *vm_get_ident(TyVM *vm, const char *ident);
 
+/*==============================================================================
+                            VM Intrinsic functions
+==============================================================================*/
+
+TyObject *vm_intrinsic__object_add(TyObject *lhs, TyObject *rhs);
+TyObject *vm_intrinsic__object_sub(TyObject *lhs, TyObject *rhs);
+TyObject *vm_intrinsic__object_mul(TyObject *lhs, TyObject *rhs);
+TyObject *vm_intrinsic__object_div(TyObject *lhs, TyObject *rhs);
+
 #endif  /* VM_H_ */
