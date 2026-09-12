@@ -52,13 +52,10 @@ static HT_Slot *ht__find_matching_slot_by_key(HT *ht, const char *key, HT_Slot *
         slot = slot->next;
     }
 
+    if (slot == NULL) { slot = &header->nil_slot; }
+
     return slot;
 }
-
-
-/* TODO(HS): I want failing look ups to return some invalid slot, need to have a
-"nil" like instance - stick a slot in the header which acts as the "nil"?
-*/
 
 void ht_init(HT *ht, size_t buckets)
 {
@@ -70,8 +67,11 @@ void ht_init(HT *ht, size_t buckets)
     header      = malloc(alloc_size);
     memset(header, 0x00, alloc_size);
 
-    header->buckets = buckets;
-    (*ht)           = (HT) (header + 1);
+    header->buckets        = buckets;
+    header->nil_slot.key   = NULL;
+    header->nil_slot.value = NULL;
+    header->nil_slot.next  = NULL;
+    (*ht)                  = (HT) (header + 1);
 }
 
 /* TODO(HS): "chase" slot chains */
@@ -85,10 +85,12 @@ void ht_deinit(HT *ht)
 
 void ht_insert(HT *ht, const char *key, TyObject *value)
 {
+    HT_Header *header;
     HT_Slot *slot;
     HT_Slot *prev_slot;
+    header = ((HT_Header*) *ht) - 1;
     slot = ht__find_matching_slot_by_key(ht, key, &prev_slot);
-    if (slot == NULL)
+    if (slot == &header->nil_slot)
     {
         prev_slot->next = malloc(sizeof(*prev_slot));
         slot            = prev_slot->next;

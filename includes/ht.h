@@ -13,11 +13,6 @@ Implementation details:
 
 #include "object.h"
 
-typedef struct
-{
-    size_t buckets;
-} HT_Header;
-
 typedef struct ht_slot
 {
     /* NOTE(HS): key is a non-owning reference - this is intentional as an ident
@@ -27,6 +22,13 @@ typedef struct ht_slot
     TyObject *value;
     struct ht_slot *next;
 } HT_Slot;
+
+typedef struct
+{
+    size_t buckets;
+    HT_Slot nil_slot;  /* NOTE(HS): special "nil" value slot to represent invalid lookup */
+} HT_Header;
+
 
 /* NOTE(HS): hash table by default utillises the djb2 hash function */
 typedef HT_Slot *HT;
