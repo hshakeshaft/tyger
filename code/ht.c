@@ -88,67 +88,23 @@ void ht_deinit(HT *ht)
     free(header);
 }
 
-
 void ht_insert(HT *ht, const char *key, TyObject *value)
 {
-    HT_Header *header;
-    unsigned int hash;
-    size_t key_len;
-    size_t bucket;
-    HT_Slot *slot_info;
-
-    header    = ((HT_Header*) *ht) - 1;
-    key_len   = strlen(key);
-    hash      = ht__djb2_hash_key(key, key_len);
-    bucket    = hash % header->buckets;
-    slot_info = &(*ht)[bucket];
-
-    if (slot_info->key != NULL)
+    HT_Slot *slot;
+    HT_Slot *prev_slot;
+    slot = ht__find_matching_slot_by_key(ht, key, &prev_slot);
+    if (slot == NULL)
     {
-        if (strcmp(slot_info->key, key) == 0)
-        {
-            slot_info->value = value;
-        }
-        else
-        {
-            HT_Slot *cur_slot;
-            HT_Slot *prev_slot;
-
-            prev_slot = slot_info;
-            cur_slot  = prev_slot->next;
-
-            while (cur_slot != NULL)
-            {
-                if (strcmp(cur_slot->key, key) == 0)
-                {
-                    cur_slot->value = value;
-                    break;
-                }
-                else
-                {
-                    prev_slot = cur_slot;
-                    cur_slot  = cur_slot->next;
-                }
-            }
-
-            /*  NOTE(HS): in cases where no matching key found, then we insert a new
-            one in the resolution chain
-            */
-            if (cur_slot == NULL)
-            {
-                prev_slot->next = malloc(sizeof(*prev_slot));
-                cur_slot        = prev_slot->next;
-                cur_slot->key   = key;
-                cur_slot->value = value;
-                cur_slot->next  = NULL;
-            }
-        }
+        prev_slot->next = malloc(sizeof(*prev_slot));
+        slot            = prev_slot->next;
+        slot->key       = key;
+        slot->value     = value;
+        slot->next      = NULL;
     }
     else
     {
-        slot_info->key = key;
-        slot_info->value = value;
-        slot_info->next = NULL;
+        if (slot->key == NULL) { slot->key = key; }
+        slot->value = value;
     }
 }
 
