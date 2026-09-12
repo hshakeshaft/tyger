@@ -78,8 +78,27 @@ void ht_init(HT *ht, size_t buckets)
 
 void ht_deinit(HT *ht)
 {
+    size_t i;
     HT_Header *header;
     header = ((HT_Header*) *ht) - 1;
+
+    for (i = 0; i < header->buckets; ++i)
+    {
+        HT_Slot *cur_slot;
+        HT_Slot *prev_slot;
+
+        prev_slot = NULL;
+        cur_slot  = (*ht)[i].next;
+
+        while (cur_slot != NULL)
+        {
+            prev_slot = cur_slot;
+            cur_slot  = cur_slot->next;
+            free(prev_slot);
+            prev_slot = NULL;
+        }
+    }
+
     free(header);
 }
 
