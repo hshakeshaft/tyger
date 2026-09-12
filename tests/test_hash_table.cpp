@@ -220,9 +220,110 @@ TEST(HashTableTestSuite, test_retrieval_of_colliding_keys_resolves_collision)
 }
 
 
-// TODO: test deletion of key
-//  - [ ] deletion of key which doesn't exist (nothing happens - return false)
-//  - [ ] test deletion of key which exists (and is lone)
-//  - [ ] test deleteion of key which exists when there's several
-//    - assert other element not deleted
-//  - [ ] test deletion of key which collides
+TEST(HashTableTestSuite, test_deletion_of_non_existing_key_fails)
+{
+    HT ht;
+    ht_init(&ht, 8);
+    ASSERT_FALSE(ht_delete(&ht, "foo"));
+    ASSERT_FALSE(ht_delete(&ht, "bar"));
+    ASSERT_FALSE(ht_delete(&ht, "baz"));
+    ht_deinit(&ht);
+}
+
+TEST(HashTableTestSuite, test_deleteion_of_existing_key_deletes)
+{
+    HT ht;
+    ht_init(&ht, 8);
+
+    auto val = HTTestValue("foo", 10);
+    ht_insert(&ht, val.ident.c_str(), val.object);
+
+    ASSERT_TRUE(ht_delete(&ht, val.ident.c_str()));
+
+    HT_Slot *slot = ht_get(&ht, val.ident.c_str());
+    ASSERT_EQ(slot->key, nullptr);
+    ASSERT_EQ(slot->value, nullptr);
+}
+
+TEST(HashTableTestSuite, test_deleting_one_key_does_not_delete_other_keys)
+{
+    HT ht;
+    ht_init(&ht, 8);
+
+    HT_Slot *slot;
+    auto val1 = HTTestValue("foo", 10);
+    auto val2 = HTTestValue("bar", 25);
+    ht_insert(&ht, val1.ident.c_str(), val1.object);
+    ht_insert(&ht, val2.ident.c_str(), val2.object);
+
+    ASSERT_TRUE(ht_delete(&ht, val1.ident.c_str()));
+
+    // test val1 deleted
+    slot = ht_get(&ht, val1.ident.c_str());
+    ASSERT_EQ(slot->key, nullptr);
+    ASSERT_EQ(slot->value, nullptr);
+
+    // test val2 still present
+    slot = ht_get(&ht, val2.ident.c_str());
+    ASSERT_EQ(slot->key, val2.ident);
+    ASSERT_EQ(slot->value->as.integer, val2.object->as.integer);
+}
+
+TEST(HashTableTestSuite, test_that_deletion_of_keys_in_chain_resolves)
+{
+    HT ht;
+    ht_init(&ht, 1);
+
+    auto val1 = HTTestValue("foo", 10);
+    auto val2 = HTTestValue("bar", 20);
+    auto val3 = HTTestValue("baz", 30);
+
+    ht_insert(&ht, val1.ident.c_str(), val1.object);
+    ht_insert(&ht, val2.ident.c_str(), val2.object);
+    ht_insert(&ht, val3.ident.c_str(), val3.object);
+
+    ASSERT_TRUE(ht_delete(&ht, val2.ident.c_str()));
+    
+    // Test that `slot[val3]` becomes `slot[val1]->next`
+    HT_Slot *slot1 = ht_get(&ht, val1.ident.c_str());
+    HT_Slot *slot3 = ht_get(&ht, val3.ident.c_str());
+    ASSERT_NE(slot1, nullptr);
+    ASSERT_NE(slot1->next, nullptr);
+    ASSERT_EQ(slot1->next, slot3);
+
+    // test that deleting `slot[val3]` now sets `slot[val1]->next` to NULL
+    ASSERT_TRUE(ht_delete(&ht, val3.ident.c_str()));
+    slot1 = ht_get(&ht, val1.ident.c_str());
+    ASSERT_EQ(slot1->next, nullptr);
+}
+
+TEST(HashTableTestSuite, test_deletion_of_initial_slot_moves_back_colission_chain)
+{
+    HT ht;
+    ht_init(&ht, 1);
+
+    HT_Slot *slot;
+    auto val1 = HTTestValue("foo", 10);
+    auto val2 = HTTestValue("bar", 20);
+
+    ht_insert(&ht, val1.ident.c_str(), val1.object);
+    ht_insert(&ht, val2.ident.c_str(), val2.object);
+
+    ASSERT_TRUE(ht_delete(&ht, val1.ident.c_str()));
+
+    // test that deleting the first key moves next back into this slot
+    slot = ht_get(&ht, val2.ident.c_str());
+    ASSERT_EQ(slot->key, val2.ident);
+    ASSERT_EQ(slot->value->as.integer, val2.object->as.integer);
+    ASSERT_EQ(slot->next, nullptr);
+
+    // test that deleting the first key in a slot when no others available "resets"
+    // all slot values to NULL
+    ASSERT_TRUE(ht_delete(&ht, val2.ident.c_str()));
+    slot = ht_get(&ht, val2.ident.c_str());
+    ASSERT_EQ(slot->key,   nullptr);
+    ASSERT_EQ(slot->value, nullptr);
+    ASSERT_EQ(slot->next,  nullptr);
+
+    ht_deinit(&ht);
+}

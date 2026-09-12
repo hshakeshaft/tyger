@@ -23,12 +23,6 @@ static unsigned int ht__djb2_hash_key(const char *key, size_t key_len)
     return hash;
 }
 
-/* TODO(HS): implement some kind of "find_matching_slot" function which finds either
-a slot matching the provided key, or NULL if no match found.
-Should also write to an "out-param" the pointer to the last found value such that
-I can perform insertions of new slots at the end of a collision resolution chain
-*/
-
 /* find the slot in the hash table which matches a supplied key
 @param ht - the hash table
 @param key - the key to match agains
@@ -49,11 +43,12 @@ static HT_Slot *ht__find_matching_slot_by_key(HT *ht, const char *key, HT_Slot *
     hash    = ht__djb2_hash_key(key, key_len);
     bucket  = hash % header->buckets;
     slot    = &(*ht)[bucket];
+    *prev_slot = slot;
 
     while (slot != NULL)
     {
-        *prev_slot = slot;
         if (slot->key == NULL || strcmp(slot->key, key) == 0) { break; }
+        *prev_slot = slot;
         slot = slot->next;
     }
 
@@ -115,4 +110,51 @@ HT_Slot *ht_get(HT *ht, const char *key)
     slot = ht__find_matching_slot_by_key(ht, key, &prev_slot);
     if (slot == NULL) { slot = prev_slot; }
     return slot;
+}
+
+int ht_delete(HT *ht, const char *key)
+{
+    HT_Slot *slot;
+    HT_Slot *prev_slot;
+    HT_Slot *next_slot;
+    int success;
+
+    success = 0;
+
+    slot      = ht__find_matching_slot_by_key(ht, key, &prev_slot);
+    next_slot = NULL;
+
+    #if 0
+    #else
+    if (slot != NULL && slot->key != NULL)
+    {
+        if (slot->next != NULL) { next_slot = slot->next; }
+
+        /* NOTE(HS): this should always refer to the initial slot in the resolution chain */
+        if (prev_slot == slot)
+        {
+            if (next_slot == NULL)
+            {
+                slot->key   = NULL;
+                slot->value = NULL;
+                slot->next  = NULL;
+            }
+            else
+            {
+                slot->key   = next_slot->key;
+                slot->value = next_slot->value;
+                slot->next  = next_slot->next;
+            }
+            success     = 1;
+        }
+        else
+        {
+            free(slot);
+            prev_slot->next = next_slot;
+            success         = 1;
+        }
+    }
+    #endif
+
+    return success;
 }

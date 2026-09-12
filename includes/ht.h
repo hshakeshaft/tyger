@@ -38,4 +38,6 @@ void ht_insert(HT *ht, const char *key, TyObject *value);
 
 HT_Slot *ht_get(HT *ht, const char *key);
 
+int ht_delete(HT *ht, const char *key);
+
 #endif  /* HT_LIB_H_ */
