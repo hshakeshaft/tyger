@@ -5,7 +5,11 @@
 #include "ht.h"
 #include "object.h"
 
+#ifndef VM_STRESS_OBJECT_ALLOCATION
 #define VM_MAX_OBJECTS 4096
+#else
+#define VM_MAX_OBJECTS 16
+#endif
 
 /* TODO(HS): consider moving to handles for objects in `HT` slots & identifiers */
 /* TODO(HS): functions require a local "environment" which contains new name bindings
