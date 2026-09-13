@@ -57,8 +57,11 @@ protected:
         parser__check_errors_and_log(m_program);
     }
 
-    // TODO(HS): destroy program here
-    void reset() {}
+    void reset() {
+        memset(vm.objects, 0x00, sizeof(*vm.objects) * vm.object_count);
+        vm.object_count = 0;
+        program_deinit(&m_program);
+    }
 
     Lexer m_lexer;
     Parser m_parser;
