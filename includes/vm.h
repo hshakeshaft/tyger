@@ -33,13 +33,13 @@ TyObject *vm_get_ident(TyVM *vm, const char *ident);
 ==============================================================================*/
 
 TyObject *vm_object_binop(
-    TyObject *lhs, TyObject *rhs,
-    TyObject *(*do_binop_fn)(TyObject *lhs, TyObject *rhs)
+    TyVM *vm, TyObject *lhs, TyObject *rhs,
+    TyObject *(*do_binop_fn)(TyVM *vm, TyObject *lhs, TyObject *rhs)
 );
 
-TyObject *vm_intrinsic__object_add(TyObject *lhs, TyObject *rhs);
-TyObject *vm_intrinsic__object_sub(TyObject *lhs, TyObject *rhs);
-TyObject *vm_intrinsic__object_mul(TyObject *lhs, TyObject *rhs);
-TyObject *vm_intrinsic__object_div(TyObject *lhs, TyObject *rhs);
+TyObject *vm_intrinsic__object_add(TyVM *vm, TyObject *lhs, TyObject *rhs);
+TyObject *vm_intrinsic__object_sub(TyVM *vm, TyObject *lhs, TyObject *rhs);
+TyObject *vm_intrinsic__object_mul(TyVM *vm, TyObject *lhs, TyObject *rhs);
+TyObject *vm_intrinsic__object_div(TyVM *vm, TyObject *lhs, TyObject *rhs);
 
 #endif  /* VM_H_ */

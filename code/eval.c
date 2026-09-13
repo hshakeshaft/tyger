@@ -38,7 +38,7 @@ static TyObject *eval__infix(TyVM *vm, Program *program, Infix_Expression *expre
     TyObject *rhs_object;
     Expression *lhs_expression;
     Expression *rhs_expression;
-    TyObject *(*binop_fn)(TyObject *lhs, TyObject *rhs);
+    TyObject *(*binop_fn)(TyVM *vm, TyObject *lhs, TyObject *rhs);
 
     object         = NULL;
     lhs_expression = program_expression_handle_to_expression(program, expression->lhs);
@@ -57,7 +57,7 @@ static TyObject *eval__infix(TyVM *vm, Program *program, Infix_Expression *expre
         }
     }
 
-    object = vm_object_binop(lhs_object, rhs_object, binop_fn);
+    object = vm_object_binop(vm, lhs_object, rhs_object, binop_fn);
 
     return object;
 }

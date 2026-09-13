@@ -92,10 +92,6 @@ TyObject *vm_get_ident(TyVM *vm, const char *ident)
                             VM Intrinsic functions
 ==============================================================================*/
 
-/* TODO(HS): implement support for marithmetic operations on identifiers (should evaluate
-to their values)
-*/
-
 /* resolve an object to the final instance - used for identifiers */
 static TyObject *vm__resolve_object(TyObject *object)
 {
@@ -116,8 +112,8 @@ static TyObject *vm__resolve_object(TyObject *object)
 }
 
 TyObject *vm_object_binop(
-    TyObject *lhs, TyObject *rhs,
-    TyObject *(*do_binop_fn)(TyObject *lhs, TyObject *rhs)
+    TyVM *vm, TyObject *lhs, TyObject *rhs,
+    TyObject *(*do_binop_fn)(TyVM *vm, TyObject *lhs, TyObject *rhs)
 )
 {
     TyObject *result;
@@ -127,42 +123,42 @@ TyObject *vm_object_binop(
     assert(lhs->type == OBJ_INTEGER && "LHS did not resolve to integer - operator only valid between integers or identifiers");
     assert(rhs->type == OBJ_INTEGER && "rHS did not resolve to integer - operator only valid between integers or identifiers");
 
-    result = do_binop_fn(lhs, rhs);
+    result = do_binop_fn(vm, lhs, rhs);
     return result;
 }
 
-TyObject *vm_intrinsic__object_add(TyObject *lhs, TyObject *rhs)
+TyObject *vm_intrinsic__object_add(TyVM *vm, TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
     value  = lhs->as.integer + rhs->as.integer;
-    result = tyobject_create(OBJ_INTEGER, (void*) &value);
+    result = vm_create_object(vm, OBJ_INTEGER, (void*) &value);
     return result;
 }
 
-TyObject *vm_intrinsic__object_sub(TyObject *lhs, TyObject *rhs)
+TyObject *vm_intrinsic__object_sub(TyVM *vm, TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
     value  = lhs->as.integer - rhs->as.integer;
-    result = tyobject_create(OBJ_INTEGER, (void*) &value);
+    result = vm_create_object(vm, OBJ_INTEGER, (void*) &value);
     return result;
 }
 
-TyObject *vm_intrinsic__object_mul(TyObject *lhs, TyObject *rhs)
+TyObject *vm_intrinsic__object_mul(TyVM *vm, TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
     value  = lhs->as.integer * rhs->as.integer;
-    result = tyobject_create(OBJ_INTEGER, (void*) &value);
+    result = vm_create_object(vm, OBJ_INTEGER, (void*) &value);
     return result;
 }
 
-TyObject *vm_intrinsic__object_div(TyObject *lhs, TyObject *rhs)
+TyObject *vm_intrinsic__object_div(TyVM *vm, TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
     value  = lhs->as.integer / rhs->as.integer;
-    result = tyobject_create(OBJ_INTEGER, (void*) &value);
+    result = vm_create_object(vm, OBJ_INTEGER, (void*) &value);
     return result;
 }
