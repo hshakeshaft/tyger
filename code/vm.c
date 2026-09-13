@@ -96,14 +96,45 @@ TyObject *vm_get_ident(TyVM *vm, const char *ident)
 to their values)
 */
 
+/* resolve an object to the final instance - used for identifiers */
+static TyObject *vm__resolve_object(TyObject *object)
+{
+    TyObject *result;
+    result = object;
+    switch (result->type)
+    {
+        case OBJ_IDENT: {
+            while (result->type == OBJ_IDENT)
+            {
+                result = result->as.ident.value;
+            }
+        } break;
+
+        default:;
+    }
+    return result;
+}
+
+static void vm__validate_arithmetic_args(TyObject *lhs, TyObject *rhs)
+{
+    assert(lhs->type == OBJ_INTEGER && "LHS did not resolve to integer - operator `+` only valid between integers or identifiers");
+    assert(rhs->type == OBJ_INTEGER && "rHS did not resolve to integer - operator `+` only valid between integers or identifiers");
+}
+
+
 TyObject *vm_intrinsic__object_add(TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
-    assert((lhs->type == OBJ_INTEGER && rhs->type == OBJ_INTEGER) && "operator `+` only valid between 2 integers");
+
+    lhs = vm__resolve_object(lhs);
+    rhs = vm__resolve_object(rhs);
+    vm__validate_arithmetic_args(lhs, rhs);
+
     result  = NULL;
     value   = lhs->as.integer + rhs->as.integer;
     result  = tyobject_create(OBJ_INTEGER, (void*) &value);
+
     return result;
 }
 
@@ -111,10 +142,15 @@ TyObject *vm_intrinsic__object_sub(TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
-    assert((lhs->type == OBJ_INTEGER && rhs->type == OBJ_INTEGER) && "operator `-` only valid between 2 integers");
+
+    lhs = vm__resolve_object(lhs);
+    rhs = vm__resolve_object(rhs);
+    vm__validate_arithmetic_args(lhs, rhs);
+
     result  = NULL;
     value   = lhs->as.integer - rhs->as.integer;
     result  = tyobject_create(OBJ_INTEGER, (void*) &value);
+
     return result;
 }
 
@@ -122,10 +158,15 @@ TyObject *vm_intrinsic__object_mul(TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
-    assert((lhs->type == OBJ_INTEGER && rhs->type == OBJ_INTEGER) && "operator `*` only valid between 2 integers");
+
+    lhs = vm__resolve_object(lhs);
+    rhs = vm__resolve_object(rhs);
+    vm__validate_arithmetic_args(lhs, rhs);
+
     result  = NULL;
     value   = lhs->as.integer * rhs->as.integer;
     result  = tyobject_create(OBJ_INTEGER, (void*) &value);
+
     return result;
 }
 
@@ -133,9 +174,14 @@ TyObject *vm_intrinsic__object_div(TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
-    assert((lhs->type == OBJ_INTEGER && rhs->type == OBJ_INTEGER) && "operator `/` only valid between 2 integers");
+
+    lhs = vm__resolve_object(lhs);
+    rhs = vm__resolve_object(rhs);
+    vm__validate_arithmetic_args(lhs, rhs);
+
     result  = NULL;
     value   = lhs->as.integer / rhs->as.integer;
     result  = tyobject_create(OBJ_INTEGER, (void*) &value);
+
     return result;
 }

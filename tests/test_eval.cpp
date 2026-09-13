@@ -144,6 +144,12 @@ TEST_F(EvalTestFixture, Eval_Infix_Expression)
         { "10 / 2;", 5 },
         { "1 + 2 + 3 + 4 + 5;", 15 },
         { "1 * 2 * 3 * 4 * 5;", 120 },
+
+        // test idents [pointing to numbers] can be added
+        { "var x = 1; var y = 2; x + y;", 3 },
+        { "var x = 1; var y = 2; y - x;", 1 },
+        { "var x = 2; var y = 2; x * y;", 4 },
+        { "var x = 4; var y = 2; x / y;", 2 },
     };
 
     for (auto& tc : test_cases)
