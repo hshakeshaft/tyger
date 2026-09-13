@@ -32,6 +32,11 @@ TyObject *vm_get_ident(TyVM *vm, const char *ident);
                             VM Intrinsic functions
 ==============================================================================*/
 
+TyObject *vm_object_binop(
+    TyObject *lhs, TyObject *rhs,
+    TyObject *(*do_binop_fn)(TyObject *lhs, TyObject *rhs)
+);
+
 TyObject *vm_intrinsic__object_add(TyObject *lhs, TyObject *rhs);
 TyObject *vm_intrinsic__object_sub(TyObject *lhs, TyObject *rhs);
 TyObject *vm_intrinsic__object_mul(TyObject *lhs, TyObject *rhs);

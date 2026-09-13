@@ -38,6 +38,7 @@ static TyObject *eval__infix(TyVM *vm, Program *program, Infix_Expression *expre
     TyObject *rhs_object;
     Expression *lhs_expression;
     Expression *rhs_expression;
+    TyObject *(*binop_fn)(TyObject *lhs, TyObject *rhs);
 
     object         = NULL;
     lhs_expression = program_expression_handle_to_expression(program, expression->lhs);
@@ -47,14 +48,16 @@ static TyObject *eval__infix(TyVM *vm, Program *program, Infix_Expression *expre
 
     switch (expression->op)
     {
-        case OP_ADD: { object = vm_intrinsic__object_add(lhs_object, rhs_object); } break;
-        case OP_SUB: { object = vm_intrinsic__object_sub(lhs_object, rhs_object); } break;
-        case OP_MUL: { object = vm_intrinsic__object_mul(lhs_object, rhs_object); } break;
-        case OP_DIV: { object = vm_intrinsic__object_div(lhs_object, rhs_object); } break;
+        case OP_ADD: { binop_fn = vm_intrinsic__object_add; } break;
+        case OP_SUB: { binop_fn = vm_intrinsic__object_sub; } break;
+        case OP_MUL: { binop_fn = vm_intrinsic__object_mul; } break;
+        case OP_DIV: { binop_fn = vm_intrinsic__object_div; } break;
         default: {
             assert(0 && "[ERROR] :: invalid operator used in expression");
         }
     }
+
+    object = vm_object_binop(lhs_object, rhs_object, binop_fn);
 
     return object;
 }

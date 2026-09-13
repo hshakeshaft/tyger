@@ -115,26 +115,28 @@ static TyObject *vm__resolve_object(TyObject *object)
     return result;
 }
 
-static void vm__validate_arithmetic_args(TyObject *lhs, TyObject *rhs)
+TyObject *vm_object_binop(
+    TyObject *lhs, TyObject *rhs,
+    TyObject *(*do_binop_fn)(TyObject *lhs, TyObject *rhs)
+)
 {
-    assert(lhs->type == OBJ_INTEGER && "LHS did not resolve to integer - operator `+` only valid between integers or identifiers");
-    assert(rhs->type == OBJ_INTEGER && "rHS did not resolve to integer - operator `+` only valid between integers or identifiers");
-}
+    TyObject *result;
+    lhs = vm__resolve_object(lhs);
+    rhs = vm__resolve_object(rhs);
 
+    assert(lhs->type == OBJ_INTEGER && "LHS did not resolve to integer - operator only valid between integers or identifiers");
+    assert(rhs->type == OBJ_INTEGER && "rHS did not resolve to integer - operator only valid between integers or identifiers");
+
+    result = do_binop_fn(lhs, rhs);
+    return result;
+}
 
 TyObject *vm_intrinsic__object_add(TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
-
-    lhs = vm__resolve_object(lhs);
-    rhs = vm__resolve_object(rhs);
-    vm__validate_arithmetic_args(lhs, rhs);
-
-    result  = NULL;
-    value   = lhs->as.integer + rhs->as.integer;
-    result  = tyobject_create(OBJ_INTEGER, (void*) &value);
-
+    value  = lhs->as.integer + rhs->as.integer;
+    result = tyobject_create(OBJ_INTEGER, (void*) &value);
     return result;
 }
 
@@ -142,15 +144,8 @@ TyObject *vm_intrinsic__object_sub(TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
-
-    lhs = vm__resolve_object(lhs);
-    rhs = vm__resolve_object(rhs);
-    vm__validate_arithmetic_args(lhs, rhs);
-
-    result  = NULL;
-    value   = lhs->as.integer - rhs->as.integer;
-    result  = tyobject_create(OBJ_INTEGER, (void*) &value);
-
+    value  = lhs->as.integer - rhs->as.integer;
+    result = tyobject_create(OBJ_INTEGER, (void*) &value);
     return result;
 }
 
@@ -158,15 +153,8 @@ TyObject *vm_intrinsic__object_mul(TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
-
-    lhs = vm__resolve_object(lhs);
-    rhs = vm__resolve_object(rhs);
-    vm__validate_arithmetic_args(lhs, rhs);
-
-    result  = NULL;
-    value   = lhs->as.integer * rhs->as.integer;
-    result  = tyobject_create(OBJ_INTEGER, (void*) &value);
-
+    value  = lhs->as.integer * rhs->as.integer;
+    result = tyobject_create(OBJ_INTEGER, (void*) &value);
     return result;
 }
 
@@ -174,14 +162,7 @@ TyObject *vm_intrinsic__object_div(TyObject *lhs, TyObject *rhs)
 {
     TyObject *result;
     int value;
-
-    lhs = vm__resolve_object(lhs);
-    rhs = vm__resolve_object(rhs);
-    vm__validate_arithmetic_args(lhs, rhs);
-
-    result  = NULL;
-    value   = lhs->as.integer / rhs->as.integer;
-    result  = tyobject_create(OBJ_INTEGER, (void*) &value);
-
+    value  = lhs->as.integer / rhs->as.integer;
+    result = tyobject_create(OBJ_INTEGER, (void*) &value);
     return result;
 }
