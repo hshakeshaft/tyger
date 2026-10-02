@@ -61,6 +61,7 @@ set(MAIN_NAME tygeri)
 set(
     MAIN_SOURCES
     code/main.c
+    code/repl.c
 )
 add_executable(${MAIN_NAME} ${MAIN_SOURCES})
 target_link_libraries(${MAIN_NAME} ${LIB_NAME})
