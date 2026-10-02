@@ -92,6 +92,22 @@ TyObject *vm_get_ident(TyVM *vm, const char *ident)
                             VM Intrinsic functions
 ==============================================================================*/
 
+/*
+TODO(HS): validate whether ident is bound to anything when accessed (i.e. was the
+variable declared already?)
+
+TODO(HS): return some kind of error when the VM encounters an error in evaluation
+(for graceful failure)
+
+TODO(HS): find more elegant way of managing intrinsic binop functions
+    - use the HMH style:
+    ```
+    #define VM_INTRINSIC__BINOP(name) <ret> (NAME) (<params...>)
+    typedef VM_INTRINSIC__BINOP(*vm_Binop_FnPtr);
+    VM_INTRINSIC__BINOP(vm_intrinsic__object_add) { ... }
+    ```
+*/
+
 /* resolve an object to the final instance - used for identifiers */
 static TyObject *vm__resolve_object(TyObject *object)
 {
